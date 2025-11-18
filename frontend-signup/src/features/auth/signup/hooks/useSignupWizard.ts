@@ -175,8 +175,9 @@ export function useSignupWizard() {
         console.log('회원가입 시작:', values);
         const response = await signup(values);
         console.log('회원가입 성공:', response);
-        // 회원가입 완료 후 user_id를 localStorage에 저장
+        // 회원가입 완료 후 user_id와 이름을 localStorage에 저장
         localStorage.setItem('signup_user_id', response.id);
+        localStorage.setItem('signup_user_name', values.name);
         // 온보딩으로 이동
         console.log('온보딩 페이지로 이동합니다...');
         window.location.href = '/job-seeker/onboarding';

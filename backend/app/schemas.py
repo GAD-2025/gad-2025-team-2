@@ -66,7 +66,7 @@ class SignupPayload(BaseModel):
     phone: str
     birthdate: str  # YYYY-MM-DD
     gender: str  # "male" | "female"
-    nationality_code: str
+    nationality_code: Optional[str] = None  # 고용주는 선택적
     terms: TermsPayload
 
 

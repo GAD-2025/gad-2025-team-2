@@ -1,3 +1,6 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
 import { UserRole } from '../types';
 
 interface RoleSelectStepProps {
@@ -19,6 +22,18 @@ const ROLE_CARDS: Array<{ role: UserRole; title: string; description: string }> 
 ];
 
 export function RoleSelectStep({ selectedRole, onSelect }: RoleSelectStepProps) {
+  const router = useRouter();
+
+  const handleRoleSelect = (role: UserRole) => {
+    if (role === 'employer') {
+      // 고용주 선택 시 별도 라우트로 이동
+      router.push('/signup/employer');
+    } else {
+      // 구직자 선택 시 기존 로직 유지
+      onSelect(role);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col items-center bg-slate-900 px-4 pb-12 pt-16">
       <div className="w-full max-w-[420px] rounded-3xl bg-white px-6 pb-10 pt-14 text-left text-gray-900 shadow-lg">
@@ -38,7 +53,7 @@ export function RoleSelectStep({ selectedRole, onSelect }: RoleSelectStepProps) 
               <button
                 key={role}
                 type="button"
-                onClick={() => onSelect(role)}
+                onClick={() => handleRoleSelect(role)}
                 className={`w-full rounded-[28px] border p-5 text-left transition ${
                   active ? 'border-emerald-500 bg-emerald-50 shadow' : 'border-gray-200 bg-white'
                 }`}

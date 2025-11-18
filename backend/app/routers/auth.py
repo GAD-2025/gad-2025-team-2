@@ -133,24 +133,48 @@ async def signup_new(request: SignupPayload, session: Session = Depends(get_sess
             detail="필수 약관에 동의해주세요."
         )
     
-    # Validate nationality exists
-    nationality = session.get(Nationality, request.nationality_code)
-    if not nationality:
-        raise HTTPException(
-            status_code=400,
-            detail="유효하지 않은 국적 코드입니다."
-        )
+    # Validate nationality exists (only for job_seeker)
+    if request.role == "job_seeker":
+        if not request.nationality_code:
+            raise HTTPException(
+                status_code=400,
+                detail="구직자는 국적 코드가 필요합니다."
+            )
+        nationality = session.get(Nationality, request.nationality_code)
+        if not nationality:
+            raise HTTPException(
+                status_code=400,
+                detail="유효하지 않은 국적 코드입니다."
+            )
+    else:
+        # 고용주는 국적 코드가 없을 수 있음
+        request.nationality_code = request.nationality_code or "KR"  # 기본값 설정
     
     # Create SignupUser
     user_id = f"signup-{uuid.uuid4().hex[:8]}"
+    
+    # 고용주는 birthdate, gender가 없을 수 있으므로 기본값 처리
+    birthdate = None
+    if request.birthdate:
+        try:
+            birthdate = datetime.strptime(request.birthdate, "%Y-%m-%d").date()
+        except ValueError:
+            # 고용주는 생년월일이 없을 수 있으므로 오늘 날짜로 설정
+            birthdate = datetime.utcnow().date()
+    else:
+        birthdate = datetime.utcnow().date()
+    
+    gender = request.gender or "male"  # 고용주는 기본값
+    nationality_code = request.nationality_code or "KR"  # 고용주는 기본값
+    
     signup_user = SignupUser(
         id=user_id,
         role=request.role,
         name=request.name,
-        phone=request.phone,
-        birthdate=datetime.strptime(request.birthdate, "%Y-%m-%d").date(),
-        gender=request.gender,
-        nationality_code=request.nationality_code,
+        phone=request.phone or "",  # 고용주는 전화번호가 없을 수 있음
+        birthdate=birthdate,
+        gender=gender,
+        nationality_code=nationality_code,
         terms_tos_required=request.terms.tos_required,
         terms_privacy_required=request.terms.privacy_required,
         terms_sms_optional=request.terms.sms_optional,

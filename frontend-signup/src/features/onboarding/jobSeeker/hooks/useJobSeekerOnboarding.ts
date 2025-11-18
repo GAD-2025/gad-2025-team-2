@@ -25,7 +25,7 @@ export function useJobSeekerOnboarding() {
   const [error, setError] = useState<string | null>(null);
 
   const goNext = () => {
-    if (step < 6) {
+    if (step < 7) {
       setStep((prev) => (prev + 1) as OnboardingStep);
     }
   };
@@ -172,7 +172,8 @@ export function useJobSeekerOnboarding() {
       console.log('Sending profile data:', payload);
 
       await createJobSeekerProfile(payload);
-      router.push('/');
+      // API 호출 성공 후 완료 화면(Step 7)으로 이동
+      setStep(7);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : '프로필 저장에 실패했습니다.';
@@ -180,6 +181,17 @@ export function useJobSeekerOnboarding() {
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGoToHome = () => {
+    // 쿼리 파라미터와 함께 홈으로 이동
+    console.log('Navigating to home with from=onboarding');
+    // window.location을 사용하여 확실하게 쿼리 파라미터 포함
+    if (typeof window !== 'undefined') {
+      window.location.href = '/?from=onboarding';
+    } else {
+      router.push('/?from=onboarding');
     }
   };
 
@@ -206,6 +218,8 @@ export function useJobSeekerOnboarding() {
     handleChangeTime,
     handleToggleDay,
     handleToggleAllDays,
+    // Complete step handler
+    handleGoToHome,
   };
 }
 

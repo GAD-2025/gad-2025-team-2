@@ -1,4 +1,4 @@
-export type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6;
+export type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface WorkSchedule {
   availableDates: string[]; // 'YYYY-MM-DD'

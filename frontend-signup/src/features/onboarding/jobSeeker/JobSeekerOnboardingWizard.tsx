@@ -6,6 +6,7 @@ import { PreferredRegionStep } from './components/PreferredRegionStep';
 import { PreferredJobStep } from './components/PreferredJobStep';
 import { WorkScheduleCalendarStep } from './components/WorkScheduleCalendarStep';
 import { WorkScheduleDetailStep } from './components/WorkScheduleDetailStep';
+import { OnboardingCompleteStep } from './components/OnboardingCompleteStep';
 import { StartInfoModal } from './components/StartInfoModal';
 import { StepIntroBottomSheet } from './components/StepIntroBottomSheet';
 import { useJobSeekerOnboarding } from './hooks/useJobSeekerOnboarding';
@@ -32,6 +33,7 @@ export default function JobSeekerOnboardingWizard() {
     handleChangeTime,
     handleToggleDay,
     handleToggleAllDays,
+    handleGoToHome,
   } = useJobSeekerOnboarding();
 
   return (
@@ -86,6 +88,12 @@ export default function JobSeekerOnboardingWizard() {
           onPrev={goPrev}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
+        />
+      )}
+      {step === 7 && (
+        <OnboardingCompleteStep
+          values={values}
+          onGoToHome={handleGoToHome}
         />
       )}
 
