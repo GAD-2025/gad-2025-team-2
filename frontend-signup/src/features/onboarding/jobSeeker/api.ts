@@ -1,10 +1,18 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
-export interface JobSeekerProfilePayload {
+export interface WorkSchedulePayload {
+  available_dates: string[]; // 'YYYY-MM-DD'
+  start_time: string; // 'HH:mm'
+  end_time: string; // 'HH:mm'
+  days_of_week: string[]; // ['MON', 'TUE', ...] or ['월', '화', ...]
+}
+
+export interface JobSeekerProfileCreate {
   user_id: string;
-  basic_info_file_name: string | null;
+  basic_info_file_name?: string | null;
   preferred_regions: string[];
   preferred_jobs: string[];
+  work_schedule: WorkSchedulePayload;
 }
 
 export interface JobSeekerProfileResponse {
@@ -13,12 +21,16 @@ export interface JobSeekerProfileResponse {
   basic_info_file_name: string | null;
   preferred_regions: string[];
   preferred_jobs: string[];
+  work_available_dates: string[];
+  work_start_time: string | null;
+  work_end_time: string | null;
+  work_days_of_week: string[];
   created_at: string;
   updated_at: string;
 }
 
 export async function createJobSeekerProfile(
-  payload: JobSeekerProfilePayload
+  payload: JobSeekerProfileCreate
 ): Promise<JobSeekerProfileResponse> {
   const response = await fetch(`${API_BASE_URL}/job-seeker/profile`, {
     method: 'POST',
@@ -52,4 +64,3 @@ export async function getJobSeekerProfile(
 
   return response.json();
 }
-

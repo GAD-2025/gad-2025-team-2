@@ -102,6 +102,18 @@ GET /learning/summary?seekerId=
 POST /leveltest
 ```
 
+### Job Seeker Profile
+```http
+POST /job-seeker/profile
+GET /job-seeker/profile/{user_id}
+```
+
+Creates or updates a job seeker profile with onboarding data:
+- Basic info file name
+- Preferred regions
+- Preferred jobs
+- Work schedule (available dates, start/end time, days of week)
+
 ### WebSocket
 ```
 WS /ws/conversations/{id}
@@ -180,11 +192,12 @@ Switch via `TRANSLATE_PROVIDER` env var.
 ## 📝 Schemas
 
 Pydantic models for request/response validation:
-- `SignInRequest`, `SignUpRequest`
+- `SignInRequest`, `SignUpRequest`, `SignupPayload`
 - `ApplicationCreate`, `ApplicationUpdate`
 - `MessageCreate`, `MessageRead`
 - `TranslateRequest`, `TranslateResponse`
 - `LevelTestSubmit`
+- `JobSeekerProfileCreate`, `JobSeekerProfileResponse`, `WorkSchedulePayload`
 
 ## 🚦 Error Handling
 

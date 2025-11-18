@@ -22,11 +22,19 @@ async def create_job_seeker_profile(
     )
     existing = session.exec(statement).first()
 
+    # Convert work_schedule to DB format
+    work_available_dates_json = json.dumps(request.work_schedule.available_dates)
+    work_days_of_week_json = json.dumps(request.work_schedule.days_of_week)
+
     if existing:
         # Update existing profile
         existing.basic_info_file_name = request.basic_info_file_name
         existing.preferred_regions = json.dumps(request.preferred_regions)
         existing.preferred_jobs = json.dumps(request.preferred_jobs)
+        existing.work_available_dates = work_available_dates_json
+        existing.work_start_time = request.work_schedule.start_time
+        existing.work_end_time = request.work_schedule.end_time
+        existing.work_days_of_week = work_days_of_week_json
         existing.updated_at = datetime.utcnow()
         session.add(existing)
         session.commit()
@@ -38,6 +46,10 @@ async def create_job_seeker_profile(
             basic_info_file_name=existing.basic_info_file_name,
             preferred_regions=json.loads(existing.preferred_regions),
             preferred_jobs=json.loads(existing.preferred_jobs),
+            work_available_dates=json.loads(existing.work_available_dates),
+            work_start_time=existing.work_start_time,
+            work_end_time=existing.work_end_time,
+            work_days_of_week=json.loads(existing.work_days_of_week),
             created_at=existing.created_at.isoformat(),
             updated_at=existing.updated_at.isoformat(),
         )
@@ -50,6 +62,10 @@ async def create_job_seeker_profile(
             basic_info_file_name=request.basic_info_file_name,
             preferred_regions=json.dumps(request.preferred_regions),
             preferred_jobs=json.dumps(request.preferred_jobs),
+            work_available_dates=work_available_dates_json,
+            work_start_time=request.work_schedule.start_time,
+            work_end_time=request.work_schedule.end_time,
+            work_days_of_week=work_days_of_week_json,
         )
         session.add(profile)
         session.commit()
@@ -61,6 +77,10 @@ async def create_job_seeker_profile(
             basic_info_file_name=profile.basic_info_file_name,
             preferred_regions=json.loads(profile.preferred_regions),
             preferred_jobs=json.loads(profile.preferred_jobs),
+            work_available_dates=json.loads(profile.work_available_dates),
+            work_start_time=profile.work_start_time,
+            work_end_time=profile.work_end_time,
+            work_days_of_week=json.loads(profile.work_days_of_week),
             created_at=profile.created_at.isoformat(),
             updated_at=profile.updated_at.isoformat(),
         )
@@ -83,6 +103,10 @@ async def get_job_seeker_profile(
         basic_info_file_name=profile.basic_info_file_name,
         preferred_regions=json.loads(profile.preferred_regions),
         preferred_jobs=json.loads(profile.preferred_jobs),
+        work_available_dates=json.loads(profile.work_available_dates) if profile.work_available_dates else [],
+        work_start_time=profile.work_start_time,
+        work_end_time=profile.work_end_time,
+        work_days_of_week=json.loads(profile.work_days_of_week) if profile.work_days_of_week else [],
         created_at=profile.created_at.isoformat(),
         updated_at=profile.updated_at.isoformat(),
     )

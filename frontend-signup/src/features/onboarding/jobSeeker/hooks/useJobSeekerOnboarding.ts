@@ -7,6 +7,12 @@ const INITIAL_VALUES: OnboardingFormValues = {
   uploadedFiles: [],
   preferredRegions: [],
   preferredJobs: [],
+  workSchedule: {
+    availableDates: [],
+    startTime: null,
+    endTime: null,
+    daysOfWeek: [],
+  },
 };
 
 export function useJobSeekerOnboarding() {
@@ -19,7 +25,7 @@ export function useJobSeekerOnboarding() {
   const [error, setError] = useState<string | null>(null);
 
   const goNext = () => {
-    if (step < 4) {
+    if (step < 6) {
       setStep((prev) => (prev + 1) as OnboardingStep);
     }
   };
@@ -63,6 +69,70 @@ export function useJobSeekerOnboarding() {
     setStep(2);
   };
 
+  // Work Schedule handlers
+  const handleToggleDate = (dateString: string) => {
+    setValues((prev) => {
+      const currentDates = prev.workSchedule.availableDates;
+      const isSelected = currentDates.includes(dateString);
+      return {
+        ...prev,
+        workSchedule: {
+          ...prev.workSchedule,
+          availableDates: isSelected
+            ? currentDates.filter((d) => d !== dateString)
+            : [...currentDates, dateString],
+        },
+      };
+    });
+  };
+
+  const handleConfirmCalendar = () => {
+    // Step 5 → Step 6으로 이동
+    goNext();
+  };
+
+  const handleChangeTime = (startTime: string | null, endTime: string | null) => {
+    setValues((prev) => ({
+      ...prev,
+      workSchedule: {
+        ...prev.workSchedule,
+        startTime,
+        endTime,
+      },
+    }));
+  };
+
+  const handleToggleDay = (dayCode: string) => {
+    setValues((prev) => {
+      const currentDays = prev.workSchedule.daysOfWeek;
+      const isSelected = currentDays.includes(dayCode);
+      return {
+        ...prev,
+        workSchedule: {
+          ...prev.workSchedule,
+          daysOfWeek: isSelected
+            ? currentDays.filter((d) => d !== dayCode)
+            : [...currentDays, dayCode],
+        },
+      };
+    });
+  };
+
+  const handleToggleAllDays = () => {
+    setValues((prev) => {
+      const allDays = ['월', '화', '수', '목', '금', '토', '일'];
+      const currentDays = prev.workSchedule.daysOfWeek;
+      const isAllSelected = allDays.every((day) => currentDays.includes(day));
+      return {
+        ...prev,
+        workSchedule: {
+          ...prev.workSchedule,
+          daysOfWeek: isAllSelected ? [] : allDays,
+        },
+      };
+    });
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
@@ -74,6 +144,15 @@ export function useJobSeekerOnboarding() {
         throw new Error('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
       }
 
+      // Validate work schedule
+      if (!values.workSchedule.startTime || !values.workSchedule.endTime) {
+        throw new Error('근무 시간을 선택해주세요.');
+      }
+      if (values.workSchedule.daysOfWeek.length === 0) {
+        throw new Error('근무 가능 요일을 선택해주세요.');
+      }
+
+      // Prepare payload with work schedule
       const payload = {
         user_id: userId,
         basic_info_file_name:
@@ -82,7 +161,15 @@ export function useJobSeekerOnboarding() {
             : null,
         preferred_regions: values.preferredRegions,
         preferred_jobs: values.preferredJobs,
+        work_schedule: {
+          available_dates: values.workSchedule.availableDates,
+          start_time: values.workSchedule.startTime,
+          end_time: values.workSchedule.endTime,
+          days_of_week: values.workSchedule.daysOfWeek,
+        },
       };
+
+      console.log('Sending profile data:', payload);
 
       await createJobSeekerProfile(payload);
       router.push('/');
@@ -113,6 +200,12 @@ export function useJobSeekerOnboarding() {
     handleSubmit,
     isSubmitting,
     error,
+    // Work Schedule handlers
+    handleToggleDate,
+    handleConfirmCalendar,
+    handleChangeTime,
+    handleToggleDay,
+    handleToggleAllDays,
   };
 }
 

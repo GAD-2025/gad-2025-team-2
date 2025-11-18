@@ -4,8 +4,7 @@ interface PreferredJobStepProps {
   selectedJobs: string[];
   onJobToggle: (jobId: string) => void;
   onPrev: () => void;
-  onSubmit: () => Promise<void>;
-  isSubmitting: boolean;
+  onNext: () => void;
 }
 
 const JOB_CATEGORIES = [
@@ -24,15 +23,9 @@ export function PreferredJobStep({
   selectedJobs,
   onJobToggle,
   onPrev,
-  onSubmit,
-  isSubmitting,
+  onNext,
 }: PreferredJobStepProps) {
   const hasSelection = selectedJobs.length > 0;
-
-  const handleComplete = async () => {
-    if (!hasSelection || isSubmitting) return;
-    await onSubmit();
-  };
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-10 pt-8">
@@ -84,15 +77,15 @@ export function PreferredJobStep({
       <div className="mt-auto">
         <button
           type="button"
-          onClick={handleComplete}
-          disabled={!hasSelection || isSubmitting}
+          onClick={onNext}
+          disabled={!hasSelection}
           className={`h-12 w-full rounded-full text-base font-semibold ${
-            hasSelection && !isSubmitting
+            hasSelection
               ? 'bg-emerald-500 text-white'
               : 'bg-gray-200 text-gray-400'
           }`}
         >
-          {isSubmitting ? '저장 중...' : '다음'}
+          다음
         </button>
       </div>
     </div>

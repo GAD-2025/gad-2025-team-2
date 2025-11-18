@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date, time
 
 
 class SignInRequest(BaseModel):
@@ -82,11 +82,19 @@ class SignupResponse(BaseModel):
     message: str = "회원가입이 완료되었습니다."
 
 
+class WorkSchedulePayload(BaseModel):
+    available_dates: List[str]  # ['YYYY-MM-DD', ...]
+    start_time: str  # 'HH:mm'
+    end_time: str  # 'HH:mm'
+    days_of_week: List[str]  # ['MON', 'TUE', ...] or ['월', '화', ...]
+
+
 class JobSeekerProfileCreate(BaseModel):
     user_id: str
     basic_info_file_name: Optional[str] = None
     preferred_regions: List[str] = []
     preferred_jobs: List[str] = []
+    work_schedule: WorkSchedulePayload
 
 
 class JobSeekerProfileResponse(BaseModel):
@@ -95,5 +103,9 @@ class JobSeekerProfileResponse(BaseModel):
     basic_info_file_name: Optional[str] = None
     preferred_regions: List[str] = []
     preferred_jobs: List[str] = []
+    work_available_dates: List[str] = []
+    work_start_time: Optional[str] = None
+    work_end_time: Optional[str] = None
+    work_days_of_week: List[str] = []
     created_at: str
     updated_at: str

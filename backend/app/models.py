@@ -162,6 +162,10 @@ class JobSeekerProfile(SQLModel, table=True):
     basic_info_file_name: Optional[str] = None
     preferred_regions: str = Field(default="[]")  # JSON string of list[str]
     preferred_jobs: str = Field(default="[]")  # JSON string of list[str]
+    work_available_dates: str = Field(default="[]")  # JSON string of list[str] (YYYY-MM-DD)
+    work_start_time: Optional[str] = None  # 'HH:mm'
+    work_end_time: Optional[str] = None  # 'HH:mm'
+    work_days_of_week: str = Field(default="[]")  # JSON string of list[str] (e.g., ['MON', 'TUE'])
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

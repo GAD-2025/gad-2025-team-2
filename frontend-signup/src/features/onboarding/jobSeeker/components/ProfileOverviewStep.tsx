@@ -1,10 +1,23 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 interface ProfileOverviewStepProps {
   onStart: () => void;
+  onPrev?: () => void;
 }
 
-export function ProfileOverviewStep({ onStart }: ProfileOverviewStepProps) {
+export function ProfileOverviewStep({ onStart, onPrev }: ProfileOverviewStepProps) {
+  const router = useRouter();
+
+  const handleBack = () => {
+    if (onPrev) {
+      onPrev();
+    } else {
+      // 온보딩 첫 화면에서 뒤로가면 회원가입 페이지로 이동
+      router.push('/signup');
+    }
+  };
   const profileSections = [
     { id: 'basic', label: '프로필 기본 정보', active: true },
     { id: 'career', label: '경력', active: false },
@@ -16,7 +29,7 @@ export function ProfileOverviewStep({ onStart }: ProfileOverviewStepProps) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-10 pt-8">
       <header className="mb-6 flex items-center gap-2">
-        <button type="button" className="text-lg">
+        <button type="button" onClick={handleBack} className="text-lg text-gray-700">
           ←
         </button>
         <span className="flex-1 text-center text-base font-semibold text-gray-900">

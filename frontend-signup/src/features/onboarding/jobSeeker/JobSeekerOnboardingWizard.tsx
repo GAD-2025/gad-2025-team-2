@@ -4,6 +4,8 @@ import { ProfileOverviewStep } from './components/ProfileOverviewStep';
 import { BasicInfoUploadStep } from './components/BasicInfoUploadStep';
 import { PreferredRegionStep } from './components/PreferredRegionStep';
 import { PreferredJobStep } from './components/PreferredJobStep';
+import { WorkScheduleCalendarStep } from './components/WorkScheduleCalendarStep';
+import { WorkScheduleDetailStep } from './components/WorkScheduleDetailStep';
 import { StartInfoModal } from './components/StartInfoModal';
 import { StepIntroBottomSheet } from './components/StepIntroBottomSheet';
 import { useJobSeekerOnboarding } from './hooks/useJobSeekerOnboarding';
@@ -25,6 +27,11 @@ export default function JobSeekerOnboardingWizard() {
     handleSubmit,
     isSubmitting,
     error,
+    handleToggleDate,
+    handleConfirmCalendar,
+    handleChangeTime,
+    handleToggleDay,
+    handleToggleAllDays,
   } = useJobSeekerOnboarding();
 
   return (
@@ -58,6 +65,24 @@ export default function JobSeekerOnboardingWizard() {
         <PreferredJobStep
           selectedJobs={values.preferredJobs}
           onJobToggle={handleJobToggle}
+          onPrev={goPrev}
+          onNext={goNext}
+        />
+      )}
+      {step === 5 && (
+        <WorkScheduleCalendarStep
+          availableDates={values.workSchedule.availableDates}
+          onToggleDate={handleToggleDate}
+          onConfirm={handleConfirmCalendar}
+          onPrev={goPrev}
+        />
+      )}
+      {step === 6 && (
+        <WorkScheduleDetailStep
+          workSchedule={values.workSchedule}
+          onChangeTime={handleChangeTime}
+          onToggleDay={handleToggleDay}
+          onToggleAllDays={handleToggleAllDays}
           onPrev={goPrev}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
