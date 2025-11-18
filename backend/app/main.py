@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.db import create_db_and_tables
-from app.routers import auth, jobs, applications, users, conversations, messages, translate, learning
+from app.routers import auth, jobs, applications, users, conversations, messages, translate, learning, meta
 from app.ws import websocket_endpoint
 from app.services.translation import initialize_translation_service
 
@@ -35,6 +35,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(meta.router)
 app.include_router(jobs.router)
 app.include_router(applications.router)
 app.include_router(users.router)

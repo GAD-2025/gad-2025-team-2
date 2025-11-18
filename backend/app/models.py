@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 import json
 
 
@@ -128,4 +128,28 @@ class User(SQLModel, table=True):
     hashedPassword: str
     role: str  # jobseeker, employer
     profileId: str  # references JobSeeker.id or Employer.id
+
+
+class Nationality(SQLModel, table=True):
+    __tablename__ = "nationalities"
+    
+    code: str = Field(primary_key=True)
+    name: str
+
+
+class SignupUser(SQLModel, table=True):
+    __tablename__ = "signup_users"
+    
+    id: str = Field(primary_key=True)
+    role: str  # job_seeker, employer
+    name: str
+    phone: str
+    birthdate: date
+    gender: str  # male, female
+    nationality_code: str = Field(foreign_key="nationalities.code")
+    terms_tos_required: bool
+    terms_privacy_required: bool
+    terms_sms_optional: bool
+    terms_marketing_optional: bool
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 

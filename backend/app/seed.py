@@ -6,7 +6,7 @@ from sqlmodel import Session
 from app.db import engine, create_db_and_tables
 from app.models import (
     User, JobSeeker, Employer, Job, Application, 
-    Conversation, Message, LearningProgress
+    Conversation, Message, LearningProgress, Nationality
 )
 from datetime import datetime, timedelta
 import json
@@ -25,6 +25,19 @@ def seed_data():
     with Session(engine) as session:
         # Clear existing data (optional)
         print("Seeding database...")
+        
+        # Create Nationalities
+        nationalities = [
+            Nationality(code="KR", name="대한민국"),
+            Nationality(code="JP", name="일본"),
+            Nationality(code="US", name="United States"),
+        ]
+        for nationality in nationalities:
+            # Check if exists, if not add
+            existing = session.get(Nationality, nationality.code)
+            if not existing:
+                session.add(nationality)
+        print("✅ Nationalities seeded")
         
         # Create JobSeekers
         seekers = [

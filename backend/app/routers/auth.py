@@ -7,8 +7,8 @@ import uuid
 import hashlib
 
 from app.db import get_session
-from app.models import User, JobSeeker, Employer
-from app.schemas import SignInRequest, SignUpRequest, AuthResponse
+from app.models import User, JobSeeker, Employer, SignupUser, Nationality
+from app.schemas import SignInRequest, SignUpRequest, AuthResponse, SignupPayload, SignupResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -120,5 +120,51 @@ async def signup(request: SignUpRequest, session: Session = Depends(get_session)
             "profile": profile.dict()
         },
         token=token
+    )
+
+
+@router.post("/signup", response_model=SignupResponse, status_code=201)
+async def signup_new(request: SignupPayload, session: Session = Depends(get_session)):
+    """New signup endpoint for wizard flow"""
+    # Validate required terms
+    if not request.terms.tos_required or not request.terms.privacy_required:
+        raise HTTPException(
+            status_code=400,
+            detail="필수 약관에 동의해주세요."
+        )
+    
+    # Validate nationality exists
+    nationality = session.get(Nationality, request.nationality_code)
+    if not nationality:
+        raise HTTPException(
+            status_code=400,
+            detail="유효하지 않은 국적 코드입니다."
+        )
+    
+    # Create SignupUser
+    user_id = f"signup-{uuid.uuid4().hex[:8]}"
+    signup_user = SignupUser(
+        id=user_id,
+        role=request.role,
+        name=request.name,
+        phone=request.phone,
+        birthdate=datetime.strptime(request.birthdate, "%Y-%m-%d").date(),
+        gender=request.gender,
+        nationality_code=request.nationality_code,
+        terms_tos_required=request.terms.tos_required,
+        terms_privacy_required=request.terms.privacy_required,
+        terms_sms_optional=request.terms.sms_optional,
+        terms_marketing_optional=request.terms.marketing_optional,
+    )
+    
+    session.add(signup_user)
+    session.commit()
+    session.refresh(signup_user)
+    
+    return SignupResponse(
+        id=signup_user.id,
+        role=signup_user.role,
+        name=signup_user.name,
+        message="회원가입이 완료되었습니다."
     )
 
