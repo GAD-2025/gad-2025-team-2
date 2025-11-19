@@ -10,6 +10,8 @@ import type {
   User,
 } from '@/types';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 // Auth
 export const authAPI = {
   signin: (email: string, password: string) =>
@@ -80,6 +82,49 @@ export const learningAPI = {
     apiClient.post('/leveltest', { seekerId, answers }),
 };
 
+// Signup User & Profile (for MyPage)
+export interface SignupUserData {
+  id: string;
+  role: string;
+  name: string;
+  phone: string;
+  birthdate: string;
+  gender: string;
+  nationality_code: string;
+  nationality_name: string | null;
+  created_at: string;
+}
+
+export interface JobSeekerProfileData {
+  id: string;
+  user_id: string;
+  basic_info_file_name: string | null;
+  preferred_regions: string[];
+  preferred_jobs: string[];
+  work_available_dates: string[];
+  work_start_time: string | null;
+  work_end_time: string | null;
+  work_days_of_week: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getSignupUser(userId: string): Promise<SignupUserData> {
+  const response = await fetch(`${API_BASE_URL}/auth/signup-user/${userId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch user data');
+  }
+  return response.json();
+}
+
+export async function getJobSeekerProfile(userId: string): Promise<JobSeekerProfileData> {
+  const response = await fetch(`${API_BASE_URL}/job-seeker/profile/${userId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch profile data');
+  }
+  return response.json();
+}
+
 export default {
   auth: authAPI,
   jobs: jobsAPI,
@@ -90,4 +135,3 @@ export default {
   translate: translateAPI,
   learning: learningAPI,
 };
-

@@ -19,6 +19,7 @@ import { MessageList } from './pages/messages/List';
 import { Chat } from './pages/messages/Chat';
 import { SignIn } from './pages/auth/SignIn';
 import { SignUp } from './pages/auth/SignUp';
+import Onboarding from './pages/auth/Onboarding';
 import { MyPage } from './pages/mypage/MyPage';
 import { LearningHome } from './pages/learning/LearningHome';
 import { LevelTest } from './pages/learning/LevelTest';
@@ -37,6 +38,10 @@ export const router = createBrowserRouter([
   {
     path: '/signup',
     element: <SignUp />,
+  },
+  {
+    path: '/onboarding',
+    element: <Onboarding />,
   },
   {
     path: '/home',

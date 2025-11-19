@@ -1,67 +1,108 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore, type UserMode } from "@/store/useAuth";
 import { useNavigate } from "react-router-dom";
 import { TrustFlipCard } from "@/components/TrustFlipCard";
 import { VerificationList } from "@/components/VerificationList";
 import { ResumeSection } from "@/components/ResumeSection";
 import type { Profile, Verifications, Resume } from "@/types/profile";
+import { getSignupUser, getJobSeekerProfile, type SignupUserData, type JobSeekerProfileData } from "@/api/endpoints";
 
 export const MyPage = () => {
   const { userMode, setUserMode, user } = useAuthStore();
   const navigate = useNavigate();
   const [showVerifications, setShowVerifications] = useState(false);
   const [showResume, setShowResume] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [signupUserData, setSignupUserData] = useState<SignupUserData | null>(null);
+  const [profileData, setProfileData] = useState<JobSeekerProfileData | null>(null);
 
-  // Mock data - 실제로는 API에서 가져옴
-  const [profile, setProfile] = useState<Profile>({
-    name: user?.profile?.name || "수정",
+  // Load user data from database
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userId = localStorage.getItem('signup_user_id');
+        if (!userId) {
+          console.error('No user ID found');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch signup user data
+        const userData = await getSignupUser(userId);
+        setSignupUserData(userData);
+
+        // Fetch job seeker profile if exists
+        try {
+          const profile = await getJobSeekerProfile(userId);
+          setProfileData(profile);
+        } catch (error) {
+          console.log('Profile not found yet (user might not have completed onboarding)');
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUserData();
+  }, []);
+
+  const profile: Profile = {
+    name: signupUserData?.name || "사용자",
     role: userMode as "jobseeker" | "employer",
     avatarUrl: undefined,
-    joinedAtISO: "2022-01-01T00:00:00Z",
+    joinedAtISO: signupUserData?.created_at || new Date().toISOString(),
     metrics: {
-      reviews: 7,
+      reviews: 0,
     },
-  });
+  };
 
-  const [verifications, setVerifications] = useState<Verifications>({
+  const verifications: Verifications = {
     idVerified: "verified",
-    visaVerified: "verified",
+    visaVerified: "pending",
     contactVerified: "verified",
     educationVerified: "pending",
     criminalRecordVerified: "not_required",
-    lastUpdatedISO: "2024-04-01T00:00:00Z",
-  });
+    lastUpdatedISO: new Date().toISOString(),
+  };
 
-  const [resume, setResume] = useState<Resume>({
-    birthYear: 2000,
+  const resume: Resume = {
+    birthYear: signupUserData ? new Date(signupUserData.birthdate).getFullYear() : new Date().getFullYear(),
     country: "대한민국",
-    city: "서울",
-    nationality: "베트남",
-    visaType: "C-4",
+    city: profileData?.preferred_regions[0] || "미설정",
+    nationality: signupUserData?.nationality_name || "미설정",
+    visaType: "미설정",
     visaExpiryISO: "2025-12-31T00:00:00Z",
     languages: [
       { code: "ko", level: "B1" },
-      { code: "en", level: "C1" },
-      { code: "vi", level: "Native" },
     ],
-    desiredRoles: ["서빙", "주방 보조", "매장 관리"],
-    skills: ["영어 가능", "스페인어 가능", "요리 경험"],
+    desiredRoles: profileData?.preferred_jobs || [],
+    skills: [],
     availability: {
-      days: ["월", "화", "수", "목", "금"],
-      timeRange: "09:00-18:00",
+      days: profileData?.work_days_of_week || [],
+      timeRange: profileData?.work_start_time && profileData?.work_end_time
+        ? `${profileData.work_start_time}-${profileData.work_end_time}`
+        : "미설정",
     },
-    hobbies: ["K-pop", "요리", "여행"],
+    hobbies: [],
     pets: "없음",
-    introShort: "성실하고 책임감 있는 직원이 되겠습니다!",
-    introLong:
-      "안녕하세요! 한국 문화를 사랑하고 열심히 일하는 것을 좋아합니다. 이전 레스토랑에서 2년간 근무하며 서빙과 주방 보조 경험을 쌓았습니다. 한국어 실력을 더 향상시키고 싶고, 좋은 팀과 함께 성장하고 싶습니다.",
+    introShort: "프로필을 작성해주세요!",
+    introLong: "프로필 수정에서 자기소개를 작성할 수 있습니다.",
     contacts: {
       email: user?.email || "user@workfair.com",
-      phone: "010-1234-5678",
-      kakao: "@workfair_user",
-      whatsapp: "+82-10-1234-5678",
+      phone: signupUserData?.phone || "미설정",
+      kakao: "",
+      whatsapp: "",
     },
-  });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-text-700">로딩 중...</div>
+      </div>
+    );
+  }
 
   const handleModeChange = (mode: UserMode) => {
     setUserMode(mode);

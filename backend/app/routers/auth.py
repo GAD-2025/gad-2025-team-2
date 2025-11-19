@@ -8,7 +8,7 @@ import hashlib
 
 from app.db import get_session
 from app.models import User, JobSeeker, Employer, SignupUser, Nationality
-from app.schemas import SignInRequest, SignUpRequest, AuthResponse, SignupPayload, SignupResponse
+from app.schemas import SignInRequest, SignUpRequest, AuthResponse, SignupPayload, SignupResponse, SignupUserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -166,5 +166,31 @@ async def signup_new(request: SignupPayload, session: Session = Depends(get_sess
         role=signup_user.role,
         name=signup_user.name,
         message="회원가입이 완료되었습니다."
+    )
+
+
+@router.get("/signup-user/{user_id}", response_model=SignupUserResponse)
+async def get_signup_user(user_id: str, session: Session = Depends(get_session)):
+    """Get SignupUser info by user_id"""
+    statement = select(SignupUser).where(SignupUser.id == user_id)
+    signup_user = session.exec(statement).first()
+    
+    if not signup_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get nationality name
+    nationality = session.get(Nationality, signup_user.nationality_code)
+    nationality_name = nationality.name if nationality else None
+    
+    return SignupUserResponse(
+        id=signup_user.id,
+        role=signup_user.role,
+        name=signup_user.name,
+        phone=signup_user.phone,
+        birthdate=signup_user.birthdate.isoformat(),
+        gender=signup_user.gender,
+        nationality_code=signup_user.nationality_code,
+        nationality_name=nationality_name,
+        created_at=signup_user.created_at.isoformat(),
     )
 

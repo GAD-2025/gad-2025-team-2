@@ -83,6 +83,18 @@ class SignupResponse(BaseModel):
     message: str = "회원가입이 완료되었습니다."
 
 
+class SignupUserResponse(BaseModel):
+    id: str
+    role: str
+    name: str
+    phone: str
+    birthdate: str  # YYYY-MM-DD
+    gender: str
+    nationality_code: str
+    nationality_name: Optional[str] = None
+    created_at: str
+
+
 class WorkSchedulePayload(BaseModel):
     available_dates: List[str]  # ['YYYY-MM-DD', ...]
     start_time: str  # 'HH:mm'

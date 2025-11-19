@@ -183,9 +183,9 @@ export function useSignupWizard() {
         console.log('회원가입 성공:', response);
         // 회원가입 완료 후 user_id를 localStorage에 저장
         localStorage.setItem('signup_user_id', response.id);
-        // 온보딩으로 이동 (일단 홈으로)
-        console.log('메인 페이지로 이동합니다...');
-        navigate('/jobseeker/home');
+        // 온보딩으로 이동
+        console.log('온보딩 페이지로 이동합니다...');
+        navigate('/onboarding');
       } catch (error) {
         console.error('회원가입 에러:', error);
         const errorMessage = error instanceof Error ? error.message : '회원가입에 실패했습니다.';
