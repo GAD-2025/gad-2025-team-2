@@ -120,11 +120,18 @@ export function UserInfoStep({
               onChange={(e) => onNationalitySelect(e.target.value)}
             >
               <option value="">국적을 선택해 주세요</option>
-              {nationalities.map((option) => (
-                <option key={option.code} value={option.code}>
-                  ({option.phone_code}) {option.label}
-                </option>
-              ))}
+              {nationalities
+                .sort((a, b) => {
+                  // 한국(KR)을 맨 위에
+                  if (a.code === 'KR') return -1;
+                  if (b.code === 'KR') return 1;
+                  return 0;
+                })
+                .map((option) => (
+                  <option key={option.code} value={option.code}>
+                    ({option.phone_code}) {option.label}
+                  </option>
+                ))}
             </select>
             <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-text-400">
               ⌄

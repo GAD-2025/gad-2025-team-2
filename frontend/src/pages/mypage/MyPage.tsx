@@ -47,10 +47,13 @@ export const MyPage = () => {
     loadUserData();
   }, []);
 
+  // 프로필 사진 가져오기
+  const profilePhoto = localStorage.getItem('profile_photo') || undefined;
+
   const profile: Profile = {
     name: signupUserData?.name || "사용자",
     role: userMode as "jobseeker" | "employer",
-    avatarUrl: undefined,
+    avatarUrl: profilePhoto,
     joinedAtISO: signupUserData?.created_at || new Date().toISOString(),
     metrics: {
       reviews: 0,

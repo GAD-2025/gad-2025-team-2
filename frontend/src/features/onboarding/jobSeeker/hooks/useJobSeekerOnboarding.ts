@@ -36,8 +36,19 @@ export function useJobSeekerOnboarding() {
     }
   };
 
-  const handleFileUpload = (files: File[]) => {
+  const handleFileUpload = async (files: File[]) => {
     setValues((prev) => ({ ...prev, uploadedFiles: files }));
+    
+    // 프로필 사진을 base64로 변환하여 localStorage에 저장
+    if (files.length > 0) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        localStorage.setItem('profile_photo', base64String);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleRegionSelect = (regions: string[]) => {

@@ -28,7 +28,8 @@ def seed_data():
         
         # Create Nationalities - Major Countries Only
         nationalities = [
-            Nationality(code="US", name="United States / Canada", phone_code="+1"),
+            Nationality(code="US", name="United States", phone_code="+1"),
+            Nationality(code="CA", name="Canada", phone_code="+1"),
             Nationality(code="EG", name="مصر‎ (Egypt)", phone_code="+20"),
             Nationality(code="ZA", name="South Africa", phone_code="+27"),
             Nationality(code="GR", name="Ελλάδα (Greece)", phone_code="+30"),

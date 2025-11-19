@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { BirthdateSelection } from '../types';
 
 interface BirthdateBottomSheetProps {
@@ -77,15 +78,36 @@ interface PickerProps {
 }
 
 function Picker({ label, options, value, onChange }: PickerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selectedRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // 선택된 항목으로 스크롤
+    if (selectedRef.current && containerRef.current) {
+      const container = containerRef.current;
+      const selected = selectedRef.current;
+      const containerHeight = container.clientHeight;
+      const selectedTop = selected.offsetTop;
+      const selectedHeight = selected.clientHeight;
+      
+      // 선택된 항목이 중간에 오도록 스크롤
+      container.scrollTop = selectedTop - containerHeight / 2 + selectedHeight / 2;
+    }
+  }, [value]);
+
   return (
     <div className="flex-1 text-center">
       <p className="mb-2 text-[15px] text-text-600">{label}</p>
-      <div className="max-h-48 overflow-y-auto rounded-2xl border border-border bg-background">
+      <div 
+        ref={containerRef}
+        className="max-h-48 overflow-y-auto rounded-2xl border border-border bg-background"
+      >
         {options.map((option) => {
           const active = option === value;
           return (
             <button
               key={option}
+              ref={active ? selectedRef : null}
               type="button"
               onClick={() => onChange(option)}
               className={`block w-full px-4 py-2 text-[17px] transition ${

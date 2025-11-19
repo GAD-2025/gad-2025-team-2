@@ -1,12 +1,47 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getSignupUser, type SignupUserData } from '@/api/endpoints';
 
 interface ProfileOverviewStepProps {
   onStart: () => void;
   onPrev?: () => void;
 }
 
+// 만나이 계산 함수
+function calculateKoreanAge(birthdate: string): number {
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+}
+
 export function ProfileOverviewStep({ onStart, onPrev }: ProfileOverviewStepProps) {
   const navigate = useNavigate();
+  const [userData, setUserData] = useState<SignupUserData | null>(null);
+
+  // 프로필 사진 가져오기
+  const profilePhoto = localStorage.getItem('profile_photo');
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userId = localStorage.getItem('signup_user_id');
+        if (userId) {
+          const data = await getSignupUser(userId);
+          setUserData(data);
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+    loadUserData();
+  }, []);
 
   const handleBack = () => {
     if (onPrev) {
@@ -16,6 +51,7 @@ export function ProfileOverviewStep({ onStart, onPrev }: ProfileOverviewStepProp
       navigate('/signup');
     }
   };
+  
   const profileSections = [
     { id: 'basic', label: '프로필 기본 정보', active: true },
     { id: 'career', label: '경력', active: false },
@@ -23,6 +59,12 @@ export function ProfileOverviewStep({ onStart, onPrev }: ProfileOverviewStepProp
     { id: 'skill', label: '재능/스킬', active: false },
     { id: 'intro', label: '자기소개', active: false },
   ];
+
+  // 사용자 정보 표시
+  const displayName = userData?.name || '사용자';
+  const age = userData?.birthdate ? calculateKoreanAge(userData.birthdate) : 0;
+  const genderText = userData?.gender === 'male' ? '남' : userData?.gender === 'female' ? '여' : '';
+  const ageGenderText = age > 0 ? `${age}세 ${genderText}` : genderText;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-10 pt-8">
@@ -36,10 +78,16 @@ export function ProfileOverviewStep({ onStart, onPrev }: ProfileOverviewStepProp
       </header>
 
       <div className="mb-6 flex items-center gap-3">
-        <div className="h-16 w-16 rounded-full bg-gray-200" />
+        <div className="h-16 w-16 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+          {profilePhoto ? (
+            <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-3xl">👤</span>
+          )}
+        </div>
         <div>
-          <p className="text-[17px] font-semibold text-gray-900">박00</p>
-          <p className="text-[15px] text-gray-500">24세 여</p>
+          <p className="text-[17px] font-semibold text-gray-900">{displayName}</p>
+          <p className="text-[15px] text-gray-500">{ageGenderText}</p>
         </div>
       </div>
 

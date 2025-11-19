@@ -28,15 +28,19 @@ export function WorkScheduleDetailStep({
   isSubmitting,
 }: WorkScheduleDetailStepProps) {
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [isAnytime, setIsAnytime] = useState(false);
 
   const { startTime, endTime, daysOfWeek } = workSchedule;
 
   const isAllDaysSelected = DAYS_OF_WEEK.every((day) => daysOfWeek.includes(day));
 
-  const canConfirm = startTime !== null && endTime !== null && daysOfWeek.length > 0;
+  // 무관이 체크되어 있거나, 시간이 모두 선택되어 있으면 확인 가능
+  const canConfirm = (isAnytime || (startTime !== null && endTime !== null)) && daysOfWeek.length > 0;
 
   const handleTimeDisplayClick = () => {
-    setShowTimePicker(!showTimePicker);
+    if (!isAnytime) {
+      setShowTimePicker(!showTimePicker);
+    }
   };
 
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -47,6 +51,19 @@ export function WorkScheduleDetailStep({
   const handleEndTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newEndTime = e.target.value || null;
     onChangeTime(startTime, newEndTime);
+  };
+
+  const handleAnytimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setIsAnytime(checked);
+    if (checked) {
+      // 무관 선택 시 시간을 "00:00"으로 설정 (백엔드에서 무관으로 처리하도록)
+      onChangeTime('00:00', '00:00');
+      setShowTimePicker(false);
+    } else {
+      // 무관 해제 시 시간 초기화
+      onChangeTime(null, null);
+    }
   };
 
   const handleComplete = async () => {
@@ -81,10 +98,13 @@ export function WorkScheduleDetailStep({
           type="button"
           onClick={handleTimeDisplayClick}
           className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-4 text-left"
+          disabled={isAnytime}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {startTime && endTime ? (
+              {isAnytime ? (
+                <span className="text-[17px] text-gray-400">무관</span>
+              ) : startTime && endTime ? (
                 <span className="text-[17px] font-medium text-gray-900">
                   {startTime} ~ {endTime}
                 </span>
@@ -92,7 +112,7 @@ export function WorkScheduleDetailStep({
                 <span className="text-[17px] text-gray-400">시간을 선택해주세요</span>
               )}
             </div>
-            <span className="text-gray-400">{showTimePicker ? '▲' : '▼'}</span>
+            {!isAnytime && <span className="text-gray-400">{showTimePicker ? '▲' : '▼'}</span>}
           </div>
         </button>
 
@@ -135,6 +155,8 @@ export function WorkScheduleDetailStep({
               <input
                 type="checkbox"
                 id="anytime"
+                checked={isAnytime}
+                onChange={handleAnytimeChange}
                 className="h-4 w-4 rounded border-gray-300 text-primary-mint"
               />
               <label htmlFor="anytime" className="text-[15px] text-gray-700">

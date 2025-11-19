@@ -30,7 +30,8 @@ const INITIAL_VALUES: SignupFormValues = {
   terms: INITIAL_TERMS,
 };
 
-const YEARS = Array.from({ length: 31 }, (_, idx) => 1990 + idx); // 1990-2020
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: currentYear - 1950 + 1 }, (_, idx) => 1950 + idx); // 1950 - 현재
 const MONTHS = Array.from({ length: 12 }, (_, idx) => idx + 1);
 
 const getDays = (year: number, month: number) => {
@@ -48,7 +49,7 @@ export function useSignupWizard() {
   const [submitting, setSubmitting] = useState(false);
   const today = new Date();
   const [birthdateSelection, setBirthdateSelection] = useState<BirthdateSelection>({
-    year: YEARS.includes(2000) ? 2000 : YEARS[Math.floor(YEARS.length / 2)],
+    year: 2000, // 기본값 2000년
     month: today.getMonth() + 1,
     day: today.getDate(),
   });
@@ -66,7 +67,8 @@ export function useSignupWizard() {
           // 빈 배열이면 기본값 사용
           console.warn('국적 목록이 비어있습니다. 기본값을 사용합니다.');
           setNationalities([
-            { code: 'US', label: 'United States / Canada', phone_code: '+1' },
+            { code: 'US', label: 'United States', phone_code: '+1' },
+            { code: 'CA', label: 'Canada', phone_code: '+1' },
             { code: 'KR', label: '대한민국 (South Korea)', phone_code: '+82' },
             { code: 'JP', label: '日本 (Japan)', phone_code: '+81' },
             { code: 'CN', label: '中国 (China)', phone_code: '+86' },
@@ -77,7 +79,8 @@ export function useSignupWizard() {
         console.error('Failed to load nationalities:', error);
         // Fallback to default nationalities
         setNationalities([
-          { code: 'US', label: 'United States / Canada', phone_code: '+1' },
+          { code: 'US', label: 'United States', phone_code: '+1' },
+          { code: 'CA', label: 'Canada', phone_code: '+1' },
           { code: 'KR', label: '대한민국 (South Korea)', phone_code: '+82' },
           { code: 'JP', label: '日本 (Japan)', phone_code: '+81' },
           { code: 'CN', label: '中国 (China)', phone_code: '+86' },
