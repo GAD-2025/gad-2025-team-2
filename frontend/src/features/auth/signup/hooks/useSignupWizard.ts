@@ -66,10 +66,10 @@ export function useSignupWizard() {
           // 빈 배열이면 기본값 사용
           console.warn('국적 목록이 비어있습니다. 기본값을 사용합니다.');
           setNationalities([
+            { code: 'US', label: 'United States / Canada', phone_code: '+1' },
             { code: 'KR', label: '대한민국 (South Korea)', phone_code: '+82' },
             { code: 'JP', label: '日本 (Japan)', phone_code: '+81' },
-            { code: 'CN', label: '中国 / 中國 (China)', phone_code: '+86' },
-            { code: 'US', label: 'United States', phone_code: '+1' },
+            { code: 'CN', label: '中国 (China)', phone_code: '+86' },
             { code: 'VN', label: 'Việt Nam (Vietnam)', phone_code: '+84' },
           ]);
         }
@@ -77,10 +77,10 @@ export function useSignupWizard() {
         console.error('Failed to load nationalities:', error);
         // Fallback to default nationalities
         setNationalities([
+          { code: 'US', label: 'United States / Canada', phone_code: '+1' },
           { code: 'KR', label: '대한민국 (South Korea)', phone_code: '+82' },
           { code: 'JP', label: '日本 (Japan)', phone_code: '+81' },
-          { code: 'CN', label: '中国 / 中國 (China)', phone_code: '+86' },
-          { code: 'US', label: 'United States', phone_code: '+1' },
+          { code: 'CN', label: '中国 (China)', phone_code: '+86' },
           { code: 'VN', label: 'Việt Nam (Vietnam)', phone_code: '+84' },
         ]);
       } finally {

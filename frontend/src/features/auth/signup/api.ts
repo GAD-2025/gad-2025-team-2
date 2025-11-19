@@ -40,10 +40,10 @@ export async function fetchNationalities(): Promise<NationalityOption[]> {
     console.error('국적 목록 로드 실패:', error);
     // 백엔드가 실행되지 않았을 때 기본값 반환
     return [
+      { code: 'US', label: 'United States / Canada', phone_code: '+1' },
       { code: 'KR', label: '대한민국 (South Korea)', phone_code: '+82' },
       { code: 'JP', label: '日本 (Japan)', phone_code: '+81' },
-      { code: 'CN', label: '中国 / 中國 (China)', phone_code: '+86' },
-      { code: 'US', label: 'United States', phone_code: '+1' },
+      { code: 'CN', label: '中国 (China)', phone_code: '+86' },
       { code: 'VN', label: 'Việt Nam (Vietnam)', phone_code: '+84' },
     ];
   }
