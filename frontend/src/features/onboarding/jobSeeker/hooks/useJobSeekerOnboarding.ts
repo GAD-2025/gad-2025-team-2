@@ -13,26 +13,36 @@ const INITIAL_VALUES: OnboardingFormValues = {
     endTime: null,
     daysOfWeek: [],
   },
+  selectedExperienceSections: [],
+  experienceData: {
+    career: '',
+    license: '',
+    skills: '',
+    introduction: '',
+  },
 };
 
 export function useJobSeekerOnboarding() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<OnboardingStep>(1);
+  const [step, setStep] = useState<OnboardingStep>(2); // Start from step 2 (profile photo upload)
   const [values, setValues] = useState<OnboardingFormValues>(INITIAL_VALUES);
-  const [showStartInfoModal, setShowStartInfoModal] = useState(true);
+  const [showStartInfoModal, setShowStartInfoModal] = useState(false); // Disable modal
   const [showStepIntroSheet, setShowStepIntroSheet] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const goNext = () => {
-    if (step < 6) {
+    if (step < 8) {
       setStep((prev) => (prev + 1) as OnboardingStep);
     }
   };
 
   const goPrev = () => {
-    if (step > 1) {
+    if (step > 2) { // Can't go back from step 2 (first step now)
       setStep((prev) => (prev - 1) as OnboardingStep);
+    } else {
+      // Go back to signup or home
+      navigate('/signup');
     }
   };
 
@@ -144,6 +154,29 @@ export function useJobSeekerOnboarding() {
     });
   };
 
+  const handleToggleExperienceSection = (sectionId: string) => {
+    setValues((prev) => {
+      const current = prev.selectedExperienceSections;
+      const isSelected = current.includes(sectionId);
+      return {
+        ...prev,
+        selectedExperienceSections: isSelected
+          ? current.filter((id) => id !== sectionId)
+          : [...current, sectionId],
+      };
+    });
+  };
+
+  const handleChangeExperienceData = (field: string, value: string) => {
+    setValues((prev) => ({
+      ...prev,
+      experienceData: {
+        ...prev.experienceData,
+        [field]: value,
+      },
+    }));
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
@@ -163,7 +196,7 @@ export function useJobSeekerOnboarding() {
         throw new Error('근무 가능 요일을 선택해주세요.');
       }
 
-      // Prepare payload with work schedule
+      // Prepare payload with work schedule and experience
       const payload = {
         user_id: userId,
         basic_info_file_name:
@@ -177,6 +210,10 @@ export function useJobSeekerOnboarding() {
           start_time: values.workSchedule.startTime,
           end_time: values.workSchedule.endTime,
           days_of_week: values.workSchedule.daysOfWeek,
+        },
+        experience: {
+          sections: values.selectedExperienceSections,
+          data: values.experienceData,
         },
       };
 
@@ -217,6 +254,9 @@ export function useJobSeekerOnboarding() {
     handleChangeTime,
     handleToggleDay,
     handleToggleAllDays,
+    // Experience handlers
+    handleToggleExperienceSection,
+    handleChangeExperienceData,
   };
 }
 

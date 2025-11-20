@@ -167,6 +167,12 @@ class JobSeekerProfile(SQLModel, table=True):
     work_start_time: Optional[str] = None  # 'HH:mm'
     work_end_time: Optional[str] = None  # 'HH:mm'
     work_days_of_week: str = Field(default="[]")  # JSON string of list[str] (e.g., ['MON', 'TUE'])
+    # Experience fields
+    experience_sections: str = Field(default="[]")  # JSON string of list[str] (e.g., ['career', 'license'])
+    experience_career: Optional[str] = None
+    experience_license: Optional[str] = None
+    experience_skills: Optional[str] = None
+    experience_introduction: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

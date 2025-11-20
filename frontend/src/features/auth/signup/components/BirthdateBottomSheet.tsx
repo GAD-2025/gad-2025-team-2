@@ -111,7 +111,9 @@ function Picker({ label, options, value, onChange }: PickerProps) {
               type="button"
               onClick={() => onChange(option)}
               className={`block w-full px-4 py-2 text-[17px] transition ${
-                active ? 'bg-white font-semibold text-primary-mint' : 'text-text-700 hover:bg-white/50'
+                active 
+                  ? 'bg-mint-50 font-semibold text-primary-mint' 
+                  : 'bg-transparent text-text-700 hover:bg-white/50'
               }`}
             >
               {option}

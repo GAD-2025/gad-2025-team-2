@@ -102,12 +102,18 @@ class WorkSchedulePayload(BaseModel):
     days_of_week: List[str]  # ['MON', 'TUE', ...] or ['월', '화', ...]
 
 
+class ExperiencePayload(BaseModel):
+    sections: List[str] = []  # ['career', 'license', 'skills', 'introduction']
+    data: dict = {}  # { 'career': '...', 'license': '...', ... }
+
+
 class JobSeekerProfileCreate(BaseModel):
     user_id: str
     basic_info_file_name: Optional[str] = None
     preferred_regions: List[str] = []
     preferred_jobs: List[str] = []
     work_schedule: WorkSchedulePayload
+    experience: Optional[ExperiencePayload] = None
 
 
 class JobSeekerProfileResponse(BaseModel):
@@ -120,5 +126,10 @@ class JobSeekerProfileResponse(BaseModel):
     work_start_time: Optional[str] = None
     work_end_time: Optional[str] = None
     work_days_of_week: List[str] = []
+    experience_sections: List[str] = []
+    experience_career: Optional[str] = None
+    experience_license: Optional[str] = None
+    experience_skills: Optional[str] = None
+    experience_introduction: Optional[str] = None
     created_at: str
     updated_at: str
