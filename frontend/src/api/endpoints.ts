@@ -87,10 +87,10 @@ export interface SignupUserData {
   id: string;
   role: string;
   name: string;
-  phone: string;
-  birthdate: string;
-  gender: string;
-  nationality_code: string;
+  phone: string | null;  // Optional for employers
+  birthdate: string | null;  // Optional for employers
+  gender: string | null;  // Optional for employers
+  nationality_code: string | null;  // Optional for employers
   nationality_name: string | null;
   created_at: string;
 }
@@ -105,6 +105,11 @@ export interface JobSeekerProfileData {
   work_start_time: string | null;
   work_end_time: string | null;
   work_days_of_week: string[];
+  experience_sections: string[];  // Added
+  experience_career: string | null;  // Added
+  experience_license: string | null;  // Added
+  experience_skills: string | null;  // Added
+  experience_introduction: string | null;  // Added
   created_at: string;
   updated_at: string;
 }

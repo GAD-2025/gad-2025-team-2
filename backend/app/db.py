@@ -7,7 +7,9 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./workfair.db")
 
-engine = create_engine(DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
+# MySQL의 경우 connect_args 불필요
+connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args)
 
 
 def create_db_and_tables():

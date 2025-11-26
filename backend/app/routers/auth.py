@@ -8,8 +8,11 @@ import hashlib
 import traceback
 
 from app.db import get_session
-from app.models import User, JobSeeker, Employer, SignupUser, Nationality
-from app.schemas import SignInRequest, SignUpRequest, AuthResponse, SignupPayload, SignupResponse, SignupUserResponse
+from app.models import User, JobSeeker, Employer, SignupUser, Nationality, EmployerProfile
+from app.schemas import (
+    SignInRequest, SignUpRequest, AuthResponse, SignupPayload, SignupResponse, 
+    SignupUserResponse, EmployerSignupPayload, EmployerSignupResponse
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -214,19 +217,62 @@ async def get_signup_user(user_id: str, session: Session = Depends(get_session))
     if not signup_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Get nationality name
-    nationality = session.get(Nationality, signup_user.nationality_code)
-    nationality_name = nationality.name if nationality else None
+    # Get nationality name (optional for employers)
+    nationality_name = None
+    if signup_user.nationality_code:
+        nationality = session.get(Nationality, signup_user.nationality_code)
+        nationality_name = nationality.name if nationality else None
     
     return SignupUserResponse(
         id=signup_user.id,
         role=signup_user.role,
         name=signup_user.name,
         phone=signup_user.phone,
-        birthdate=signup_user.birthdate.isoformat(),
+        birthdate=signup_user.birthdate.isoformat() if signup_user.birthdate else None,
         gender=signup_user.gender,
         nationality_code=signup_user.nationality_code,
         nationality_name=nationality_name,
         created_at=signup_user.created_at.isoformat(),
+    )
+
+
+@router.post("/signup/employer", response_model=EmployerSignupResponse, status_code=201)
+async def signup_employer(request: EmployerSignupPayload, session: Session = Depends(get_session)):
+    """Employer signup endpoint"""
+    # Create SignupUser for employer
+    user_id = f"employer-{uuid.uuid4().hex[:8]}"
+    signup_user = SignupUser(
+        id=user_id,
+        role="employer",
+        name=request.name,
+        email=request.email,
+        terms_tos_required=True,  # Assumed agreed via modal
+        terms_privacy_required=True,
+    )
+    
+    session.add(signup_user)
+    session.commit()
+    session.refresh(signup_user)
+    
+    # Create EmployerProfile
+    profile_id = f"profile-{uuid.uuid4().hex[:8]}"
+    employer_profile = EmployerProfile(
+        id=profile_id,
+        user_id=user_id,
+        business_type=request.business_type,
+        company_name=request.company_name,
+        address=request.address,
+        address_detail=request.address_detail,
+    )
+    
+    session.add(employer_profile)
+    session.commit()
+    session.refresh(employer_profile)
+    
+    return EmployerSignupResponse(
+        id=signup_user.id,
+        name=signup_user.name,
+        company_name=employer_profile.company_name,
+        message="고용주 회원가입이 완료되었습니다."
     )
 

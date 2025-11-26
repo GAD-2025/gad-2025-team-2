@@ -144,14 +144,15 @@ class SignupUser(SQLModel, table=True):
     id: str = Field(primary_key=True)
     role: str  # job_seeker, employer
     name: str
-    phone: str
-    birthdate: date
-    gender: str  # male, female
-    nationality_code: str = Field(foreign_key="nationalities.code")
-    terms_tos_required: bool
-    terms_privacy_required: bool
-    terms_sms_optional: bool
-    terms_marketing_optional: bool
+    phone: Optional[str] = None  # Optional for employers
+    email: Optional[str] = None  # For employers
+    birthdate: Optional[date] = None  # Optional for employers
+    gender: Optional[str] = None  # male, female, optional for employers
+    nationality_code: Optional[str] = Field(default=None, foreign_key="nationalities.code")
+    terms_tos_required: bool = Field(default=False)
+    terms_privacy_required: bool = Field(default=False)
+    terms_sms_optional: bool = Field(default=False)
+    terms_marketing_optional: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -173,6 +174,19 @@ class JobSeekerProfile(SQLModel, table=True):
     experience_license: Optional[str] = None
     experience_skills: Optional[str] = None
     experience_introduction: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class EmployerProfile(SQLModel, table=True):
+    __tablename__ = "employer_profiles"
+    
+    id: str = Field(primary_key=True)
+    user_id: str  # references signup_users.id
+    business_type: str  # 'business' or 'individual'
+    company_name: str
+    address: str
+    address_detail: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

@@ -15,6 +15,7 @@ from app.routers import (
     learning,
     meta,
     job_seeker,
+    employer,
 )
 from app.ws import websocket_endpoint
 
@@ -31,6 +32,11 @@ except ImportError:
 async def lifespan(app: FastAPI):
     # Startup
     create_db_and_tables()
+    
+    # Seed data
+    from app.seed import seed_nationalities
+    seed_nationalities()
+    
     if TRANSLATION_AVAILABLE:
         initialize_translation_service()
     yield
@@ -85,6 +91,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(auth.router)
 app.include_router(meta.router)
 app.include_router(job_seeker.router)
+app.include_router(employer.router)
 app.include_router(jobs.router)
 app.include_router(applications.router)
 app.include_router(users.router)

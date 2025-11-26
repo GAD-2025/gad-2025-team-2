@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
@@ -21,6 +21,8 @@ interface JobFormData {
 export const JobCreate = () => {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [employerProfileId, setEmployerProfileId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState<JobFormData>({
     title: '',
@@ -36,6 +38,37 @@ export const JobCreate = () => {
     employerMessage: '',
     preferredSkills: '',
   });
+
+  // Load employer profile on mount
+  useEffect(() => {
+    const loadEmployerProfile = async () => {
+      try {
+        // Get signup user ID from localStorage (stored during signup)
+        const userId = localStorage.getItem('signup_user_id');
+        if (!userId) {
+          toast.error('고용주 정보를 찾을 수 없습니다');
+          navigate('/signup');
+          return;
+        }
+
+        // Fetch employer profile
+        const response = await fetch(`http://localhost:8000/employer/profile/${userId}`);
+        if (!response.ok) {
+          throw new Error('프로필 정보를 가져올 수 없습니다');
+        }
+
+        const profile = await response.json();
+        setEmployerProfileId(profile.id);
+      } catch (error) {
+        console.error('프로필 로드 실패:', error);
+        toast.error('프로필 정보를 불러오는데 실패했습니다');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEmployerProfile();
+  }, [navigate]);
 
   const languageOptions = ['제한없음', 'Lv.1 기초', 'Lv.2 초급', 'Lv.3 중급', 'Lv.4 상급'];
   const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
@@ -67,24 +100,67 @@ export const JobCreate = () => {
       toast.error('마감일을 선택해주세요');
       return;
     }
+    if (!formData.industry.trim()) {
+      toast.error('업직종을 입력해주세요');
+      return;
+    }
 
     try {
       setSubmitting(true);
       
-      // TODO: API call to create job posting
-      // await jobsAPI.create(formData);
-      
-      // Mock success
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare job data
+      const jobData = {
+        employer_profile_id: employerProfileId,
+        title: formData.title,
+        description: formData.employerMessage || '자세한 내용은 문의 바랍니다.',
+        category: formData.industry,
+        wage: parseInt(formData.wage),
+        work_days: formData.workDays || '협의',
+        work_hours: formData.workHours || '협의',
+        deadline: new Date(formData.deadline).toISOString(),
+        positions: parseInt(formData.positions),
+        required_language: formData.requiredLanguage,
+        required_visa: formData.requiredVisa,
+        benefits: formData.preferredSkills || null,
+        employer_message: formData.employerMessage || null,
+      };
+
+      // API call to create job posting
+      const response = await fetch('http://localhost:8000/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jobData),
+      });
+
+      if (!response.ok) {
+        throw new Error('공고 등록에 실패했습니다');
+      }
+
+      const result = await response.json();
+      console.log('공고 등록 성공:', result);
       
       toast.success('공고가 등록되었습니다');
       navigate('/employer/home');
     } catch (error) {
+      console.error('공고 등록 실패:', error);
       toast.error('공고 등록에 실패했습니다');
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-mint border-t-transparent"></div>
+          <p className="mt-4 text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">

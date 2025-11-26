@@ -19,6 +19,7 @@ import { MessageList } from './pages/messages/List';
 import { Chat } from './pages/messages/Chat';
 import { SignIn } from './pages/auth/SignIn';
 import { SignUp } from './pages/auth/SignUp';
+import { AutoRedirect } from './pages/auth/AutoRedirect';
 import Onboarding from './pages/auth/Onboarding';
 import EmployerSignupWizard from './features/auth/employerSignup/EmployerSignupWizard';
 import { MyPage } from './pages/mypage/MyPage';
@@ -35,7 +36,7 @@ import { NotFound } from './pages/NotFound';
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/signup" replace />,
+    element: <AutoRedirect />,
   },
   {
     path: '/signup',

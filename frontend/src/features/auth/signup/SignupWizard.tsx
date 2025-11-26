@@ -4,6 +4,7 @@ import { TermsStep } from './components/TermsStep';
 import { UserInfoStep } from './components/UserInfoStep';
 import { ProgressBar } from './components/ProgressBar';
 import { useSignupWizard } from './hooks/useSignupWizard';
+import { EmployerSignupWizard } from './EmployerSignupWizard';
 
 export default function SignupWizard() {
   const {
@@ -30,6 +31,11 @@ export default function SignupWizard() {
     days,
     toggleTerms,
   } = useSignupWizard();
+
+  // 고용주 선택 시 고용주 회원가입 플로우로 이동
+  if (values.role === 'employer' && step > 1) {
+    return <EmployerSignupWizard />;
+  }
 
   // 전체 프로그레스 바 단계 (회원가입 2단계 + 온보딩 7단계 = 총 9단계)
   const getProgressStep = () => {
