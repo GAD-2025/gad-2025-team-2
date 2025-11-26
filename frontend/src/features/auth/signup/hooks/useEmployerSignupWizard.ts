@@ -46,6 +46,36 @@ export function useEmployerSignupWizard() {
     }
   };
 
+  // Skip 기능 (개발자용) - 유효성 검사 우회
+  const skipToNext = () => {
+    if (step === 1 && !termsAgreed) {
+      // 임시로 기본값 설정
+      if (!formData.name) updateFormData({ name: 'Test' });
+      if (!formData.email) updateFormData({ email: 'test@test.com' });
+      setShowNotificationModal(true);
+      return;
+    }
+    
+    if (step === 2 && !formData.businessType) {
+      updateFormData({ businessType: 'business' });
+    }
+    if (step === 3 && !formData.companyName) {
+      updateFormData({ companyName: 'Test Company' });
+    }
+    if (step === 4 && !formData.address) {
+      updateFormData({ 
+        address: '서울특별시 강남구 테헤란로 123',
+        addressDetail: '1층',
+      });
+    }
+    
+    if (step < 4) {
+      setStep(step + 1);
+    } else {
+      handleSubmit();
+    }
+  };
+
   const goPrev = () => {
     if (step > 1) {
       setStep(step - 1);
@@ -130,6 +160,7 @@ export function useEmployerSignupWizard() {
     updateFormData,
     goNext,
     goPrev,
+    skipToNext,
     canProceed,
     showNotificationModal,
     setShowNotificationModal,
