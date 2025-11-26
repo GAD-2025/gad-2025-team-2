@@ -6,6 +6,7 @@ import { WorkScheduleCalendarStep } from './components/WorkScheduleCalendarStep'
 import { WorkScheduleDetailStep } from './components/WorkScheduleDetailStep';
 import { ExperienceStep } from './components/ExperienceStep';
 import { ExperienceDetailStep } from './components/ExperienceDetailStep';
+import { OnboardingCompleteStep } from './components/OnboardingCompleteStep';
 import { StartInfoModal } from './components/StartInfoModal';
 import { StepIntroBottomSheet } from './components/StepIntroBottomSheet';
 import { OnboardingProgressBar } from './components/OnboardingProgressBar';
@@ -107,6 +108,9 @@ export default function JobSeekerOnboardingWizard() {
           onNext={handleSubmit}
           onPrev={goPrev}
         />
+      )}
+      {step === 9 && (
+        <OnboardingCompleteStep />
       )}
 
       {error && (

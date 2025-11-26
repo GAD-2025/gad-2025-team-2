@@ -112,9 +112,11 @@ export function WorkScheduleCalendarStep({
       </header>
 
       <div className="mb-4">
-        <h1 className="mb-2 text-[22px] font-semibold text-gray-900">희망 근무 시작일*</h1>
+        <h1 className="mb-2 text-[22px] font-semibold text-gray-900">희망 근무 시작일</h1>
         <p className="text-[15px] text-gray-500">
-          근무 가능한 스케줄을 모두 입력하시면 맞춤 추천 구인/구직 정보를 드릴게요.
+          근무 가능한 스케줄을 모두 입력하시면 
+          <br/>
+          맞춤 추천 구인/구직 정보를 알려드려요.
         </p>
       </div>
 

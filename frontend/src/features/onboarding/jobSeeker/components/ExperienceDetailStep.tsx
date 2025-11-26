@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ExperienceDetailStepProps {
   selectedSections: string[];
@@ -20,7 +20,34 @@ export function ExperienceDetailStep({
   onNext,
   onPrev,
 }: ExperienceDetailStepProps) {
+  const [careers, setCareers] = useState<string[]>([]);
+  const [currentCareer, setCurrentCareer] = useState('');
+
+  useEffect(() => {
+    if (experienceData.career) {
+      setCareers(experienceData.career.split('\n').filter(c => c.trim() !== ''));
+    }
+  }, []); // Run only once on mount
+
+  const handleAddCareer = () => {
+    if (currentCareer.trim()) {
+      const newCareers = [...careers, currentCareer.trim()];
+      setCareers(newCareers);
+      setCurrentCareer('');
+      onChangeData('career', newCareers.join('\n'));
+    }
+  };
+
+  const handleRemoveCareer = (indexToRemove: number) => {
+    const newCareers = careers.filter((_, index) => index !== indexToRemove);
+    setCareers(newCareers);
+    onChangeData('career', newCareers.join('\n'));
+  };
+
   const canSubmit = selectedSections.every((section) => {
+    if (section === 'career') {
+      return careers.length > 0;
+    }
     const value = experienceData[section as keyof typeof experienceData];
     return value && value.trim().length > 0;
   });
@@ -72,8 +99,9 @@ export function ExperienceDetailStep({
         추가 정보
       </h1>
       <p className="mb-6 text-[15px] text-gray-500">
-        나의 강점을 보여주세요.<br />
-        원신 등잉과 프로필이 될 거예요.
+      경력은 최대 40개까지 추가 가능해요.
+      <br />
+      추가한 경력은 장단기순, 최근 근무일 순으로 보여져요.
       </p>
 
       {/* 입력 필드 */}
@@ -83,19 +111,66 @@ export function ExperienceDetailStep({
             <label className="mb-2 block text-[15px] font-medium text-gray-700">
               {getSectionLabel(sectionId)}
             </label>
-            <textarea
-              value={experienceData[sectionId as keyof typeof experienceData]}
-              onChange={(e) => onChangeData(sectionId, e.target.value)}
-              placeholder={getPlaceholder(sectionId)}
-              rows={4}
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:outline-none focus:ring-1 focus:ring-primary-mint"
-            />
+            {sectionId === 'career' ? (
+              <>
+                {/* Career cards */}
+                <div className="space-y-2 mb-3">
+                  {careers.map((career, index) => (
+                    <div key={index} className="flex items-center justify-between rounded-lg bg-gray-100 p-3 text-sm">
+                      <span className="text-gray-800 flex-1">{career}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCareer(index)}
+                        className="ml-2 text-red-500 font-semibold"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Career input */}
+                <textarea
+                  value={currentCareer}
+                  onChange={(e) => setCurrentCareer(e.target.value)}
+                  placeholder={getPlaceholder(sectionId)}
+                  rows={3}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:outline-none focus:ring-1 focus:ring-primary-mint"
+                />
+
+                {/* Add button */}
+                {currentCareer.trim().length > 0 && (
+                    <button
+                        type="button"
+                        onClick={handleAddCareer}
+                        className="mt-3 w-full rounded-full bg-primary-mint py-3 text-[15px] font-semibold text-white"
+                    >
+                        + 경력 추가하기
+                    </button>
+                )}
+              </>
+            ) : (
+              <textarea
+                value={experienceData[sectionId as keyof typeof experienceData]}
+                onChange={(e) => onChangeData(sectionId, e.target.value)}
+                placeholder={getPlaceholder(sectionId)}
+                rows={4}
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:outline-none focus:ring-1 focus:ring-primary-mint"
+              />
+            )}
           </div>
         ))}
       </div>
 
       {/* 하단 버튼 */}
-      <div className="mt-auto">
+      <div className="mt-auto space-y-3">
+        <button
+          type="button"
+          onClick={onNext}
+          className="w-full rounded-full px-4 py-3 text-[17px] font-semibold bg-gray-200 text-gray-700"
+        >
+          건너뛰기
+        </button>
         <button
           type="button"
           onClick={onNext}
@@ -106,7 +181,7 @@ export function ExperienceDetailStep({
               : 'bg-gray-200 text-gray-400'
           }`}
         >
-          건너뛰기
+          저장하기
         </button>
       </div>
     </div>

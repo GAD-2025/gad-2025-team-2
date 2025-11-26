@@ -49,8 +49,7 @@ export function ExperienceStep({
         경력 정보
       </h1>
       <p className="mb-6 text-[15px] text-gray-500">
-        나의 강점을 직업인게 되는 일들이네요.<br />
-        시작날짜와 가장 관심있는 보면의 될 거예요.
+        나의 경력들을 등록해보세요.
       </p>
 
       {/* 경력 섹션 선택 */}

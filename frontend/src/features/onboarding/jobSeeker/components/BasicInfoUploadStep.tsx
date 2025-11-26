@@ -97,11 +97,11 @@ export function BasicInfoUploadStep({
         <p>• 프로필 사진은 나중에 변경할 수 있습니다</p>
       </div>
 
-      <div className="mt-auto flex gap-3">
+      <div className="mt-auto space-y-3">
         <button
           type="button"
           onClick={onSkip}
-          className="flex-1 rounded-full border border-gray-300 bg-white px-4 py-3 text-[17px] font-semibold text-gray-700"
+          className="w-full rounded-full border border-gray-300 bg-white px-4 py-3 text-[17px] font-semibold text-gray-700"
         >
           건너뛰기
         </button>
@@ -109,7 +109,7 @@ export function BasicInfoUploadStep({
           type="button"
           onClick={onNext}
           disabled={!hasFiles}
-          className={`flex-1 rounded-full px-4 py-3 text-[17px] font-semibold ${
+          className={`w-full rounded-full px-4 py-3 text-[17px] font-semibold ${
             hasFiles
               ? 'bg-primary-mint text-white'
               : 'bg-gray-200 text-gray-400'

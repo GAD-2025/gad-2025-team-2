@@ -9,7 +9,7 @@ import { ProgressCard } from '@/components/ProgressCard';
 import { QuickMenuGrid } from '@/components/QuickMenuGrid';
 import { GuideCard } from '@/components/GuideCard';
 import { JobCardSkeleton } from '@/components/Skeleton';
-import { SafetyNoticeModal } from '@/components/SafetyNoticeModal';
+//import { SafetyNoticeModal } from '@/components/SafetyNoticeModal';
 import { jobsAPI, learningAPI } from '@/api/endpoints';
 import type { Job, LearningProgress } from '@/types';
 
@@ -209,12 +209,12 @@ export const JobSeekerHome = () => {
       </div>
 
       {/* Safety Notice Modal */}
-      {showSafetyNotice && (
-        <SafetyNoticeModal
+      {/* {showSafetyNotice && (
+       // <SafetyNoticeModal
           onClose={() => setShowSafetyNotice(false)}
           onNeverShowAgain={() => setShowSafetyNotice(false)}
         />
-      )}
+      )} */}
     </div>
   );
 };

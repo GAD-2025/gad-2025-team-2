@@ -1,11 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/useAuth';
 
 export const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
+
   const { userMode } = useAuthStore();
 
   // 모드에 따라 홈 경로 변경

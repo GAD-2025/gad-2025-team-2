@@ -85,7 +85,7 @@ export function WorkScheduleDetailStep({
       <div className="mb-6">
         <h1 className="mb-2 text-[22px] font-semibold text-gray-900">근무 가능 요일 / 시간</h1>
         <p className="text-[15px] text-gray-500">
-          선택하신 날짜에 적용할 기본 근무 가능 시간을 알려주세요.
+          추후에 수정이 가능해요.
         </p>
       </div>
 
@@ -170,7 +170,7 @@ export function WorkScheduleDetailStep({
       {/* 요일 섹션 */}
       <div className="mb-6">
         <label className="mb-3 block text-[15px] font-medium text-gray-700">
-          시간 적용할 요일*
+          적용할 요일
         </label>
         
         <div className="mb-3">

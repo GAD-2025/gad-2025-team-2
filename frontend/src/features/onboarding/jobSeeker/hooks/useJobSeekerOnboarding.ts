@@ -32,7 +32,7 @@ export function useJobSeekerOnboarding() {
   const [error, setError] = useState<string | null>(null);
 
   const goNext = () => {
-    if (step < 8) {
+    if (step < 9) {
       setStep((prev) => (prev + 1) as OnboardingStep);
     }
   };
@@ -220,7 +220,7 @@ export function useJobSeekerOnboarding() {
       console.log('Sending profile data:', payload);
 
       await createJobSeekerProfile(payload);
-      navigate('/jobseeker/home');
+      goNext();
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : '프로필 저장에 실패했습니다.';

@@ -21,7 +21,7 @@ import { SignIn } from './pages/auth/SignIn';
 import { SignUp } from './pages/auth/SignUp';
 import { AutoRedirect } from './pages/auth/AutoRedirect';
 import Onboarding from './pages/auth/Onboarding';
-import EmployerSignupWizard from './features/auth/employerSignup/EmployerSignupWizard';
+//import EmployerSignupWizard from './features/auth/employerSignup/EmployerSignupWizard';
 import { MyPage } from './pages/mypage/MyPage';
 import { LearningHome } from './pages/learning/LearningHome';
 import { LevelTest } from './pages/learning/LevelTest';
@@ -31,7 +31,7 @@ import { ProfileEdit } from './pages/profile/ProfileEdit';
 import { EmployeeScheduleList } from './pages/employer/EmployeeScheduleList';
 import { SharedSchedule } from './pages/employer/SharedSchedule';
 import { MySchedule } from './pages/jobseeker/MySchedule';
-import { NotFound } from './pages/NotFound';
+//import { NotFound } from './pages/NotFound';
 
 export const router = createBrowserRouter([
   {
@@ -43,10 +43,6 @@ export const router = createBrowserRouter([
     element: <SignUp />,
   },
   {
-    path: '/signup/employer',
-    element: <EmployerSignupWizard />,
-  },
-  {
     path: '/onboarding',
     element: <Onboarding />,
   },
@@ -55,126 +51,7 @@ export const router = createBrowserRouter([
     element: <Home />,
   },
   {
-    path: '/auth/signin',
-    element: <SignIn />,
-  },
-  {
-    path: '/',
-    element: <AppLayout />,
-    children: [
-      {
-        path: 'jobseeker/home',
-        element: <JobSeekerHome />,
-      },
-      {
-        path: 'job/:id',
-        element: <JobDetail />,
-      },
-      {
-        path: 'jobseeker/apply-done',
-        element: <ApplyDone />,
-      },
-      {
-        path: 'filters/talent',
-        element: <TalentFilter />,
-      },
-      {
-        path: 'filters/applicant',
-        element: <ApplicantFilter />,
-      },
-      {
-        path: 'employer/home',
-        element: <EmployerHome />,
-      },
-      {
-        path: 'applicant/:id',
-        element: <ApplicantDetail />,
-      },
-      {
-        path: 'employer/hire-done',
-        element: <HireDone />,
-      },
-      {
-        path: 'messages',
-        element: <MessageList />,
-      },
-      {
-        path: 'messages/:id',
-        element: <Chat />,
-      },
-      {
-        path: 'jobs',
-        element: <JobList />,
-      },
-      {
-        path: 'jobs/:id',
-        element: <JobDetail />,
-      },
-      {
-        path: 'my-applications',
-        element: <MyApplications />,
-      },
-      {
-        path: 'learning',
-        element: <LearningHome />,
-      },
-      {
-        path: 'learning/level-test',
-        element: <LevelTest />,
-      },
-      {
-        path: 'learning/lesson/:id',
-        element: <LessonDetail />,
-      },
-      {
-        path: 'network',
-        element: <Network />,
-      },
-      {
-        path: 'network/community/:id',
-        element: <div className="p-4">커뮤니티 상세 (Coming soon)</div>,
-      },
-      {
-        path: 'employer/job-create',
-        element: <JobCreate />,
-      },
-      {
-        path: 'recruitment',
-        element: <Recruitment />,
-      },
-      {
-        path: 'job-management',
-        element: <JobManagement />,
-      },
-      {
-        path: 'employer/applicant/:id',
-        element: <ApplicantDetail />,
-      },
-      {
-        path: 'employer/schedule',
-        element: <EmployeeScheduleList />,
-      },
-      {
-        path: 'employer/schedule/:userId',
-        element: <SharedSchedule />,
-      },
-      {
-        path: 'jobseeker/schedule',
-        element: <MySchedule />,
-      },
-      {
-        path: 'profile/edit',
-        element: <ProfileEdit />,
-      },
-      {
-        path: 'mypage',
-        element: <MyPage />,
-      },
-    ],
-  },
-  {
-    path: '*',
-    element: <NotFound />,
+    path: '/mypage',
+    element: <MyPage />,
   },
 ]);
-
