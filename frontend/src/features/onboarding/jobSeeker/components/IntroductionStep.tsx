@@ -13,7 +13,7 @@ export function IntroductionStep({
   onSkip,
   onPrev,
 }: IntroductionStepProps) {
-  const maxLength = 50000;
+  const maxLength = 5000;
   const currentLength = introductionData.length;
   const canProceed = introductionData.trim().length > 0;
 

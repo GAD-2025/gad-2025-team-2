@@ -66,11 +66,17 @@ export function UserInfoStep({
           </label>
           <input
             id="phone"
+            type="tel"
             className={INPUT_CLASS}
             inputMode="numeric"
             value={values.phone}
-            onChange={(e) => onPhoneChange(e.target.value)}
-            placeholder="휴대전화 번호를 입력하세요"
+            onChange={(e) => {
+              // 숫자만 입력 가능
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              onPhoneChange(value);
+            }}
+            placeholder="01012345678"
+            maxLength={11}
           />
         </div>
 

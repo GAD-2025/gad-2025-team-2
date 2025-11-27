@@ -74,7 +74,7 @@ export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
               e.stopPropagation();
               navigate(`/job/${job.id}`);
             }}
-            className="px-3 py-1.5 bg-mint-600 text-white rounded-[8px] 
+            className="px-3 py-1.5 bg-mint-600 text-white rounded-[16px] 
                      text-[13px] font-semibold hover:bg-mint-700 transition-colors flex-shrink-0"
           >
             지원하기

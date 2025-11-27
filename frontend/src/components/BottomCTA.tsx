@@ -50,7 +50,7 @@ export const CTAButton = ({
       disabled={disabled}
       className={`
         flex items-center justify-center gap-2
-        h-12 px-6 rounded-button
+        h-12 px-6 rounded-[16px]
         text-[15px] font-semibold
         transition-all
         disabled:opacity-50 disabled:cursor-not-allowed

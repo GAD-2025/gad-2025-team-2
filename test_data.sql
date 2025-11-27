@@ -4,11 +4,12 @@
 
 USE workfair;
 
--- 1. 테스트용 고용주 회원 생성
-INSERT INTO signup_users (id, role, name, phone, email, birthdate, gender, nationality_code, terms_tos_required, terms_privacy_required, created_at) VALUES
-('employer-test-001', 'employer', '김사장', '010-1111-2222', 'employer1@test.com', NULL, NULL, 'KR', TRUE, TRUE, NOW()),
-('employer-test-002', 'employer', '이대표', '010-3333-4444', 'employer2@test.com', NULL, NULL, 'KR', TRUE, TRUE, NOW())
-ON DUPLICATE KEY UPDATE name=VALUES(name);
+-- 1. 테스트용 고용주 회원 생성 (기본 비밀번호: 123456)
+-- SHA256('123456') = 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
+INSERT INTO signup_users (id, role, name, phone, email, password, birthdate, gender, nationality_code, terms_tos_required, terms_privacy_required, created_at) VALUES
+('employer-test-001', 'employer', '김사장', '010-1111-2222', 'employer1@test.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', NULL, NULL, 'KR', TRUE, TRUE, NOW()),
+('employer-test-002', 'employer', '이대표', '010-3333-4444', 'employer2@test.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', NULL, NULL, 'KR', TRUE, TRUE, NOW())
+ON DUPLICATE KEY UPDATE name=VALUES(name), password=VALUES(password);
 
 -- 2. 고용주 프로필 생성
 INSERT INTO employer_profiles (id, user_id, business_type, company_name, address, address_detail, created_at, updated_at) VALUES
@@ -22,14 +23,16 @@ INSERT INTO employers (id, businessNo, shopName, industry, address, openHours, c
 ('emp-002', 'emp-profile-002', '강남역 맛있는집', '음식점', '서울 강남구 테헤란로 234', '11:00-23:00', 'employer2@test.com', 'Lv.2 초급', 13000, '주 6일', 4.5)
 ON DUPLICATE KEY UPDATE shopName=VALUES(shopName);
 
--- 4. 테스트용 구직자 회원 생성
-INSERT INTO signup_users (id, role, name, phone, email, birthdate, gender, nationality_code, terms_tos_required, terms_privacy_required, created_at) VALUES
-('seeker-test-001', 'job_seeker', '수정', '010-5555-6666', 'sujung@test.com', '1995-03-15', 'female', 'UZ', TRUE, TRUE, NOW()),
-('seeker-test-002', 'job_seeker', '알렉스', '010-7777-8888', 'alex@test.com', '1992-07-20', 'male', 'PH', TRUE, TRUE, NOW())
-ON DUPLICATE KEY UPDATE name=VALUES(name);
+-- 4. 테스트용 구직자 회원 생성 (기본 비밀번호: 123456)
+INSERT INTO signup_users (id, role, name, phone, email, password, birthdate, gender, nationality_code, terms_tos_required, terms_privacy_required, created_at) VALUES
+('seeker-1', 'job_seeker', '소피아', '010-1234-5678', 'sophia@test.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '1998-05-10', 'female', 'UZ', TRUE, TRUE, NOW()),
+('seeker-test-001', 'job_seeker', '수정', '010-5555-6666', 'sujung@test.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '1995-03-15', 'female', 'UZ', TRUE, TRUE, NOW()),
+('seeker-test-002', 'job_seeker', '알렉스', '010-7777-8888', 'alex@test.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '1992-07-20', 'male', 'PH', TRUE, TRUE, NOW())
+ON DUPLICATE KEY UPDATE name=VALUES(name), password=VALUES(password);
 
 -- 5. 구직자 프로필 생성
 INSERT INTO job_seeker_profiles (id, user_id, preferred_regions, preferred_jobs, work_days_of_week, experience_career, created_at, updated_at) VALUES
+('seeker-profile-1', 'seeker-1', '["용산구", "종로구"]', '["카페", "음식점"]', '["SAT", "SUN"]', '레스토랑 2년 근무 경험', NOW(), NOW()),
 ('seeker-profile-001', 'seeker-test-001', '["종로구", "성동구"]', '["카페", "음식점"]', '["SAT", "SUN"]', '카페 2년 근무 경험', NOW(), NOW()),
 ('seeker-profile-002', 'seeker-test-002', '["강남구", "서초구"]', '["편의점", "카페"]', '["MON", "TUE", "WED", "THU", "FRI"]', '편의점 1년 근무 경험', NOW(), NOW())
 ON DUPLICATE KEY UPDATE preferred_regions=VALUES(preferred_regions);

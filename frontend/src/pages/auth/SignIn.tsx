@@ -40,7 +40,15 @@ export function SignIn() {
         role: role,
       };
 
+      console.log('🔐 로그인 시도:', {
+        role: loginData.role,
+        identifier: loginData.identifier,
+        password_length: loginData.password.length
+      });
+
       const response = await authAPI.signIn(loginData);
+      
+      console.log('✅ 로그인 성공:', response);
       
       // Store user info
       localStorage.setItem('signup_user_id', response.user_id);
@@ -58,7 +66,8 @@ export function SignIn() {
         navigate('/jobseeker/home');
       }
     } catch (error: any) {
-      console.error('로그인 실패:', error);
+      console.error('❌ 로그인 실패:', error);
+      console.error('에러 상세:', error.response?.data);
       toast.error(error.response?.data?.detail || '로그인에 실패했습니다');
     } finally {
       setLoading(false);
@@ -90,23 +99,23 @@ export function SignIn() {
         </div>
 
         {/* Role Toggle */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-0 mb-8">
           <button
             onClick={() => setRole('job_seeker')}
-            className={`flex-1 h-[52px] rounded-[12px] text-[16px] font-semibold transition-colors ${
+            className={`flex-1 h-[52px] rounded-l-[12px] text-[16px] font-semibold transition-colors border ${
               role === 'job_seeker'
-                ? 'bg-mint-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-gray-600 text-white border-gray-600'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-300'
             }`}
           >
             나는 구직자
           </button>
           <button
             onClick={() => setRole('employer')}
-            className={`flex-1 h-[52px] rounded-[12px] text-[16px] font-semibold transition-colors ${
+            className={`flex-1 h-[52px] rounded-r-[12px] text-[16px] font-semibold transition-colors border ${
               role === 'employer'
-                ? 'bg-mint-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-gray-600 text-white border-gray-600'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-300'
             }`}
           >
             나는 고용주
@@ -126,7 +135,7 @@ export function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="example@email.com"
-                className="w-full h-[52px] px-4 bg-gray-50 rounded-[12px] border border-gray-200
+                className="w-full h-[52px] px-4 bg-gray-50 rounded-t-[12px] border border-gray-200 border-b-0
                          text-[16px] text-text-900 placeholder:text-gray-400
                          focus:outline-none focus:ring-2 focus:ring-mint-600 focus:border-transparent"
               />
@@ -134,9 +143,14 @@ export function SignIn() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="010-1234-5678"
-                className="w-full h-[52px] px-4 bg-gray-50 rounded-[12px] border border-gray-200
+                onChange={(e) => {
+                  // 숫자만 입력 가능
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setPhone(value);
+                }}
+                placeholder="01012345678"
+                maxLength={11}
+                className="w-full h-[52px] px-4 bg-gray-50 rounded-t-[12px] border border-gray-200 border-b-0
                          text-[16px] text-text-900 placeholder:text-gray-400
                          focus:outline-none focus:ring-2 focus:ring-mint-600 focus:border-transparent"
               />
@@ -154,7 +168,7 @@ export function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="비밀번호를 입력하세요"
-                className="w-full h-[52px] px-4 pr-12 bg-gray-50 rounded-[12px] border border-gray-200
+                className="w-full h-[52px] px-4 pr-12 bg-gray-50 rounded-b-[12px] border border-gray-200
                          text-[16px] text-text-900 placeholder:text-gray-400
                          focus:outline-none focus:ring-2 focus:ring-mint-600 focus:border-transparent"
                 onKeyPress={(e) => {

@@ -240,7 +240,7 @@ export const MyApplications = () => {
                         e.stopPropagation();
                         navigate(`/messages/chat/${app.jobId}`);
                       }}
-                      className="px-3 py-1.5 bg-mint-600 text-white rounded-[8px] text-[12px] 
+                      className="px-3 py-1.5 bg-mint-600 text-white rounded-[16px] text-[12px] 
                                font-semibold hover:bg-mint-700 transition-colors"
                     >
                       사장님께 연락하기

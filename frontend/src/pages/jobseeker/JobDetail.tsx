@@ -77,7 +77,7 @@ export const JobDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-[480px] mx-auto">
         <Header showBack title="공고 상세 정보" />
         <div className="p-4">Loading...</div>
       </div>
@@ -89,7 +89,7 @@ export const JobDetail = () => {
   const daysLeft = getDaysUntil(job.deadline);
 
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="min-h-screen bg-background pb-40 max-w-[480px] mx-auto">
       <Header showBack title="공고 상세 정보" />
 
       <div className="p-4">
@@ -165,11 +165,11 @@ export const JobDetail = () => {
       </div>
 
       {/* Bottom Action Buttons - 메뉴바 위에 위치 */}
-      <div className="fixed bottom-20 left-0 right-0 bg-white border-t border-line-200 p-4 z-40">
-        <div className="flex gap-2 max-w-[480px] mx-auto">
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 p-4 z-40">
+        <div className="flex gap-2 w-full">
           <button
             onClick={handleSave}
-            className={`w-[52px] h-[52px] rounded-[12px] flex items-center justify-center transition-colors ${
+            className={`w-[52px] h-[52px] flex-shrink-0 rounded-[12px] flex items-center justify-center transition-colors ${
               isSaved
                 ? 'bg-mint-600 text-white'
                 : 'bg-transparent text-gray-600 hover:bg-gray-50 border border-line-200'

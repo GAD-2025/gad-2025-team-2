@@ -68,28 +68,47 @@ async def signin(request: SignInRequest, session: Session = Depends(get_session)
 async def signin_new(request: NewSignInRequest, session: Session = Depends(get_session)):
     """New signin endpoint for identifier (email or phone) + password + role"""
     try:
+        # 전화번호에서 하이픈(-) 제거
+        identifier = request.identifier.replace('-', '') if request.role == "job_seeker" else request.identifier
+        
+        print(f"🔐 로그인 시도: role={request.role}, identifier={identifier}")
+        
         # Find user by identifier (email or phone) and role
         if request.role == "employer":
             # Employer logs in with email
             statement = select(SignupUser).where(
-                SignupUser.email == request.identifier,
+                SignupUser.email == identifier,
                 SignupUser.role == "employer"
             )
         else:
             # Job seeker logs in with phone
             statement = select(SignupUser).where(
-                SignupUser.phone == request.identifier,
+                SignupUser.phone == identifier,
                 SignupUser.role == "job_seeker"
             )
         
         user = session.exec(statement).first()
         
         if not user:
+            print(f"❌ 사용자를 찾을 수 없음: {request.identifier}")
             raise HTTPException(status_code=401, detail="계정을 찾을 수 없습니다")
         
+        print(f"✅ 사용자 발견: id={user.id}, name={user.name}, has_password={user.password is not None}")
+        
         # Verify password
-        if not user.password or not verify_password(request.password, user.password):
+        if not user.password:
+            print(f"❌ 비밀번호가 설정되지 않음")
+            raise HTTPException(status_code=401, detail="비밀번호가 설정되지 않았습니다. 관리자에게 문의하세요.")
+        
+        input_hash = hash_password(request.password)
+        print(f"🔑 입력 비밀번호 해시: {input_hash}")
+        print(f"🔑 저장된 비밀번호 해시: {user.password}")
+        
+        if not verify_password(request.password, user.password):
+            print(f"❌ 비밀번호 불일치")
             raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다")
+        
+        print(f"✅ 로그인 성공: {user.id}")
         
         # Create token
         token = create_access_token({"sub": user.id, "role": user.role})
@@ -220,6 +239,9 @@ async def signup_new(request: SignupPayload, session: Session = Depends(get_sess
         gender = request.gender or "male"  # 고용주는 기본값
         nationality_code = request.nationality_code or "KR"  # 고용주는 기본값
         
+        # 전화번호에서 하이픈(-) 제거
+        phone = request.phone.replace('-', '') if request.phone else ""
+        
         # Hash password
         hashed_password = hash_password(request.password)
         
@@ -227,7 +249,7 @@ async def signup_new(request: SignupPayload, session: Session = Depends(get_sess
             id=user_id,
             role=request.role,
             name=request.name,
-            phone=request.phone or "",  # 고용주는 전화번호가 없을 수 있음
+            phone=phone,  # 하이픈 제거된 전화번호
             email=request.email,  # 고용주 필수
             password=hashed_password,  # 해시된 비밀번호 저장
             birthdate=birthdate,
