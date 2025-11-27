@@ -13,7 +13,6 @@ const INITIAL_VALUES: OnboardingFormValues = {
     endTime: null,
     daysOfWeek: [],
   },
-  selectedExperienceSections: [],
   experienceData: {
     career: '',
     license: '',
@@ -32,7 +31,7 @@ export function useJobSeekerOnboarding() {
   const [error, setError] = useState<string | null>(null);
 
   const goNext = () => {
-    if (step < 8) {
+    if (step < 10) {
       setStep((prev) => (prev + 1) as OnboardingStep);
     }
   };
@@ -154,19 +153,6 @@ export function useJobSeekerOnboarding() {
     });
   };
 
-  const handleToggleExperienceSection = (sectionId: string) => {
-    setValues((prev) => {
-      const current = prev.selectedExperienceSections;
-      const isSelected = current.includes(sectionId);
-      return {
-        ...prev,
-        selectedExperienceSections: isSelected
-          ? current.filter((id) => id !== sectionId)
-          : [...current, sectionId],
-      };
-    });
-  };
-
   const handleChangeExperienceData = (field: string, value: string) => {
     setValues((prev) => ({
       ...prev,
@@ -211,10 +197,7 @@ export function useJobSeekerOnboarding() {
           end_time: values.workSchedule.endTime,
           days_of_week: values.workSchedule.daysOfWeek,
         },
-        experience: {
-          sections: values.selectedExperienceSections,
-          data: values.experienceData,
-        },
+        experience: values.experienceData,
       };
 
       console.log('Sending profile data:', payload);
@@ -255,7 +238,6 @@ export function useJobSeekerOnboarding() {
     handleToggleDay,
     handleToggleAllDays,
     // Experience handlers
-    handleToggleExperienceSection,
     handleChangeExperienceData,
   };
 }

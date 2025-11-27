@@ -32,8 +32,8 @@ export function BasicInfoUploadStep({
   const hasFiles = uploadedFiles.length > 0;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-10">
-      <header className="mb-6 flex items-center gap-2">
+    <div className="mx-auto flex h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-24">
+      <header className="mb-4 flex items-center gap-2 pt-4">
         <button type="button" onClick={onPrev} className="text-[26px]">
           ←
         </button>
@@ -45,7 +45,7 @@ export function BasicInfoUploadStep({
       <h1 className="mb-2 text-[22px] font-semibold text-gray-900">
         프로필 사진을 등록해주세요
       </h1>
-      <p className="mb-6 text-[15px] text-gray-500">
+      <p className="mb-4 text-[15px] text-gray-500">
         사진은 자유롭게 선택하실 수 있어요.
       </p>
 
@@ -91,32 +91,34 @@ export function BasicInfoUploadStep({
         />
       </div>
 
-      <div className="mb-6 space-y-2 text-[13px] text-gray-500">
+      <div className="mb-4 space-y-1.5 text-[13px] text-gray-500">
         <p>• 얼굴이 잘 보이는 사진을 권장합니다</p>
         <p>• jpg, png 형식의 이미지 파일만 가능합니다</p>
         <p>• 프로필 사진은 나중에 변경할 수 있습니다</p>
       </div>
 
-      <div className="mt-auto flex gap-3">
-        <button
-          type="button"
-          onClick={onSkip}
-          className="flex-1 rounded-full border border-gray-300 bg-white px-4 py-3 text-[17px] font-semibold text-gray-700"
-        >
-          건너뛰기
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!hasFiles}
-          className={`flex-1 rounded-full px-4 py-3 text-[17px] font-semibold ${
-            hasFiles
-              ? 'bg-primary-mint text-white'
-              : 'bg-gray-200 text-gray-400'
-          }`}
-        >
-          사진 등록
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 max-w-[420px] mx-auto">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onSkip}
+            className="flex-1 rounded-full border border-gray-300 bg-white px-4 py-3 text-[17px] font-semibold text-gray-700"
+          >
+            건너뛰기
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!hasFiles}
+            className={`flex-1 rounded-full px-4 py-3 text-[17px] font-semibold ${
+              hasFiles
+                ? 'bg-primary-mint text-white'
+                : 'bg-gray-200 text-gray-400'
+            }`}
+          >
+            사진 등록
+          </button>
+        </div>
       </div>
     </div>
   );

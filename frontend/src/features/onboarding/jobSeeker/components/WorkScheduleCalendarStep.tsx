@@ -101,8 +101,8 @@ export function WorkScheduleCalendarStep({
   const canConfirm = availableDates.length > 0;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-10">
-      <header className="mb-6 flex items-center gap-2">
+    <div className="mx-auto flex h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-24">
+      <header className="mb-4 flex items-center gap-2 pt-4">
         <button type="button" onClick={onPrev} className="text-[26px] text-gray-700">
           ←
         </button>
@@ -198,7 +198,7 @@ export function WorkScheduleCalendarStep({
       </div>
 
       {/* 하단 버튼 */}
-      <div className="mt-auto pt-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 max-w-[420px] mx-auto">
         <button
           type="button"
           onClick={onConfirm}

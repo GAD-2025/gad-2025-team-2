@@ -4,8 +4,10 @@ import { PreferredRegionStep } from './components/PreferredRegionStep';
 import { PreferredJobStep } from './components/PreferredJobStep';
 import { WorkScheduleCalendarStep } from './components/WorkScheduleCalendarStep';
 import { WorkScheduleDetailStep } from './components/WorkScheduleDetailStep';
-import { ExperienceStep } from './components/ExperienceStep';
-import { ExperienceDetailStep } from './components/ExperienceDetailStep';
+import { CareerStep } from './components/CareerStep';
+import { LicenseStep } from './components/LicenseStep';
+import { SkillsStep } from './components/SkillsStep';
+import { IntroductionStep } from './components/IntroductionStep';
 import { StartInfoModal } from './components/StartInfoModal';
 import { StepIntroBottomSheet } from './components/StepIntroBottomSheet';
 import { OnboardingProgressBar } from './components/OnboardingProgressBar';
@@ -33,18 +35,16 @@ export default function JobSeekerOnboardingWizard() {
     handleChangeTime,
     handleToggleDay,
     handleToggleAllDays,
-    handleToggleExperienceSection,
     handleChangeExperienceData,
   } = useJobSeekerOnboarding();
 
-  // 전체 프로그레스 계산 (회원가입 2단계 + 온보딩 7단계 = 총 9단계)
-  // Step 2 = 3/9, Step 3 = 4/9, ..., Step 8 = 9/9
+  // 전체 프로그레스 계산 (회원가입 2단계 + 온보딩 9단계 = 총 11단계)
   const totalProgressStep = step; // Step 2부터 시작하므로 +2 (회원가입 2단계)
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Onboarding Progress Bar - 전체 9단계 중 현재 위치 표시 */}
-      <OnboardingProgressBar currentStep={totalProgressStep} totalSteps={9} />
+      {/* Onboarding Progress Bar - 전체 11단계 중 현재 위치 표시 */}
+      <OnboardingProgressBar currentStep={totalProgressStep} totalSteps={11} />
       
       {step === 2 && (
         <BasicInfoUploadStep
@@ -91,20 +91,38 @@ export default function JobSeekerOnboardingWizard() {
         />
       )}
       {step === 7 && (
-        <ExperienceStep
-          selectedSections={values.selectedExperienceSections}
-          onToggleSection={handleToggleExperienceSection}
+        <CareerStep
+          careerData={values.experienceData.career}
+          onChangeData={(value) => handleChangeExperienceData('career', value)}
           onNext={goNext}
-          onSkip={handleSubmit}
+          onSkip={goNext}
           onPrev={goPrev}
         />
       )}
       {step === 8 && (
-        <ExperienceDetailStep
-          selectedSections={values.selectedExperienceSections}
-          experienceData={values.experienceData}
-          onChangeData={handleChangeExperienceData}
+        <LicenseStep
+          licenseData={values.experienceData.license}
+          onChangeData={(value) => handleChangeExperienceData('license', value)}
+          onNext={goNext}
+          onSkip={goNext}
+          onPrev={goPrev}
+        />
+      )}
+      {step === 9 && (
+        <SkillsStep
+          skillsData={values.experienceData.skills}
+          onChangeData={(value) => handleChangeExperienceData('skills', value)}
+          onNext={goNext}
+          onSkip={goNext}
+          onPrev={goPrev}
+        />
+      )}
+      {step === 10 && (
+        <IntroductionStep
+          introductionData={values.experienceData.introduction}
+          onChangeData={(value) => handleChangeExperienceData('introduction', value)}
           onNext={handleSubmit}
+          onSkip={handleSubmit}
           onPrev={goPrev}
         />
       )}

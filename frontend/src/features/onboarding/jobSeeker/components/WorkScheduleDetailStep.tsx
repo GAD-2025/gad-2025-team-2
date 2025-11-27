@@ -72,8 +72,8 @@ export function WorkScheduleDetailStep({
   };
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-10">
-      <header className="mb-6 flex items-center gap-2">
+    <div className="mx-auto flex h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-24">
+      <header className="mb-4 flex items-center gap-2 pt-4">
         <button type="button" onClick={onPrev} className="text-[26px] text-gray-700">
           ←
         </button>
@@ -82,7 +82,7 @@ export function WorkScheduleDetailStep({
         </span>
       </header>
 
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="mb-2 text-[22px] font-semibold text-gray-900">근무 가능 요일 / 시간</h1>
         <p className="text-[15px] text-gray-500">
           선택하신 날짜에 적용할 기본 근무 가능 시간을 알려주세요.
@@ -209,7 +209,7 @@ export function WorkScheduleDetailStep({
       </div>
 
       {/* 하단 버튼 */}
-      <div className="mt-auto pt-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 max-w-[420px] mx-auto">
         <button
           type="button"
           onClick={handleComplete}

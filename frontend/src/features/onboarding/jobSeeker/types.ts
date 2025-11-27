@@ -1,4 +1,4 @@
-export type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export interface WorkSchedule {
   availableDates: string[]; // 'YYYY-MM-DD'
@@ -23,8 +23,7 @@ export interface OnboardingFormValues {
   preferredJobs: string[];
   // Step 5-6: Work Schedule
   workSchedule: WorkSchedule;
-  // Step 7-8: Experience
-  selectedExperienceSections: string[];
+  // Step 7-10: Experience Details
   experienceData: ExperienceData;
 }
 
