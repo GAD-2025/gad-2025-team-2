@@ -33,34 +33,24 @@ export const JobSeekerHome = () => {
       try {
         setLoading(true);
         
-        // Try to fetch from API, fallback to mock data
-        try {
-          const [jobsRes, progressRes] = await Promise.all([
-            jobsAPI.list({ limit: 10 }),
-            learningAPI.getSummary('seeker-1').catch(() => null),
-          ]);
-          setJobs(jobsRes.data);
-          if (progressRes) {
-            setLearningProgress(progressRes.data);
-          }
-        } catch (apiError) {
-          // Fallback to mock data if API fails
-          console.log('API 연결 실패, Mock 데이터 사용');
-          const { mockJobs } = await import('@/data/mockJobs');
-          setJobs(mockJobs.slice(0, 10));
-          
-          // Mock learning progress
-          setLearningProgress({
-            seekerId: 'seeker-1',
-            currentLevel: 'Lv.3 중급',
-            completedLessons: 12,
-            totalLessons: 20,
-            progressPercent: 60
-          });
+        // Fetch from API only - no mock data fallback
+        const [jobsRes, progressRes] = await Promise.all([
+          jobsAPI.list({ limit: 10 }),
+          learningAPI.getSummary('seeker-test-001').catch(() => null),
+        ]);
+        
+        // Set jobs from API (empty array if no data)
+        setJobs(jobsRes.data || []);
+        console.log(`Loaded ${jobsRes.data?.length || 0} jobs from API`);
+        
+        // Set learning progress if available
+        if (progressRes) {
+          setLearningProgress(progressRes.data);
         }
       } catch (error) {
         console.error('데이터 로딩 오류:', error);
         toast.error('데이터를 불러오는데 실패했습니다');
+        setJobs([]);
       } finally {
         setLoading(false);
       }

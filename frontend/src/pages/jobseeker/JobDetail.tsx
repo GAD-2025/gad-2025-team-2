@@ -20,23 +20,18 @@ export const JobDetail = () => {
     const fetchJob = async () => {
       if (!id) return;
       try {
+        setLoading(true);
         const res = await jobsAPI.get(id);
         setJob(res.data);
-      } catch (error) {
-        console.log('API 연결 실패, Mock 데이터 사용');
-        try {
-          const { getJobById } = await import('@/data/mockJobs');
-          const mockJob = getJobById(id);
-          if (mockJob) {
-            setJob(mockJob);
-          } else {
-            toast.error('공고를 찾을 수 없습니다');
-            navigate('/jobseeker/home');
-          }
-        } catch {
+        console.log('Loaded job detail:', res.data);
+      } catch (error: any) {
+        console.error('공고 로딩 오류:', error);
+        if (error.response?.status === 404) {
+          toast.error('공고를 찾을 수 없습니다');
+        } else {
           toast.error('공고를 불러오는데 실패했습니다');
-          navigate('/jobseeker/home');
         }
+        navigate('/jobseeker/home');
       } finally {
         setLoading(false);
       }

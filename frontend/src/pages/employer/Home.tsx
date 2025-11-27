@@ -15,34 +15,23 @@ export const EmployerHome = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock data for now - in real app would fetch from API
-    const mockApplicants: JobSeeker[] = [
-      {
-        id: 'seeker-1',
-        name: '소피아',
-        nationality: '우즈베키스탄',
-        phone: '010-1234-5678',
-        languageLevel: 'L1-2',
-        visaType: 'C - 4',
-        availability: '주말',
-        experience: JSON.stringify([{ role: '레스토랑', years: 2, tags: [] }]),
-        preferences: JSON.stringify({}),
-      },
-      {
-        id: 'seeker-2',
-        name: '왕리',
-        nationality: '중국',
-        phone: '010-2345-6789',
-        languageLevel: 'L1-1',
-        visaType: 'C - 2',
-        availability: '평일 야간',
-        experience: JSON.stringify([{ role: '편의점', years: 3, tags: [] }]),
-        preferences: JSON.stringify({}),
-      },
-    ];
-    
-    setApplicants(mockApplicants);
-    setLoading(false);
+    const fetchApplicants = async () => {
+      try {
+        setLoading(true);
+        // For now, use empty array until applicants API is ready
+        // TODO: Implement applicants API endpoint
+        setApplicants([]);
+        console.log('Employer home loaded');
+      } catch (error) {
+        console.error('지원자 로딩 오류:', error);
+        toast.error('데이터를 불러오는데 실패했습니다');
+        setApplicants([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplicants();
   }, []);
 
   const quickMenuItems = [

@@ -9,11 +9,22 @@ export const TalentFilter = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const [selectedLanguage, setSelectedLanguage] = useState<string[]>(['Lv.1 기초']);
-  const [selectedLocation, setSelectedLocation] = useState<string[]>(['종로구']);
-  const [selectedExperience, setSelectedExperience] = useState<string[]>(['경력 없음']);
+  // Single selection for language, location, and experience
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('Lv.1 기초');
+  const [selectedLocation, setSelectedLocation] = useState<string>('종로구');
+  const [selectedExperience, setSelectedExperience] = useState<string>('경력 없음');
+  // Multi-selection for work conditions
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
+  // Single selection handler
+  const setSingleSelection = (
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    value: string
+  ) => {
+    setter(value);
+  };
+
+  // Multi-selection handler (for work conditions)
   const toggleSelection = (
     category: string[],
     setter: React.Dispatch<React.SetStateAction<string[]>>,
@@ -44,8 +55,8 @@ export const TalentFilter = () => {
                 <Tag
                   key={level}
                   variant="outline-mint"
-                  active={selectedLanguage.includes(level)}
-                  onClick={() => toggleSelection(selectedLanguage, setSelectedLanguage, level)}
+                  active={selectedLanguage === level}
+                  onClick={() => setSingleSelection(setSelectedLanguage, level)}
                 >
                   {level}
                 </Tag>
@@ -62,8 +73,8 @@ export const TalentFilter = () => {
                 <Tag
                   key={location}
                   variant="outline-mint"
-                  active={selectedLocation.includes(location)}
-                  onClick={() => toggleSelection(selectedLocation, setSelectedLocation, location)}
+                  active={selectedLocation === location}
+                  onClick={() => setSingleSelection(setSelectedLocation, location)}
                 >
                   {location}
                 </Tag>
@@ -79,8 +90,8 @@ export const TalentFilter = () => {
               <Tag
                 key={exp}
                 variant="outline-mint"
-                active={selectedExperience.includes(exp)}
-                onClick={() => toggleSelection(selectedExperience, setSelectedExperience, exp)}
+                active={selectedExperience === exp}
+                onClick={() => setSingleSelection(setSelectedExperience, exp)}
               >
                 {exp}
               </Tag>

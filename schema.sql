@@ -121,9 +121,15 @@ CREATE TABLE IF NOT EXISTS jobs (
     benefits TEXT NULL COMMENT '우대 사항',
     employerMessage TEXT NULL COMMENT '사장님 한마디',
     createdAt VARCHAR(50) NOT NULL COMMENT '생성일시 (ISO8601)',
+    status VARCHAR(20) DEFAULT 'active' COMMENT '공고 상태: active, paused, closed',
+    views INT DEFAULT 0 COMMENT '조회수',
+    applications INT DEFAULT 0 COMMENT '지원자 수',
+    postedAt VARCHAR(50) NULL COMMENT '등록일시 (ISO8601)',
+    location VARCHAR(200) NULL COMMENT '근무지 (간단 주소)',
     INDEX idx_employer (employerId),
     INDEX idx_category (category),
     INDEX idx_deadline (deadline),
+    INDEX idx_status (status),
     FOREIGN KEY (employerId) REFERENCES employers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='채용 공고';
 

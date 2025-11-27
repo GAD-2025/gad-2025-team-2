@@ -44,24 +44,31 @@ export const JobCreate = () => {
     const loadEmployerProfile = async () => {
       try {
         // Get signup user ID from localStorage (stored during signup)
-        const userId = localStorage.getItem('signup_user_id');
+        let userId = localStorage.getItem('signup_user_id');
+        
+        // For testing: use test employer if no user_id found
         if (!userId) {
-          toast.error('고용주 정보를 찾을 수 없습니다');
-          navigate('/signup');
-          return;
+          console.warn('No user_id in localStorage, using test employer');
+          userId = 'employer-test-001'; // Test data
+          localStorage.setItem('signup_user_id', userId);
         }
 
         // Fetch employer profile
         const response = await fetch(`http://localhost:8000/employer/profile/${userId}`);
         if (!response.ok) {
+          if (response.status === 404) {
+            toast.error('고용주 프로필을 찾을 수 없습니다. 테스트 데이터를 실행해주세요.');
+          } else {
+            toast.error('프로필 정보를 가져오는데 실패했습니다');
+          }
           throw new Error('프로필 정보를 가져올 수 없습니다');
         }
 
         const profile = await response.json();
         setEmployerProfileId(profile.id);
+        console.log('Loaded employer profile:', profile);
       } catch (error) {
         console.error('프로필 로드 실패:', error);
-        toast.error('프로필 정보를 불러오는데 실패했습니다');
       } finally {
         setLoading(false);
       }
@@ -86,7 +93,7 @@ export const JobCreate = () => {
     }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (isDraft = false) => {
     // Validation
     if (!formData.title.trim()) {
       toast.error('공고 제목을 입력해주세요');
@@ -125,6 +132,13 @@ export const JobCreate = () => {
         employer_message: formData.employerMessage || null,
       };
 
+      if (isDraft) {
+        // TODO: Implement draft save functionality
+        toast.success('임시저장되었습니다');
+        navigate('/job-management');
+        return;
+      }
+
       // API call to create job posting
       const response = await fetch('http://localhost:8000/jobs', {
         method: 'POST',
@@ -142,7 +156,7 @@ export const JobCreate = () => {
       console.log('공고 등록 성공:', result);
       
       toast.success('공고가 등록되었습니다');
-      navigate('/employer/home');
+      navigate('/job-management');
     } catch (error) {
       console.error('공고 등록 실패:', error);
       toast.error('공고 등록에 실패했습니다');
@@ -390,18 +404,33 @@ export const JobCreate = () => {
                      focus:outline-none focus:ring-2 focus:ring-mint-600"
           />
         </div>
-      </div>
 
-      {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 p-4">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
-                   font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50"
-        >
-          {submitting ? '등록 중...' : '공고 등록하기'}
-        </button>
+        {/* Button Section - placed at the end of scrollable content */}
+        <div className="bg-white rounded-[16px] p-5 shadow-card mb-6">
+          <div className="flex gap-3">
+            {/* 임시저장하기 버튼 - 회색 */}
+            <button
+              onClick={() => handleSubmit(true)}
+              disabled={submitting}
+              className="flex-1 h-[52px] bg-gray-200 text-gray-700 rounded-[12px] text-[16px] 
+                       font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50
+                       active:scale-[0.98]"
+            >
+              임시저장하기
+            </button>
+
+            {/* 공고등록하기 버튼 - 민트색 */}
+            <button
+              onClick={() => handleSubmit(false)}
+              disabled={submitting}
+              className="flex-1 h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
+                       font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50
+                       active:scale-[0.98]"
+            >
+              {submitting ? '등록 중...' : '공고등록하기'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

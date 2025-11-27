@@ -8,7 +8,6 @@ import { JobCard } from '@/components/JobCard';
 import { JobCardSkeleton } from '@/components/Skeleton';
 import { jobsAPI } from '@/api/endpoints';
 import type { Job } from '@/types';
-import { mockJobs } from '@/data/mockJobs';
 
 export const JobList = () => {
   const navigate = useNavigate();
@@ -25,11 +24,15 @@ export const JobList = () => {
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        // Mock 데이터 사용 (고용주가 등록한 공고와 연동)
-        await new Promise(resolve => setTimeout(resolve, 300)); // 로딩 시뮬레이션
-        setJobs(mockJobs.filter(job => job.status === 'active'));
+        // Fetch jobs from API
+        const response = await jobsAPI.list({ limit: 50 });
+        const activeJobs = (response.data || []).filter((job: any) => job.status === 'active');
+        setJobs(activeJobs);
+        console.log(`Loaded ${activeJobs.length} active jobs from API`);
       } catch (error) {
+        console.error('공고 로딩 오류:', error);
         toast.error('공고를 불러오는데 실패했습니다');
+        setJobs([]);
       } finally {
         setLoading(false);
       }

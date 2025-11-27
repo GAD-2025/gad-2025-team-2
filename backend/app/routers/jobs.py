@@ -60,6 +60,46 @@ async def get_job(job_id: str, session: Session = Depends(get_session)):
     return job_dict
 
 
+@router.patch("/{job_id}/status")
+async def update_job_status(
+    job_id: str, 
+    status_data: dict,
+    session: Session = Depends(get_session)
+):
+    """Update job status (active, paused, closed)"""
+    statement = select(Job).where(Job.id == job_id)
+    job = session.exec(statement).first()
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    new_status = status_data.get('status')
+    if new_status not in ['active', 'paused', 'closed']:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    job.status = new_status
+    session.add(job)
+    session.commit()
+    session.refresh(job)
+    
+    return {"message": "Status updated successfully", "status": new_status}
+
+
+@router.delete("/{job_id}")
+async def delete_job(job_id: str, session: Session = Depends(get_session)):
+    """Delete a job posting"""
+    statement = select(Job).where(Job.id == job_id)
+    job = session.exec(statement).first()
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    session.delete(job)
+    session.commit()
+    
+    return {"message": "Job deleted successfully"}
+
+
 @router.post("", response_model=JobResponse, status_code=201)
 async def create_job(request: JobCreateRequest, session: Session = Depends(get_session)):
     """Create a new job posting"""
@@ -96,7 +136,9 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         session.refresh(employer)
     
     # Create Job
+    from datetime import datetime
     job_id = f"job-{uuid.uuid4().hex[:8]}"
+    current_time = datetime.utcnow().isoformat()
     job = Job(
         id=job_id,
         employerId=employer.id,
@@ -112,6 +154,12 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         requiredVisa=json.dumps(request.required_visa),
         benefits=request.benefits,
         employerMessage=request.employer_message,
+        createdAt=current_time,
+        postedAt=current_time,
+        status="active",
+        views=0,
+        applications=0,
+        location=employer.address.split()[:2].__str__() if employer.address else None,
     )
     
     session.add(job)

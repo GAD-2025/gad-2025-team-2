@@ -75,6 +75,11 @@ class Job(SQLModel, table=True):
     benefits: Optional[str] = None
     employerMessage: Optional[str] = None
     createdAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    status: str = Field(default="active")  # active, paused, closed
+    views: int = Field(default=0)
+    applications: int = Field(default=0)
+    postedAt: Optional[str] = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    location: Optional[str] = None
 
 
 class Application(SQLModel, table=True):

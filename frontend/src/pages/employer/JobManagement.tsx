@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockJobs } from '@/data/mockJobs';
+import { toast } from 'react-toastify';
+import { jobsAPI } from '@/api/endpoints';
 import type { Job } from '@/types';
 
 interface JobWithStats extends Job {
@@ -12,15 +13,31 @@ export const JobManagement = () => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'paused' | 'closed'>('all');
   const [jobs, setJobs] = useState<JobWithStats[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock 데이터를 JobWithStats 형식으로 변환
-    const jobsWithStats: JobWithStats[] = mockJobs.map(job => ({
-      ...job,
-      applicantCount: job.applications || 0,
-      viewCount: job.views || 0,
-    }));
-    setJobs(jobsWithStats);
+    const fetchEmployerJobs = async () => {
+      try {
+        setLoading(true);
+        // Fetch all jobs from API
+        const response = await jobsAPI.list({ limit: 100 });
+        const jobsWithStats: JobWithStats[] = (response.data || []).map((job: any) => ({
+          ...job,
+          applicantCount: job.applications || 0,
+          viewCount: job.views || 0,
+        }));
+        setJobs(jobsWithStats);
+        console.log(`Loaded ${jobsWithStats.length} jobs for employer`);
+      } catch (error) {
+        console.error('공고 로딩 오류:', error);
+        toast.error('공고를 불러오는데 실패했습니다');
+        setJobs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployerJobs();
   }, []);
 
 
@@ -46,20 +63,57 @@ export const JobManagement = () => {
     closed: jobs.filter(j => j.status === 'closed').length
   };
 
-  const handleStatusToggle = (jobId: string, currentStatus: Job['status'], e: React.MouseEvent) => {
+  const handleStatusToggle = async (jobId: string, currentStatus: Job['status'], e: React.MouseEvent) => {
     e.stopPropagation();
-    // 실제로는 API 호출
-    if (currentStatus === 'active') {
-      alert('공고를 일시중지합니다');
-    } else if (currentStatus === 'paused') {
-      alert('공고를 다시 활성화합니다');
+    
+    try {
+      const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+      const response = await fetch(`http://localhost:8000/jobs/${jobId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('상태 변경 실패');
+      }
+
+      // 로컬 상태 업데이트
+      setJobs(prev => prev.map(job => 
+        job.id === jobId ? { ...job, status: newStatus } : job
+      ));
+
+      toast.success(newStatus === 'active' ? '공고가 활성화되었습니다' : '공고가 일시중지되었습니다');
+    } catch (error) {
+      console.error('상태 변경 오류:', error);
+      toast.error('상태 변경에 실패했습니다');
     }
   };
 
-  const handleDelete = (jobId: string, e: React.MouseEvent) => {
+  const handleDelete = async (jobId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('정말 이 공고를 삭제하시겠습니까?')) {
-      alert('공고가 삭제되었습니다');
+    
+    if (!confirm('정말 이 공고를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/jobs/${jobId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('삭제 실패');
+      }
+
+      // 로컬 상태에서 제거
+      setJobs(prev => prev.filter(job => job.id !== jobId));
+      toast.success('공고가 삭제되었습니다');
+    } catch (error) {
+      console.error('삭제 오류:', error);
+      toast.error('공고 삭제에 실패했습니다');
     }
   };
 

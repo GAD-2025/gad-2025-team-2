@@ -79,15 +79,6 @@ export function EmployerSignupWizard() {
         </div>
       </div>
 
-      {/* Dev Skip Button - 우측 하단 */}
-      <button
-        onClick={skipToNext}
-        className="fixed bottom-32 right-6 z-30 rounded-full bg-gray-800/50 px-2 py-1 text-[10px] text-white opacity-30 hover:opacity-100 transition-opacity"
-        title="개발자용 Skip"
-      >
-        skip
-      </button>
-
       {/* Notification Permission Modal */}
       <NotificationPermissionModal
         isOpen={showNotificationModal}

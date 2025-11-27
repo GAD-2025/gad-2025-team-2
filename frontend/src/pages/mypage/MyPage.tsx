@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore, type UserMode } from "@/store/useAuth";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { TrustFlipCard } from "@/components/TrustFlipCard";
 import { VerificationList } from "@/components/VerificationList";
 import { ResumeSection } from "@/components/ResumeSection";
@@ -126,6 +127,18 @@ export const MyPage = () => {
 
   const handleResumeEdit = () => {
     navigate("/profile/edit");
+  };
+
+  const handleLogout = () => {
+    // localStorage 클리어
+    localStorage.removeItem('signup_user_id');
+    localStorage.removeItem('profile_photo');
+    localStorage.removeItem('user_role');
+    
+    toast.success('로그아웃되었습니다');
+    
+    // 회원가입 페이지로 이동
+    navigate('/signup', { replace: true });
   };
 
   return (
@@ -549,6 +562,33 @@ export const MyPage = () => {
                 d="M9 5l7 7-7 7"
               />
             </svg>
+          </button>
+          
+          {/* 로그아웃 버튼 */}
+          <button 
+            onClick={handleLogout}
+            className="w-full px-5 py-4 flex items-center justify-between hover:bg-red-50 transition-colors border-t border-line-200"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-5 h-5 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+              </div>
+              <span className="text-[15px] font-medium text-red-600">
+                로그아웃
+              </span>
+            </div>
           </button>
         </div>
       </div>
