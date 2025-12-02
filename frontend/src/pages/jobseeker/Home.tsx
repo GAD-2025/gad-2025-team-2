@@ -167,8 +167,7 @@ export const JobSeekerHome = () => {
         </div>
       )}
 
-      {/* Quick menu */}
-      <div className="px-8 mb-4">
+      <div className="pt-2 pb-4">
         {/* Section header */}
         <div className="flex items-center gap-2 px-8 mb-3">
           <span className="text-[16px]">🔎</span>
