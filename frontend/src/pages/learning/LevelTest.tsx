@@ -150,7 +150,7 @@ export const LevelTest = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Header title="레벨 테스트" />
-        <div className="flex flex-col items-center flex-grow px-6 pt-8">
+        <div className="flex flex-col items-center flex-grow px-6 pt-16">
           <div className="w-32 h-32 mb-8 flex items-center justify-center">
             <svg className="w-full h-full text-mint-600" viewBox="0 0 120 120" fill="none">
               <circle cx="60" cy="60" r="54" stroke="currentColor" strokeWidth="4" fill="none" />
