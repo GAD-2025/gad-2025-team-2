@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface Community {
@@ -10,6 +10,14 @@ interface Community {
   category: string;
 }
 
+interface CommentType {
+  id: string;
+  author: string;
+  authorNationality: string;
+  content: string;
+  timeAgo: string;
+}
+
 interface Post {
   id: string;
   author: string;
@@ -19,12 +27,15 @@ interface Post {
   comments: number;
   timeAgo: string;
   communityName: string;
+  commentsData?: CommentType[];
+  isLiked?: boolean;
+  showComments?: boolean;
 }
 
 export const Network = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'communities' | 'feed'>('communities');
-
+  
   const communities: Community[] = [
     {
       id: '1',
@@ -148,16 +159,20 @@ export const Network = () => {
     },
   ];
 
-  const posts: Post[] = [
+  const initialPosts: Post[] = [
     {
       id: '1',
       author: '마리아',
       authorNationality: '🇵🇭',
       content: '강남역 근처에서 주말 알바 구하는데 좋은 곳 있을까요? 서빙 경험 있습니다!',
       likes: 12,
-      comments: 8,
+      comments: 2,
       timeAgo: '2시간 전',
-      communityName: '알바 정보 공유'
+      communityName: '알바 정보 공유',
+      commentsData: [
+        { id: 'c1-1', author: '김사장', authorNationality: '🇰🇷', content: '저희 가게에서 사람 구하는데, 한번 와보실래요?', timeAgo: '1시간 전' },
+        { id: 'c1-2', author: '이민준', authorNationality: '🇰🇷', content: '강남역 10번 출구 쪽 찾아보세요.', timeAgo: '30분 전' },
+      ]
     },
     {
       id: '2',
@@ -165,9 +180,12 @@ export const Network = () => {
       authorNationality: '🇻🇳',
       content: 'Lv.3 중급 합격했어요! 다들 응원해주셔서 감사합니다 🎉',
       likes: 45,
-      comments: 23,
+      comments: 1,
       timeAgo: '5시간 전',
-      communityName: '한국어 학습 커뮤니티'
+      communityName: '한국어 학습 커뮤니티',
+      commentsData: [
+        { id: 'c2-1', author: '김하나', authorNationality: '🇰🇷', content: '축하해요, 응웬 씨! 정말 대단해요!', timeAgo: '4시간 전' },
+      ]
     },
     {
       id: '3',
@@ -175,11 +193,58 @@ export const Network = () => {
       authorNationality: '🇺🇸',
       content: '홍대에서 저녁 식사할 분 계신가요? 새로운 친구 만나고 싶어요!',
       likes: 8,
-      comments: 15,
+      comments: 0,
       timeAgo: '8시간 전',
       communityName: '서울 외국인 모임'
+    },
+    {
+        id: '4',
+        author: '사쿠라',
+        authorNationality: '🇯🇵',
+        content: '블랙핑크 신곡 다들 들어보셨나요? 제 최애곡 등극..',
+        likes: 128,
+        comments: 1,
+        timeAgo: '1일 전',
+        communityName: 'K-POP 팬 모임',
+        commentsData: [
+          { id: 'c4-1', author: '크리스', authorNationality: '🇺🇸', content: '저도요! 이번 컨셉 너무 좋아요.', timeAgo: '23시간 전' },
+        ]
+    },
+    {
+        id: '5',
+        author: '제임스',
+        authorNationality: '🇬🇧',
+        content: '광장시장 꽈배기 꼭 드셔보세요. 인생 꽈배기입니다.',
+        likes: 34,
+        comments: 0,
+        timeAgo: '2일 전',
+        communityName: '음식 맛집 추천'
     }
   ];
+
+  const [feedPosts, setFeedPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    setFeedPosts(initialPosts.map(p => ({ ...p, isLiked: false, showComments: false })));
+  }, []);
+
+  const handleLikeToggle = (postId: string) => {
+    setFeedPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId
+          ? { ...post, likes: post.isLiked ? post.likes - 1 : post.likes + 1, isLiked: !post.isLiked }
+          : post
+      )
+    );
+  };
+
+  const handleToggleComments = (postId: string) => {
+    setFeedPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId ? { ...post, showComments: !post.showComments } : post
+      )
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -281,7 +346,7 @@ export const Network = () => {
             </div>
 
             {/* Posts */}
-            {posts.map((post) => (
+            {feedPosts.map((post) => (
               <div
                 key={post.id}
                 className="bg-white rounded-[16px] p-4 shadow-card border border-line-200"
@@ -316,19 +381,26 @@ export const Network = () => {
 
                 {/* Post Actions */}
                 <div className="flex items-center gap-4 pt-3 border-t border-line-200">
-                  <button className="flex items-center gap-1 text-text-700 hover:text-mint-600 
-                                   transition-colors">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <button onClick={() => handleLikeToggle(post.id)} className="flex items-center gap-1 text-text-700 hover:text-mint-600 transition-colors">
+                    <svg
+                      className={`w-5 h-5 ${post.isLiked ? 'fill-mint-600 text-mint-600' : 'fill-none text-text-700'}`}
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                     <span className="text-[13px] font-medium">{post.likes}</span>
                   </button>
-                  <button className="flex items-center gap-1 text-text-700 hover:text-mint-600 
-                                   transition-colors">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <button onClick={() => handleToggleComments(post.id)} className="flex items-center gap-1 text-text-700 hover:text-mint-600 transition-colors">
+                    <svg
+                      className={`w-5 h-5 ${post.showComments ? 'text-mint-600' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
-                    <span className="text-[13px] font-medium">{post.comments}</span>
+                    <span className="text-[13px] font-medium">{post.commentsData ? post.commentsData.length : post.comments}</span>
                   </button>
                   <button className="flex items-center gap-1 text-text-700 hover:text-mint-600 
                                    transition-colors ml-auto">
@@ -337,6 +409,29 @@ export const Network = () => {
                     </svg>
                   </button>
                 </div>
+                {/* Comments Section */}
+                {post.showComments && post.commentsData && post.commentsData.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-line-200">
+                    <h5 className="text-[13px] font-semibold text-text-800 mb-2">댓글</h5>
+                    <div className="space-y-3">
+                      {post.commentsData.map((comment) => (
+                        <div key={comment.id} className="flex items-start gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 
+                                         rounded-full flex items-center justify-center text-[16px] flex-shrink-0">
+                            {comment.authorNationality}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[13px] font-semibold text-text-900">{comment.author}</span>
+                              <span className="text-[11px] text-text-500">• {comment.timeAgo}</span>
+                            </div>
+                            <p className="text-[13px] text-text-800 leading-snug">{comment.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -345,4 +440,3 @@ export const Network = () => {
     </div>
   );
 };
-
