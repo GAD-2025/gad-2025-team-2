@@ -19,6 +19,8 @@ interface CommunityPost {
   comments: number;
   timeAgo: string;
   commentsData?: CommentType[];
+  isLiked?: boolean;
+  showComments?: boolean;
 }
 
 interface CommunityDetailData {
