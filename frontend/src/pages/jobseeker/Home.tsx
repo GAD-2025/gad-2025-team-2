@@ -121,7 +121,7 @@ export const JobSeekerHome = () => {
       />
 
       {/* AI recommendations */}
-      <div className="pt-4 pb-6 bg-background">
+      <div className="pt-4 pb-2 bg-background">
         {/* Section header */}
         <div className="flex items-center justify-between px-8 mb-3">
           <div className="flex items-center gap-2">
