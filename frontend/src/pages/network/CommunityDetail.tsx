@@ -463,12 +463,11 @@ export const CommunityDetail: React.FC = () => {
                   onClick={() => handleLikeToggle(post.id)}
                   className="flex items-center gap-1 text-text-700 hover:text-mint-600 transition-colors"
                 >
-                                    <svg
-                                      className={`w-5 h-5 ${post.isLiked ? 'fill-mint-600 text-mint-600' : 'text-text-700'}`}
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                    <path
+                                                      <svg
+                                                        className={`w-5 h-5 ${post.isLiked ? 'fill-mint-600 text-mint-600' : 'fill-none text-text-700'}`}
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                      >                    <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
