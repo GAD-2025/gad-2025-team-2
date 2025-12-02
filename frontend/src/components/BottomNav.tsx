@@ -14,17 +14,98 @@ export const BottomNav = () => {
   // 모드에 따라 다른 탭 표시
   const tabs = userMode === 'employer' 
     ? [
-        { id: 'home', label: '홈', icon: '🏠', path: homePath },
-        { id: 'recruitment', label: '채용', icon: '💼', path: '/recruitment' },
-        { id: 'job-management', label: '공고관리', icon: '📋', path: '/job-management' },
-        { id: 'mypage', label: '마이', icon: '👤', path: '/mypage' },
+        { 
+          id: 'home', 
+          label: '홈', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          ), 
+          path: homePath 
+        },
+        { 
+          id: 'recruitment', 
+          label: '채용', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.564 23.564 0 0112 15c-3.248 0-6.326-.749-9-2.255M15 7a2 2 0 11-4 0 2 2 0 014 0zm-5 4a2 2 0 11-4 0 2 2 0 014 0zm9-2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          ), 
+          path: '/recruitment' 
+        },
+        { 
+          id: 'job-management', 
+          label: '공고관리', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          ), 
+          path: '/job-management' 
+        },
+        { 
+          id: 'mypage', 
+          label: '마이', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          ), 
+          path: '/mypage' 
+        },
       ]
     : [
-        { id: 'home', label: '홈', icon: '🏠', path: homePath },
-        { id: 'jobs', label: '공고', icon: '💼', path: '/jobs' },
-        { id: 'learning', label: '학습', icon: '📚', path: '/learning' },
-        { id: 'network', label: '네트워킹', icon: '🌐', path: '/network' },
-        { id: 'mypage', label: '마이', icon: '👤', path: '/mypage' },
+        { 
+          id: 'home', 
+          label: '홈', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          ), 
+          path: homePath 
+        },
+        { 
+          id: 'jobs', 
+          label: '공고', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          ), 
+          path: '/jobs' 
+        },
+        { 
+          id: 'learning', 
+          label: '학습', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          ), 
+          path: '/learning' 
+        },
+        { 
+          id: 'network', 
+          label: '네트워킹', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h1a2 2 0 002-2v-1a2 2 0 012-2h2.945M18 10a2 2 0 012 2v1a2 2 0 002 2h1M5 10a2 2 0 012 2v1a2 2 0 002 2h1a2 2 0 002-2v-1a2 2 0 012-2h2.945M12 16l-3-3m0 0l-3 3m3-3v8" />
+            </svg>
+          ), 
+          path: '/network' 
+        },
+        { 
+          id: 'mypage', 
+          label: '마이', 
+          icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          ), 
+          path: '/mypage' 
+        },
       ];
 
   const isActive = (tabId: string, path: string) => {
@@ -51,7 +132,9 @@ export const BottomNav = () => {
               `}
               aria-label={tab.label}
             >
-              <span className="text-[22px]">{tab.icon}</span>
+              <div className="w-6 h-6 flex items-center justify-center">
+                {tab.icon}
+              </div>
               <span className={`text-[10px] ${active ? 'font-semibold' : 'font-regular'}`}>
                 {tab.label}
               </span>
