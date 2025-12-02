@@ -232,7 +232,20 @@ const dummyCommunityDetails: CommunityDetailData[] = [
     description: 'K-POP을 사랑하는 사람들의 소통 공간',
     category: '취미',
     rules: [],
-    posts: []
+    posts: [
+        {
+        id: '601',
+        author: '사쿠라',
+        authorNationality: '🇯🇵',
+        content: '이번에 새로 나온 아이돌 노래 너무 좋아요! 다들 들어보셨나요?',
+        likes: 150,
+        comments: 25,
+        timeAgo: '1시간 전',
+        commentsData: [
+            { id: 'c6-1', author: '크리스', authorNationality: '🇺🇸', content: '저도 지금 듣고 있어요! 멜로디가 너무 좋네요.', timeAgo: '30분 전' },
+        ],
+        }
+    ]
   },
   {
     id: '7',
@@ -242,7 +255,20 @@ const dummyCommunityDetails: CommunityDetailData[] = [
     description: '부산에 사는 외국인들의 커뮤니티',
     category: '지역',
     rules: [],
-    posts: []
+    posts: [
+        {
+        id: '701',
+        author: '마이클',
+        authorNationality: '🇦🇺',
+        content: '해운대 근처에 괜찮은 펍 추천해주세요!',
+        likes: 12,
+        comments: 3,
+        timeAgo: '5시간 전',
+        commentsData: [
+            { id: 'c7-1', author: '김지민', authorNationality: '🇰🇷', content: '더베이 101 추천합니다!', timeAgo: '4시간 전' },
+        ],
+        }
+    ]
   },
   {
     id: '8',
