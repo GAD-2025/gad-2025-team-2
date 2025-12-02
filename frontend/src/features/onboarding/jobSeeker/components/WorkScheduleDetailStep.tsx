@@ -170,7 +170,7 @@ export function WorkScheduleDetailStep({
       {/* 요일 섹션 */}
       <div className="mb-6">
         <label className="mb-3 block text-[15px] font-medium text-gray-700">
-          시간 적용할 요일*
+          시간 적용할 요일
         </label>
         
         <div className="mb-3">

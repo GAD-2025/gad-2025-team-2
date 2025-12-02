@@ -67,7 +67,7 @@ export function CareerStep({
         </h1>
         <p className="mb-4 text-[14px] text-gray-500">
           경력은 최대 40개까지 추가 가능해요.<br />
-          추가한 경력은 회사기준, 최근 근무일 순으로 보여져요.
+          최근 근무일 순으로 보여져요.
         </p>
 
         <div className="mb-4 space-y-3">
