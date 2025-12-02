@@ -204,9 +204,42 @@ const dummyCommunityDetails: CommunityDetailData[] = [
 export const CommunityDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showJoinModal, setShowJoinModal] = React.useState(false);
+  const [isJoined, setIsJoined] = React.useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = React.useState(false);
 
   const community = dummyCommunityDetails.find((c) => c.id === id);
 
+  const handleConfirmJoin = () => {
+    setShowJoinModal(false);
+    setIsJoined(true);
+    setShowWelcomeModal(true);
+  };
+
+  const JoinCommunityModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-20">
+      <div className="bg-white rounded-[20px] p-6 text-center shadow-lg max-w-sm w-full">
+        <h3 className="text-lg font-bold mb-2 text-text-900">커뮤니티 가입</h3>
+        <p className="text-sm text-text-700 mb-6">'{community?.name}'에 가입하시겠습니까?</p>
+        <div className="flex justify-center gap-3">
+          <button onClick={() => setShowJoinModal(false)} className="flex-1 h-[48px] bg-gray-100 text-text-800 rounded-[12px] font-semibold">취소</button>
+          <button onClick={handleConfirmJoin} className="flex-1 h-[48px] bg-mint-600 text-white rounded-[12px] font-semibold">가입</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const WelcomeModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-20">
+      <div className="bg-white rounded-[20px] p-8 text-center shadow-lg max-w-sm w-full">
+        <div className="text-5xl mb-4">🎉</div>
+        <h3 className="text-xl font-bold mb-2 text-text-900">가입을 환영합니다!</h3>
+        <p className="text-md text-text-700 mb-6">이제 '{community?.name}'의 멤버입니다.</p>
+        <button onClick={() => setShowWelcomeModal(false)} className="w-full h-[48px] bg-mint-600 text-white rounded-[12px] font-semibold">확인</button>
+      </div>
+    </div>
+  );
+  
   if (!community) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -225,6 +258,9 @@ export const CommunityDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header title={community.name} showBack />
+      
+      {showJoinModal && <JoinCommunityModal />}
+      {showWelcomeModal && <WelcomeModal />}
 
       <div className="p-4 space-y-4">
         {/* Community Info */}
@@ -252,9 +288,15 @@ export const CommunityDetail: React.FC = () => {
           <p className="text-[14px] text-text-800 leading-relaxed mb-4">
             {community.description}
           </p>
-          <button className="w-full h-[48px] bg-mint-600 text-white rounded-[12px] 
-                           text-[16px] font-semibold hover:bg-mint-700 transition-colors">
-            커뮤니티 가입
+          <button 
+            onClick={() => !isJoined && setShowJoinModal(true)}
+            disabled={isJoined}
+            className={`w-full h-[48px] rounded-[12px] text-[16px] font-semibold transition-colors
+                           ${isJoined 
+                              ? 'bg-mint-100 text-mint-700 cursor-not-allowed' 
+                              : 'bg-mint-600 text-white hover:bg-mint-700'}`}
+          >
+            {isJoined ? '가입 완료' : '커뮤니티 가입'}
           </button>
         </div>
 
