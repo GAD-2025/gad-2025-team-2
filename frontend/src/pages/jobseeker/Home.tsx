@@ -155,7 +155,7 @@ export const JobSeekerHome = () => {
 
       {/* Learning progress */}
       {learningProgress && (
-        <div className="px-8 my-4">
+        <div className="px-8 my-2">
           <ProgressCard
             title="현재 학습 상태"
             level={learningProgress.currentLevel}
