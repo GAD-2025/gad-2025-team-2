@@ -13,6 +13,64 @@ import { SafetyNoticeModal } from '@/components/SafetyNoticeModal';
 import { jobsAPI, learningAPI } from '@/api/endpoints';
 import type { Job, LearningProgress } from '@/types';
 
+const mockJobs: Job[] = [
+  {
+    id: 'mock-1',
+    title: '카페 바리스타 (주말)',
+    employer: { shopName: '스타커피 광화문점', rating: 4.8, industry: '음식료품' },
+    wage: 12500,
+    workDays: ['토', '일'],
+    workHours: '14:00 ~ 22:00',
+    location: '서울 종로구',
+    deadline: '2025-12-31',
+    requiredLanguage: 'Lv.3 중급',
+  },
+  {
+    id: 'mock-2',
+    title: '편의점 야간 스태프',
+    employer: { shopName: 'CU 종로점', rating: 4.5, industry: '소매업' },
+    wage: 11000,
+    workDays: ['월', '화', '수'],
+    workHours: '22:00 ~ 06:00',
+    location: '서울 종로구',
+    deadline: '2025-12-25',
+    requiredLanguage: 'Lv.2 초급',
+  },
+  {
+    id: 'mock-3',
+    title: '레스토랑 주방 보조',
+    employer: { shopName: '이탈리안 키친', rating: 4.9, industry: '음식료품' },
+    wage: 13000,
+    workDays: ['주말'],
+    workHours: '18:00 ~ 23:00',
+    location: '서울 강남구',
+    deadline: '2026-01-15',
+    requiredLanguage: 'Lv.3 중급',
+  },
+  {
+    id: 'mock-4',
+    title: '의류 매장 판매원',
+    employer: { shopName: '패션하우스 명동점', rating: 4.6, industry: '소매업' },
+    wage: 11500,
+    workDays: ['수', '목', '금'],
+    workHours: '12:00 ~ 20:00',
+    location: '서울 중구',
+    deadline: '2026-01-10',
+    requiredLanguage: 'Lv.4 상급',
+  },
+  {
+    id: 'mock-5',
+    title: '호텔 룸서비스',
+    employer: { shopName: '그랜드 호텔 서울', rating: 4.7, industry: '숙박업' },
+    wage: 14000,
+    workDays: ['주말포함', '주5일'],
+    workHours: '09:00 ~ 18:00',
+    location: '서울 중구',
+    deadline: '2026-01-20',
+    requiredLanguage: 'Lv.3 중급',
+  },
+];
+
 export const JobSeekerHome = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -33,24 +91,26 @@ export const JobSeekerHome = () => {
       try {
         setLoading(true);
         
-        // Fetch from API only - no mock data fallback
         const [jobsRes, progressRes] = await Promise.all([
           jobsAPI.list({ limit: 10 }),
           learningAPI.getSummary('seeker-test-001').catch(() => null),
         ]);
         
-        // Set jobs from API (empty array if no data)
-        setJobs(jobsRes.data || []);
-        console.log(`Loaded ${jobsRes.data?.length || 0} jobs from API`);
+        if (jobsRes.data && jobsRes.data.length > 0) {
+          setJobs(jobsRes.data);
+          console.log(`Loaded ${jobsRes.data.length} jobs from API`);
+        } else {
+          setJobs(mockJobs);
+          console.log(`Loaded ${mockJobs.length} mock jobs`);
+        }
         
-        // Set learning progress if available
         if (progressRes) {
           setLearningProgress(progressRes.data);
         }
       } catch (error) {
         console.error('데이터 로딩 오류:', error);
         toast.error('데이터를 불러오는데 실패했습니다');
-        setJobs([]);
+        setJobs(mockJobs); // API 호출 실패 시에도 목 데이터 사용
       } finally {
         setLoading(false);
       }
@@ -145,7 +205,7 @@ export const JobSeekerHome = () => {
                 <JobCardSkeleton />
               </>
             ) : (
-              jobs.slice(0, 3).map((job) => (
+              jobs.slice(0, 10).map((job) => (
                 <JobCard key={job.id} job={job} variant="featured" />
               ))
             )}
