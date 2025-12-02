@@ -65,7 +65,87 @@ export const Network = () => {
       icon: '📋',
       description: '비자와 체류에 관한 정보 교환',
       category: '법률'
-    }
+    },
+    {
+      id: '6',
+      name: 'K-POP 팬 모임',
+      members: 8765,
+      icon: '🎤',
+      description: 'K-POP을 사랑하는 사람들의 소통 공간',
+      category: '취미'
+    },
+    {
+      id: '7',
+      name: '부산 거주자 모임',
+      members: 987,
+      icon: '🌉',
+      description: '부산에 사는 외국인들의 커뮤니티',
+      category: '지역'
+    },
+    {
+      id: '8',
+      name: 'E-7 비자 홀더 모임',
+      members: 1543,
+      icon: '🧑‍💻',
+      description: 'E-7 비자를 가진 전문직 종사자 정보 공유',
+      category: '법률'
+    },
+    {
+      id: '9',
+      name: '한국 드라마 같이 봐요',
+      members: 6543,
+      icon: '📺',
+      description: '한국 드라마에 대한 이야기를 나누는 곳',
+      category: '취미'
+    },
+    {
+      id: '10',
+      name: '대학생/유학생 모임',
+      members: 3123,
+      icon: '🎓',
+      description: '한국에서 공부하는 학생들의 정보 교환',
+      category: '학습'
+    },
+    {
+      id: '11',
+      name: '주말 등산/캠핑 모임',
+      members: 789,
+      icon: '🏕️',
+      description: '주말마다 자연을 즐기는 아웃도어 커뮤니티',
+      category: '취미'
+    },
+    {
+      id: '12',
+      name: '한국 요리 레시피',
+      members: 4873,
+      icon: '🍳',
+      description: '집에서 만드는 한국 요리 레시피 공유',
+      category: '생활'
+    },
+    {
+      id: '13',
+      name: '인천/경기 거주자 모임',
+      members: 852,
+      icon: '✈️',
+      description: '인천과 경기도에 사는 외국인들의 모임',
+      category: '지역'
+    },
+    {
+      id: '14',
+      name: '반려동물과 함께하기',
+      members: 1789,
+      icon: '🐾',
+      description: '한국에서 반려동물을 키우는 팁 공유',
+      category: '생활'
+    },
+    {
+      id: '15',
+      name: 'D-2/D-4 비자 정보',
+      members: 2456,
+      icon: '🧑‍🏫',
+      description: '유학생 비자에 대한 모든 정보',
+      category: '법률'
+    },
   ];
 
   const posts: Post[] = [
