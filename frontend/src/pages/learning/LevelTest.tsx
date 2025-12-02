@@ -52,6 +52,18 @@ export const LevelTest = () => {
     }
   ];
 
+  const handleSelectAnswer = (index: number) => {
+    console.log('Selected answer index:', index);
+    setSelectedAnswer(index);
+  };
+
+  const handlePrev = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+      setSelectedAnswer(null);
+    }
+  };
+
   const handleNext = () => {
     if (selectedAnswer === null) return;
 
@@ -177,7 +189,7 @@ export const LevelTest = () => {
             {question.options.map((option, index) => (
               <button
                 key={index}
-                onClick={() => setSelectedAnswer(index)}
+                onClick={() => handleSelectAnswer(index)}
                 className={`w-full text-left p-4 rounded-[12px] border-2 transition-all ${
                   selectedAnswer === index
                     ? 'border-mint-600 bg-mint-50'
@@ -201,20 +213,52 @@ export const LevelTest = () => {
               </button>
             ))}
           </div>
+
+          {selectedAnswer !== null && (
+            <div className="mt-6 flex gap-3">
+              {currentQuestion > 0 && (
+                <button
+                  onClick={handlePrev}
+                  className="w-full h-[52px] bg-gray-200 text-gray-700 rounded-[12px] text-[16px] 
+                           font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  이전
+                </button>
+              )}
+              <button
+                onClick={handleNext}
+                className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
+                         font-semibold hover:bg-mint-700 transition-colors"
+              >
+                {currentQuestion === questions.length - 1 ? '결과 확인하기' : '다음'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Bottom Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 p-4">
-        <button
-          onClick={handleNext}
-          disabled={selectedAnswer === null}
-          className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
-                   font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50 
-                   disabled:cursor-not-allowed"
-        >
-          {currentQuestion === questions.length - 1 ? '결과 확인하기' : '다음'}
-        </button>
+        <div className="flex gap-3">
+          {currentQuestion > 0 && (
+            <button
+              onClick={handlePrev}
+              className="w-full h-[52px] bg-gray-200 text-gray-700 rounded-[12px] text-[16px] 
+                       font-semibold hover:bg-gray-300 transition-colors"
+            >
+              이전
+            </button>
+          )}
+          <button
+            onClick={handleNext}
+            disabled={selectedAnswer === null}
+            className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
+                     font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50 
+                     disabled:cursor-not-allowed"
+          >
+            {currentQuestion === questions.length - 1 ? '결과 확인하기' : '다음'}
+          </button>
+        </div>
       </div>
     </div>
   );
