@@ -34,6 +34,7 @@ import { EmployeeScheduleList } from './pages/employer/EmployeeScheduleList';
 import { SharedSchedule } from './pages/employer/SharedSchedule';
 import { MySchedule } from './pages/jobseeker/MySchedule';
 import { NotFound } from './pages/NotFound';
+import { CommunityDetail } from './pages/network/CommunityDetail';
 
 export const router = createBrowserRouter([
   {
@@ -134,7 +135,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'network/community/:id',
-        element: <div className="p-4">커뮤니티 상세 (Coming soon)</div>,
+        element: <CommunityDetail />,
       },
       {
         path: 'employer/job-create',
