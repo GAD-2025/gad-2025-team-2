@@ -3,7 +3,7 @@ import { useState } from 'react';
 type TabType = 'language' | 'license' | 'awards';
 
 interface LicenseStepProps {
-  licenseData: string;
+  // licenseData: string; // Removed as it's not actively used now
   onChangeData: (value: string) => void;
   onNext: () => void;
   onSkip: () => void;
@@ -11,7 +11,7 @@ interface LicenseStepProps {
 }
 
 export function LicenseStep({
-  licenseData,
+  // licenseData, // Removed
   onChangeData,
   onNext,
   onSkip,
@@ -21,8 +21,64 @@ export function LicenseStep({
   const [languageLevel, setLanguageLevel] = useState<string>('');
   const [hasStudyAbroad, setHasStudyAbroad] = useState(false);
   const [hasOfficialTest, setHasOfficialTest] = useState(false);
+  const [newOfficialExam, setNewOfficialExam] = useState('');
+  const [officialExams, setOfficialExams] = useState<string[]>([]);
+  const [additionalLanguageInfo, setAdditionalLanguageInfo] = useState('');
+  const [additionalLanguageInfoList, setAdditionalLanguageInfoList] = useState<string[]>([]);
+  const [newLicense, setNewLicense] = useState('');
+  const [licenses, setLicenses] = useState<string[]>([]);
+  const [newAward, setNewAward] = useState('');
+  const [awards, setAwards] = useState<string[]>([]);
   
-  const canProceed = licenseData.trim().length > 0;
+  // const canProceed = licenseData.trim().length > 0; // Removed
+
+  const handleAddOfficialExam = () => {
+    if (newOfficialExam.trim()) {
+      setOfficialExams([...officialExams, newOfficialExam.trim()]);
+      setNewOfficialExam('');
+    }
+  };
+
+  const handleDeleteOfficialExam = (index: number) => {
+    setOfficialExams(officialExams.filter((_, i) => i !== index));
+  };
+
+  const handleAddAdditionalInfo = () => {
+    if (additionalLanguageInfo.trim()) {
+      setAdditionalLanguageInfoList([...additionalLanguageInfoList, additionalLanguageInfo.trim()]);
+      setAdditionalLanguageInfo('');
+    }
+  };
+
+  const handleDeleteAdditionalInfo = (index: number) => {
+    setAdditionalLanguageInfoList(additionalLanguageInfoList.filter((_, i) => i !== index));
+  };
+
+  const handleAddLicense = () => {
+    if (newLicense.trim()) {
+      setLicenses([...licenses, newLicense.trim()]);
+      setNewLicense('');
+    }
+  };
+
+  const handleDeleteLicense = (index: number) => {
+    setLicenses(licenses.filter((_, i) => i !== index));
+  };
+
+  const handleAddAward = () => {
+    if (newAward.trim()) {
+      setAwards([...awards, newAward.trim()]);
+      setNewAward('');
+    }
+  };
+
+  const handleDeleteAward = (index: number) => {
+    setAwards(awards.filter((_, i) => i !== index));
+  };
+
+
+
+
 
   return (
     <div className="mx-auto flex h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-32">
@@ -155,11 +211,81 @@ export function LicenseStep({
               </label>
             </div>
 
-            <textarea
-              placeholder="예: IELTS 9.0, DELE A1, TOPIK 3급"
-              rows={4}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-mint"
-            />
+            {hasOfficialTest && (
+              <div className="mb-4">
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={newOfficialExam}
+                    onChange={(e) => setNewOfficialExam(e.target.value)}
+                    placeholder="예: IELTS 9.0"
+                    className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-mint"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddOfficialExam}
+                    className="rounded-2xl bg-primary-mint px-4 py-3 text-[15px] font-semibold text-white hover:bg-primary-mint/90"
+                  >
+                    추가
+                  </button>
+                </div>
+                {officialExams.length > 0 && (
+                  <div className="space-y-2">
+                    {officialExams.map((exam, index) => (
+                      <div key={index} className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3 text-[15px]">
+                        <span>{exam}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOfficialExam(index)}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mb-2">
+              <textarea
+                value={additionalLanguageInfo}
+                onChange={(e) => setAdditionalLanguageInfo(e.target.value)}
+                placeholder="추가 어학 관련 정보 (예: 영어권 국가 거주 경험)"
+                rows={4}
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-mint mb-2"
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleAddAdditionalInfo}
+                  className="w-fit rounded-2xl bg-primary-mint px-4 py-2 text-[15px] font-semibold text-white hover:bg-primary-mint/90"
+                >
+                  추가
+                </button>
+              </div>
+            </div>
+            {additionalLanguageInfoList.length > 0 && (
+              <div className="space-y-2">
+                {additionalLanguageInfoList.map((info, index) => (
+                  <div key={index} className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3 text-[15px]">
+                    <span>{info}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAdditionalInfo(index)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -170,36 +296,44 @@ export function LicenseStep({
             
             <div className="mb-4">
               <label className="mb-2 block text-[15px] font-medium text-gray-700">
-                자격증 종류
+                자격증 이름
               </label>
-              <select className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] focus:border-primary-mint focus:outline-none">
-                <option value="">선택하세요</option>
-                <option value="driver">운전면허</option>
-                <option value="forklift">지게차</option>
-                <option value="cook">조리사</option>
-                <option value="barista">바리스타</option>
-                <option value="computer">컴퓨터활용능력</option>
-                <option value="etc">기타</option>
-              </select>
+              <div className="flex gap-2">
+                <input 
+                  type="text"
+                  value={newLicense}
+                  onChange={(e) => setNewLicense(e.target.value)}
+                  placeholder="예: 운전면허 1종 보통"
+                  className="flex-1 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] placeholder:text-gray-400 focus:border-primary-mint focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddLicense}
+                  className="rounded-2xl bg-primary-mint px-4 py-3 text-[15px] font-semibold text-white hover:bg-primary-mint/90"
+                >
+                  추가
+                </button>
+              </div>
             </div>
-
-            <div className="mb-4">
-              <label className="mb-2 block text-[15px] font-medium text-gray-700">
-                취득일
-              </label>
-              <input 
-                type="date"
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] focus:border-primary-mint focus:outline-none"
-              />
-            </div>
-
-            <textarea
-              value={licenseData}
-              onChange={(e) => onChangeData(e.target.value)}
-              placeholder="예: 운전면허 1종 보통, 조리사 자격증, 바리스타 2급"
-              rows={4}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-mint"
-            />
+            
+            {licenses.length > 0 && (
+              <div className="space-y-2">
+                {licenses.map((license, index) => (
+                  <div key={index} className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3 text-[15px]">
+                    <span>{license}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLicense(index)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -210,37 +344,44 @@ export function LicenseStep({
             
             <div className="mb-4">
               <label className="mb-2 block text-[15px] font-medium text-gray-700">
-                구분
+                내용
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button className="rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-[14px] hover:border-primary-mint hover:bg-mint-50 transition-colors">
-                  수상
-                </button>
-                <button className="rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-[14px] hover:border-primary-mint hover:bg-mint-50 transition-colors">
-                  수료
-                </button>
-                <button className="rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-[14px] hover:border-primary-mint hover:bg-mint-50 transition-colors">
-                  활동
+              <div className="flex gap-2">
+                <input 
+                  type="text"
+                  value={newAward}
+                  onChange={(e) => setNewAward(e.target.value)}
+                  placeholder="예: 우수사원상"
+                  className="flex-1 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] placeholder:text-gray-400 focus:border-primary-mint focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddAward}
+                  className="rounded-2xl bg-primary-mint px-4 py-3 text-[15px] font-semibold text-white hover:bg-primary-mint/90"
+                >
+                  추가
                 </button>
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="mb-2 block text-[15px] font-medium text-gray-700">
-                이름
-              </label>
-              <input 
-                type="text"
-                placeholder="예: 우수사원상, 한국어교육 수료증"
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[15px] placeholder:text-gray-400 focus:border-primary-mint focus:outline-none"
-              />
-            </div>
-
-            <textarea
-              placeholder="예: 2024년 우수사원상 수상, 한국어 중급 교육 수료"
-              rows={4}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-primary-mint focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-mint"
-            />
+            {awards.length > 0 && (
+              <div className="space-y-2">
+                {awards.map((award, index) => (
+                  <div key={index} className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3 text-[15px]">
+                    <span>{award}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAward(index)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -249,13 +390,17 @@ export function LicenseStep({
         <div className="flex flex-col gap-2.5">
           <button
             type="button"
-            onClick={onNext}
-            disabled={!canProceed}
-            className={`w-full rounded-full px-4 py-3 text-[17px] font-semibold ${
-              canProceed
-                ? 'bg-primary-mint text-white'
-                : 'bg-gray-200 text-gray-400'
-            }`}
+            onClick={() => {
+              const data = [
+                ...officialExams.map(exam => `공인시험: ${exam}`),
+                ...additionalLanguageInfoList.map(info => `추가정보: ${info}`),
+                ...licenses.map(license => `자격증: ${license}`),
+                ...awards.map(award => `수상/수료/활동: ${award}`)
+              ].join(', ');
+              onChangeData(data);
+              onNext();
+            }}
+            className={`w-full rounded-full px-4 py-3 text-[17px] font-semibold bg-primary-mint text-white`}
           >
             저장하기
           </button>
