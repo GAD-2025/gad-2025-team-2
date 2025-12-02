@@ -1,7 +1,14 @@
-// frontend/src/pages/network/CommunityDetail.tsx
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
+
+interface CommentType {
+  id: string;
+  author: string;
+  authorNationality: string;
+  content: string;
+  timeAgo: string;
+}
 
 interface CommunityPost {
   id: string;
@@ -11,6 +18,7 @@ interface CommunityPost {
   likes: number;
   comments: number;
   timeAgo: string;
+  commentsData?: CommentType[];
 }
 
 interface CommunityDetailData {
@@ -21,7 +29,7 @@ interface CommunityDetailData {
   category: string;
   rules: string[];
   posts: CommunityPost[];
-  icon: string; // Added icon here for easier lookup
+  icon: string;
 }
 
 const dummyCommunityDetails: CommunityDetailData[] = [
@@ -43,8 +51,12 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇺🇸',
         content: '이번 주말 한강 피크닉 같이 갈 분 구해요! 도시락 싸서 오시면 됩니다.',
         likes: 25,
-        comments: 10,
+        comments: 2,
         timeAgo: '1일 전',
+        commentsData: [
+          { id: 'c1-1', author: '제시카', authorNationality: '🇬🇧', content: '저도 가고 싶어요! 몇 시에 어디서 만나요?', timeAgo: '1일 전' },
+          { id: 'c1-2', author: '김민준', authorNationality: '🇰🇷', content: '도시락은 제가 준비할까요? 🍙', timeAgo: '23시간 전' },
+        ],
       },
       {
         id: '102',
@@ -52,7 +64,7 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇯🇵',
         content: '남산타워 야경 보러 갈 사람? 같이 가면 더 좋을 것 같아요!',
         likes: 18,
-        comments: 7,
+        comments: 0,
         timeAgo: '2일 전',
       },
       {
@@ -61,8 +73,11 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇫🇷',
         content: '신촌에서 맛있는 프랑스 음식점 아시는 분 추천해주세요!',
         likes: 10,
-        comments: 5,
+        comments: 1,
         timeAgo: '3일 전',
+        commentsData: [
+          { id: 'c1-3', author: '박선우', authorNationality: '🇰🇷', content: '에릭스 키친 추천해요! 예약 필수입니다.', timeAgo: '2일 전' },
+        ],
       },
     ],
     icon: '🏙️',
@@ -85,16 +100,21 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇻🇳',
         content: '토픽 시험 준비하시는 분들 같이 스터디 하실 분 구합니다! 주 2회 강남역 스터디룸에서 만날 예정입니다.',
         likes: 30,
-        comments: 15,
+        comments: 3,
         timeAgo: '6시간 전',
+        commentsData: [
+          { id: 'c2-1', author: '타오', authorNationality: '🇨🇳', content: '저도 토픽 준비 중인데, 참여하고 싶어요!', timeAgo: '5시간 전' },
+          { id: 'c2-2', author: '이사벨', authorNationality: '🇪🇸', content: '스터디 시간대가 어떻게 되나요?', timeAgo: '4시간 전' },
+          { id: 'c2-3', author: '정영희', authorNationality: '🇰🇷', content: '좋은 스터디 그룹이네요! 응원합니다.', timeAgo: '3시간 전' },
+        ],
       },
       {
         id: '202',
-        author: '김하나', // Assuming a Korean author for some posts
+        author: '김하나',
         authorNationality: '🇰🇷',
         content: '한국어 문법 질문 받습니다! 어려웠던 부분 편하게 질문해주세요.',
         likes: 40,
-        comments: 20,
+        comments: 0,
         timeAgo: '12시간 전',
       },
     ],
@@ -118,16 +138,19 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇵🇭',
         content: '동대문에서 의류 매장 알바 구해요! 한국어 가능하신 분 우대합니다.',
         likes: 15,
-        comments: 8,
+        comments: 1,
         timeAgo: '4시간 전',
+        commentsData: [
+          { id: 'c3-1', author: '안젤라', authorNationality: '🇺🇸', content: '어떤 요일 가능한가요?', timeAgo: '3시간 전' },
+        ],
       },
       {
         id: '302',
-        author: '이민준', // Assuming a Korean author
+        author: '이민준',
         authorNationality: '🇰🇷',
         content: '카페 알바 구인중입니다. 평일 저녁 시간 가능하신 분 환영합니다!',
         likes: 20,
-        comments: 10,
+        comments: 0,
         timeAgo: '1일 전',
       },
     ],
@@ -151,7 +174,7 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇬🇧',
         content: '종로3가에 있는 백반집 정말 맛있네요! 가격도 저렴하고 반찬도 푸짐해요.',
         likes: 35,
-        comments: 12,
+        comments: 0,
         timeAgo: '3시간 전',
       },
       {
@@ -160,7 +183,7 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇯🇵',
         content: '명동에 괜찮은 스시집 추천해주실 분 계신가요? 혼밥 가능한 곳이면 좋겠어요.',
         likes: 22,
-        comments: 9,
+        comments: 0,
         timeAgo: '1일 전',
       },
     ],
@@ -184,7 +207,7 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇨🇦',
         content: 'E-2 비자 연장 준비 중인데, 필요한 서류 목록 최신 정보 아시는 분 있나요?',
         likes: 10,
-        comments: 6,
+        comments: 0,
         timeAgo: '5시간 전',
       },
       {
@@ -193,7 +216,7 @@ const dummyCommunityDetails: CommunityDetailData[] = [
         authorNationality: '🇷🇺',
         content: '결혼 이민 비자(F-6) 신청해보신 분들 경험담 공유 부탁드립니다!',
         likes: 18,
-        comments: 11,
+        comments: 0,
         timeAgo: '2일 전',
       },
     ],
@@ -208,12 +231,46 @@ export const CommunityDetail: React.FC = () => {
   const [isJoined, setIsJoined] = React.useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = React.useState(false);
 
-  const community = dummyCommunityDetails.find((c) => c.id === id);
+  // State to manage posts with local like/comment status
+  const [communityPosts, setCommunityPosts] = React.useState<CommunityPost[]>([]);
+
+  React.useEffect(() => {
+    if (community) {
+      setCommunityPosts(community.posts.map(post => ({ ...post }))); // Deep copy for mutable state
+    }
+  }, [community]);
 
   const handleConfirmJoin = () => {
     setShowJoinModal(false);
     setIsJoined(true);
     setShowWelcomeModal(true);
+  };
+
+  const handleLikeToggle = (postId: string) => {
+    setCommunityPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
+              isLiked: !post.isLiked,
+            }
+          : post
+      )
+    );
+  };
+
+  const handleToggleComments = (postId: string) => {
+    setCommunityPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              showComments: !post.showComments,
+            }
+          : post
+      )
+    );
   };
 
   const JoinCommunityModal = () => (
@@ -327,7 +384,7 @@ export const CommunityDetail: React.FC = () => {
 
         {/* Community Posts */}
         <div className="space-y-3">
-          {community.posts.map((post) => (
+          {communityPosts.map((post) => (
             <div
               key={post.id}
               className="bg-white rounded-[16px] p-4 shadow-card border border-line-200"
@@ -357,19 +414,44 @@ export const CommunityDetail: React.FC = () => {
                 {post.content}
               </p>
               <div className="flex items-center gap-4 pt-3 border-t border-line-200">
-                <button className="flex items-center gap-1 text-text-700 hover:text-mint-600 
-                                 transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                {/* Like Button */}
+                <button
+                  onClick={() => handleLikeToggle(post.id)}
+                  className="flex items-center gap-1 text-text-700 hover:text-mint-600 transition-colors"
+                >
+                  <svg
+                    className={`w-5 h-5 ${post.isLiked ? 'fill-red-500 text-red-500' : 'text-text-700'}`}
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
                   </svg>
                   <span className="text-[13px] font-medium">{post.likes}</span>
                 </button>
-                <button className="flex items-center gap-1 text-text-700 hover:text-mint-600 
-                                 transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                {/* Comment Button */}
+                <button
+                  onClick={() => handleToggleComments(post.id)}
+                  className="flex items-center gap-1 text-text-700 hover:text-mint-600 transition-colors"
+                >
+                  <svg
+                    className={`w-5 h-5 ${post.showComments ? 'text-mint-600' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
                   </svg>
-                  <span className="text-[13px] font-medium">{post.comments}</span>
+                  <span className="text-[13px] font-medium">{post.commentsData ? post.commentsData.length : 0}</span>
                 </button>
                 <button className="flex items-center gap-1 text-text-700 hover:text-mint-600 
                                  transition-colors ml-auto">
@@ -378,6 +460,29 @@ export const CommunityDetail: React.FC = () => {
                   </svg>
                 </button>
               </div>
+              {/* Comments Section */}
+              {post.showComments && post.commentsData && post.commentsData.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-line-200">
+                  <h5 className="text-[13px] font-semibold text-text-800 mb-2">댓글</h5>
+                  <div className="space-y-3">
+                    {post.commentsData.map((comment) => (
+                      <div key={comment.id} className="flex items-start gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 
+                                       rounded-full flex items-center justify-center text-[16px] flex-shrink-0">
+                          {comment.authorNationality}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[13px] font-semibold text-text-900">{comment.author}</span>
+                            <span className="text-[11px] text-text-500">• {comment.timeAgo}</span>
+                          </div>
+                          <p className="text-[13px] text-text-800 leading-snug">{comment.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
