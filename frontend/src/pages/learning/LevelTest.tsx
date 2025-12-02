@@ -148,17 +148,17 @@ export const LevelTest = () => {
     const level = score >= 90 ? 'Lv.4 상급' : score >= 70 ? 'Lv.3 중급' : score >= 50 ? 'Lv.2 초급' : 'Lv.1 기초';
 
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-background flex flex-col">
         <Header title="레벨 테스트" />
-        <div className="flex flex-col items-center justify-center px-6 pt-24">
+        <div className="flex flex-col items-center justify-center flex-grow px-6 pt-24">
           <div className="w-32 h-32 mb-8 flex items-center justify-center">
             <svg className="w-full h-full text-mint-600" viewBox="0 0 120 120" fill="none">
               <circle cx="60" cy="60" r="54" stroke="currentColor" strokeWidth="4" fill="none" />
               <path d="M35 60 L52 77 L85 44" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             </svg>
           </div>
-          <h2 className="text-[24px] font-bold text-text-900 mb-3">테스트 완료!</h2>
-          <p className="text-[16px] text-text-700 text-center mb-2">당신의 한국어 레벨은</p>
+          <h2 className="text-[24px] font-bold text-text-900 mb-4">테스트 완료!</h2>
+          <p className="text-[16px] text-text-700 text-center mb-3">당신의 한국어 레벨은</p>
           <div className="px-6 py-3 bg-mint-100 rounded-[12px] mb-8">
             <p className="text-[28px] font-bold text-mint-600">{level}</p>
           </div>
