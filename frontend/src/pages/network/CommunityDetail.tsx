@@ -233,12 +233,22 @@ export const CommunityDetail: React.FC = () => {
   const [isJoined, setIsJoined] = React.useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = React.useState(false);
 
-  // State to manage posts with local like/comment status
+  const community = React.useMemo(
+    () => dummyCommunityDetails.find((c) => c.id === id),
+    [id]
+  );
+
   const [communityPosts, setCommunityPosts] = React.useState<CommunityPost[]>([]);
 
   React.useEffect(() => {
     if (community) {
-      setCommunityPosts(community.posts.map(post => ({ ...post }))); // Deep copy for mutable state
+      setCommunityPosts(
+        community.posts.map((post) => ({
+          ...post,
+          isLiked: false,
+          showComments: false,
+        }))
+      );
     }
   }, [community]);
 
@@ -249,8 +259,8 @@ export const CommunityDetail: React.FC = () => {
   };
 
   const handleLikeToggle = (postId: string) => {
-    setCommunityPosts(prevPosts =>
-      prevPosts.map(post =>
+    setCommunityPosts((prevPosts) =>
+      prevPosts.map((post) =>
         post.id === postId
           ? {
               ...post,
@@ -263,13 +273,10 @@ export const CommunityDetail: React.FC = () => {
   };
 
   const handleToggleComments = (postId: string) => {
-    setCommunityPosts(prevPosts =>
-      prevPosts.map(post =>
+    setCommunityPosts((prevPosts) =>
+      prevPosts.map((post) =>
         post.id === postId
-          ? {
-              ...post,
-              showComments: !post.showComments,
-            }
+          ? { ...post, showComments: !post.showComments }
           : post
       )
     );
@@ -279,10 +286,22 @@ export const CommunityDetail: React.FC = () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-20">
       <div className="bg-white rounded-[20px] p-6 text-center shadow-lg max-w-sm w-full">
         <h3 className="text-lg font-bold mb-2 text-text-900">커뮤니티 가입</h3>
-        <p className="text-sm text-text-700 mb-6">'{community?.name}'에 가입하시겠습니까?</p>
+        <p className="text-sm text-text-700 mb-6">
+          '{community?.name}'에 가입하시겠습니까?
+        </p>
         <div className="flex justify-center gap-3">
-          <button onClick={() => setShowJoinModal(false)} className="flex-1 h-[48px] bg-gray-100 text-text-800 rounded-[12px] font-semibold">취소</button>
-          <button onClick={handleConfirmJoin} className="flex-1 h-[48px] bg-mint-600 text-white rounded-[12px] font-semibold">가입</button>
+          <button
+            onClick={() => setShowJoinModal(false)}
+            className="flex-1 h-[48px] bg-gray-100 text-text-800 rounded-[12px] font-semibold"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleConfirmJoin}
+            className="flex-1 h-[48px] bg-mint-600 text-white rounded-[12px] font-semibold"
+          >
+            가입
+          </button>
         </div>
       </div>
     </div>
@@ -292,13 +311,22 @@ export const CommunityDetail: React.FC = () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-20">
       <div className="bg-white rounded-[20px] p-8 text-center shadow-lg max-w-sm w-full">
         <div className="text-5xl mb-4">🎉</div>
-        <h3 className="text-xl font-bold mb-2 text-text-900">가입을 환영합니다!</h3>
-        <p className="text-md text-text-700 mb-6">이제 '{community?.name}'의 멤버입니다.</p>
-        <button onClick={() => setShowWelcomeModal(false)} className="w-full h-[48px] bg-mint-600 text-white rounded-[12px] font-semibold">확인</button>
+        <h3 className="text-xl font-bold mb-2 text-text-900">
+          가입을 환영합니다!
+        </h3>
+        <p className="text-md text-text-700 mb-6">
+          이제 '{community?.name}'의 멤버입니다.
+        </p>
+        <button
+          onClick={() => setShowWelcomeModal(false)}
+          className="w-full h-[48px] bg-mint-600 text-white rounded-[12px] font-semibold"
+        >
+          확인
+        </button>
       </div>
     </div>
   );
-  
+
   if (!community) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -317,7 +345,7 @@ export const CommunityDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header title={community.name} showBack />
-      
+
       {showJoinModal && <JoinCommunityModal />}
       {showWelcomeModal && <WelcomeModal />}
 
@@ -325,8 +353,10 @@ export const CommunityDetail: React.FC = () => {
         {/* Community Info */}
         <div className="bg-white rounded-[16px] p-4 shadow-card border border-line-200">
           <div className="flex items-start gap-3 mb-3">
-            <div className="w-16 h-16 bg-mint-100 rounded-[12px] flex items-center 
-                           justify-center text-[36px] flex-shrink-0">
+            <div
+              className="w-16 h-16 bg-mint-100 rounded-[12px] flex items-center 
+                           justify-center text-[36px] flex-shrink-0"
+            >
               {community.icon}
             </div>
             <div className="flex-1 min-w-0">
@@ -334,8 +364,10 @@ export const CommunityDetail: React.FC = () => {
                 <h2 className="text-[20px] font-bold text-text-900">
                   {community.name}
                 </h2>
-                <span className="px-[8px] py-[2px] bg-gray-100 text-text-700 
-                               rounded-[6px] text-[12px] font-medium">
+                <span
+                  className="px-[8px] py-[2px] bg-gray-100 text-text-700 
+                               rounded-[6px] text-[12px] font-medium"
+                >
                   {community.category}
                 </span>
               </div>
@@ -347,13 +379,15 @@ export const CommunityDetail: React.FC = () => {
           <p className="text-[14px] text-text-800 leading-relaxed mb-4">
             {community.description}
           </p>
-          <button 
+          <button
             onClick={() => !isJoined && setShowJoinModal(true)}
             disabled={isJoined}
             className={`w-full h-[48px] rounded-[12px] text-[16px] font-semibold transition-colors
-                           ${isJoined 
-                              ? 'bg-mint-100 text-mint-700 cursor-not-allowed' 
-                              : 'bg-mint-600 text-white hover:bg-mint-700'}`}
+                           ${
+                             isJoined
+                               ? 'bg-mint-100 text-mint-700 cursor-not-allowed'
+                               : 'bg-mint-600 text-white hover:bg-mint-700'
+                           }`}
           >
             {isJoined ? '가입 완료' : '커뮤니티 가입'}
           </button>
@@ -362,7 +396,9 @@ export const CommunityDetail: React.FC = () => {
         {/* Community Rules */}
         {community.rules.length > 0 && (
           <div className="bg-white rounded-[16px] p-4 shadow-card border border-line-200">
-            <h3 className="text-[16px] font-bold text-text-900 mb-3">커뮤니티 규칙</h3>
+            <h3 className="text-[16px] font-bold text-text-900 mb-3">
+              커뮤니티 규칙
+            </h3>
             <ul className="list-disc list-inside text-[14px] text-text-800 space-y-1">
               {community.rules.map((rule, index) => (
                 <li key={index}>{rule}</li>
@@ -373,15 +409,15 @@ export const CommunityDetail: React.FC = () => {
 
         {/* Create Post for Community */}
         <div className="bg-white rounded-[16px] p-4 shadow-card border border-line-200">
-            <button
-                onClick={() => {
-                  alert('커뮤니티 게시글 작성 페이지 (구현 예정)');
-                }}
-                className="w-full text-left p-3 bg-background rounded-[12px] 
+          <button
+            onClick={() => {
+              alert('커뮤니티 게시글 작성 페이지 (구현 예정)');
+            }}
+            className="w-full text-left p-3 bg-background rounded-[12px] 
                          text-[14px] text-text-500 hover:bg-gray-100 transition-colors"
-              >
-                무슨 생각을 하고 계신가요?
-              </button>
+          >
+            무슨 생각을 하고 계신가요?
+          </button>
         </div>
 
         {/* Community Posts */}
@@ -393,8 +429,10 @@ export const CommunityDetail: React.FC = () => {
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-mint-100 to-mint-200 
-                                 rounded-full flex items-center justify-center text-[20px]">
+                  <div
+                    className="w-10 h-10 bg-gradient-to-br from-mint-100 to-mint-200 
+                                 rounded-full flex items-center justify-center text-[20px]"
+                  >
                     {post.authorNationality}
                   </div>
                   <div>
@@ -407,8 +445,12 @@ export const CommunityDetail: React.FC = () => {
                   </div>
                 </div>
                 <button className="p-1 text-text-500 hover:bg-gray-100 rounded-full">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                   </svg>
                 </button>
               </div>
@@ -422,7 +464,9 @@ export const CommunityDetail: React.FC = () => {
                   className="flex items-center gap-1 text-text-700 hover:text-mint-600 transition-colors"
                 >
                   <svg
-                    className={`w-5 h-5 ${post.isLiked ? 'fill-red-500 text-red-500' : 'text-text-700'}`}
+                    className={`w-5 h-5 ${
+                      post.isLiked ? 'fill-red-500 text-red-500' : 'text-text-700'
+                    }`}
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
@@ -441,7 +485,9 @@ export const CommunityDetail: React.FC = () => {
                   className="flex items-center gap-1 text-text-700 hover:text-mint-600 transition-colors"
                 >
                   <svg
-                    className={`w-5 h-5 ${post.showComments ? 'text-mint-600' : ''}`}
+                    className={`w-5 h-5 ${
+                      post.showComments ? 'text-mint-600' : ''
+                    }`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -453,38 +499,64 @@ export const CommunityDetail: React.FC = () => {
                       d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                     />
                   </svg>
-                  <span className="text-[13px] font-medium">{post.commentsData ? post.commentsData.length : 0}</span>
+                  <span className="text-[13px] font-medium">
+                    {post.commentsData ? post.commentsData.length : 0}
+                  </span>
                 </button>
-                <button className="flex items-center gap-1 text-text-700 hover:text-mint-600 
-                                 transition-colors ml-auto">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                <button
+                  className="flex items-center gap-1 text-text-700 hover:text-mint-600 
+                                 transition-colors ml-auto"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                    />
                   </svg>
                 </button>
               </div>
               {/* Comments Section */}
-              {post.showComments && post.commentsData && post.commentsData.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-line-200">
-                  <h5 className="text-[13px] font-semibold text-text-800 mb-2">댓글</h5>
-                  <div className="space-y-3">
-                    {post.commentsData.map((comment) => (
-                      <div key={comment.id} className="flex items-start gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 
-                                       rounded-full flex items-center justify-center text-[16px] flex-shrink-0">
-                          {comment.authorNationality}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-1">
-                            <span className="text-[13px] font-semibold text-text-900">{comment.author}</span>
-                            <span className="text-[11px] text-text-500">• {comment.timeAgo}</span>
+              {post.showComments &&
+                post.commentsData &&
+                post.commentsData.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-line-200">
+                    <h5 className="text-[13px] font-semibold text-text-800 mb-2">
+                      댓글
+                    </h5>
+                    <div className="space-y-3">
+                      {post.commentsData.map((comment) => (
+                        <div key={comment.id} className="flex items-start gap-2">
+                          <div
+                            className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 
+                                       rounded-full flex items-center justify-center text-[16px] flex-shrink-0"
+                          >
+                            {comment.authorNationality}
                           </div>
-                          <p className="text-[13px] text-text-800 leading-snug">{comment.content}</p>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[13px] font-semibold text-text-900">
+                                {comment.author}
+                              </span>
+                              <span className="text-[11px] text-text-500">
+                                • {comment.timeAgo}
+                              </span>
+                            </div>
+                            <p className="text-[13px] text-text-800 leading-snug">
+                              {comment.content}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           ))}
         </div>
