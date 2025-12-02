@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
+import { LevelTestIntro } from './LevelTestIntro';
 
 interface Question {
   id: number;
@@ -11,6 +12,7 @@ interface Question {
 
 export const LevelTest = () => {
   const navigate = useNavigate();
+  const [testStarted, setTestStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -52,10 +54,19 @@ export const LevelTest = () => {
     }
   ];
 
+  const handleStartTest = () => {
+    setTestStarted(true);
+  };
+
   const handleSelectAnswer = (index: number) => {
     console.log('Selected answer index:', index);
     setSelectedAnswer(index);
   };
+
+  if (!testStarted) {
+    return <LevelTestIntro onStartTest={handleStartTest} />;
+  }
+
 
   const handlePrev = () => {
     if (currentQuestion > 0) {
