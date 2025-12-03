@@ -7,12 +7,19 @@ import { ApplicantCard } from '@/components/ApplicantCard';
 import { QuickMenuGrid } from '@/components/QuickMenuGrid';
 import { GuideCard } from '@/components/GuideCard';
 import { usersAPI } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
 import type { JobSeeker } from '@/types';
 
 export const EmployerHome = () => {
   const navigate = useNavigate();
+  const { setUserMode } = useAuthStore();
   const [applicants, setApplicants] = useState<JobSeeker[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 고용주 홈 페이지 진입 시 userMode를 employer로 설정
+  useEffect(() => {
+    setUserMode('employer');
+  }, [setUserMode]);
 
   useEffect(() => {
     const fetchApplicants = async () => {

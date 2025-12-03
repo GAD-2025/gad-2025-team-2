@@ -1,0 +1,234 @@
+-- WorkFair MySQL Database Schema
+-- Generated based on frontend and backend code analysis
+
+-- ============================================
+-- 1. Nationalities Table (국적 정보)
+-- ============================================
+CREATE TABLE IF NOT EXISTS `nationalities` (
+    `code` VARCHAR(10) PRIMARY KEY COMMENT '국적 코드 (예: KR, US, JP)',
+    `name` VARCHAR(100) NOT NULL COMMENT '국적 이름',
+    `phone_code` VARCHAR(10) NOT NULL COMMENT '전화번호 국가 코드 (예: +82, +1)',
+    INDEX `idx_phone_code` (`phone_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='국적 정보 테이블';
+
+-- ============================================
+-- 2. Signup Users Table (회원가입 기본 정보)
+-- ============================================
+CREATE TABLE IF NOT EXISTS `signup_users` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '사용자 고유 ID (예: signup-xxxxxxxx)',
+    `role` VARCHAR(20) NOT NULL COMMENT '사용자 역할 (job_seeker, employer)',
+    `name` VARCHAR(100) NOT NULL COMMENT '이름',
+    `phone` VARCHAR(20) NOT NULL DEFAULT '' COMMENT '전화번호',
+    `birthdate` DATE NOT NULL COMMENT '생년월일',
+    `gender` VARCHAR(10) NOT NULL COMMENT '성별 (male, female)',
+    `nationality_code` VARCHAR(10) NOT NULL COMMENT '국적 코드',
+    `terms_tos_required` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '이용약관 동의 (필수)',
+    `terms_privacy_required` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '개인정보 수집·이용 동의 (필수)',
+    `terms_sms_optional` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '혜택 안내 문자 서비스 동의 (선택)',
+    `terms_marketing_optional` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '마케팅 정보 수신 동의 (선택)',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    INDEX `idx_role` (`role`),
+    INDEX `idx_nationality_code` (`nationality_code`),
+    INDEX `idx_created_at` (`created_at`),
+    FOREIGN KEY (`nationality_code`) REFERENCES `nationalities`(`code`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='회원가입 기본 정보 테이블';
+
+-- ============================================
+-- 3. Job Seeker Profiles Table (구직자 프로필)
+-- ============================================
+CREATE TABLE IF NOT EXISTS `job_seeker_profiles` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '프로필 고유 ID',
+    `user_id` VARCHAR(50) NOT NULL COMMENT 'signup_users.id 참조',
+    `basic_info_file_name` VARCHAR(255) NULL COMMENT '기본 정보 파일명',
+    `preferred_regions` TEXT NOT NULL DEFAULT '[]' COMMENT '희망 근무 지역 (JSON 배열)',
+    `preferred_jobs` TEXT NOT NULL DEFAULT '[]' COMMENT '희망 업무 카테고리 (JSON 배열)',
+    `work_available_dates` TEXT NOT NULL DEFAULT '[]' COMMENT '근무 가능 날짜 (JSON 배열, YYYY-MM-DD 형식)',
+    `work_start_time` VARCHAR(5) NULL COMMENT '근무 시작 시간 (HH:mm 형식)',
+    `work_end_time` VARCHAR(5) NULL COMMENT '근무 종료 시간 (HH:mm 형식)',
+    `work_days_of_week` TEXT NOT NULL DEFAULT '[]' COMMENT '근무 가능 요일 (JSON 배열, 예: ["MON", "TUE"])',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+    INDEX `idx_user_id` (`user_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `signup_users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='구직자 프로필 및 온보딩 정보 테이블';
+
+-- ============================================
+-- 4. Employer Company Info Table (고용주 회사 정보)
+-- ============================================
+-- Note: 현재 프론트엔드에서 수집하지만 백엔드에 저장되지 않는 정보
+-- 향후 백엔드에 저장 기능이 추가될 경우를 대비한 스키마
+CREATE TABLE IF NOT EXISTS `employer_company_info` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '회사 정보 고유 ID',
+    `user_id` VARCHAR(50) NOT NULL COMMENT 'signup_users.id 참조',
+    `business_type` VARCHAR(30) NULL COMMENT '사업자 여부 (business_owner, not_business_owner)',
+    `company_name` VARCHAR(100) NULL COMMENT '회사 이름',
+    `base_address` VARCHAR(255) NULL COMMENT '기본 주소',
+    `detail_address` VARCHAR(255) NULL COMMENT '상세 주소',
+    `has_no_detail_address` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '상세주소 없음 여부',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+    INDEX `idx_user_id` (`user_id`),
+    UNIQUE KEY `uk_user_id` (`user_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `signup_users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='고용주 회사 정보 테이블';
+
+-- ============================================
+-- 5. Legacy Tables (기존 시스템 호환용)
+-- ============================================
+
+-- Users Table (기존 인증 시스템용)
+CREATE TABLE IF NOT EXISTS `users` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '사용자 고유 ID',
+    `email` VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일',
+    `hashed_password` VARCHAR(255) NOT NULL COMMENT '해시된 비밀번호',
+    `role` VARCHAR(20) NOT NULL COMMENT '사용자 역할 (jobseeker, employer)',
+    `profile_id` VARCHAR(50) NOT NULL COMMENT '프로필 ID 참조',
+    INDEX `idx_email` (`email`),
+    INDEX `idx_role` (`role`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='기존 인증 시스템 사용자 테이블';
+
+-- Job Seekers Table (기존 시스템용)
+CREATE TABLE IF NOT EXISTS `jobseekers` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '구직자 고유 ID',
+    `name` VARCHAR(100) NOT NULL COMMENT '이름',
+    `nationality` VARCHAR(50) NOT NULL COMMENT '국적',
+    `phone` VARCHAR(20) NOT NULL COMMENT '전화번호',
+    `language_level` VARCHAR(50) NOT NULL COMMENT '언어 수준',
+    `visa_type` VARCHAR(50) NOT NULL COMMENT '비자 유형',
+    `availability` VARCHAR(100) NOT NULL COMMENT '가용성',
+    `location` TEXT NULL COMMENT '위치 정보 (JSON)',
+    `experience` TEXT NOT NULL DEFAULT '[]' COMMENT '경력 정보 (JSON)',
+    `preferences` TEXT NOT NULL DEFAULT '{}' COMMENT '선호사항 (JSON)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='기존 시스템 구직자 테이블';
+
+-- Employers Table (기존 시스템용)
+CREATE TABLE IF NOT EXISTS `employers` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '고용주 고유 ID',
+    `business_no` VARCHAR(50) NOT NULL COMMENT '사업자 등록번호',
+    `shop_name` VARCHAR(100) NOT NULL COMMENT '상점 이름',
+    `industry` VARCHAR(100) NOT NULL COMMENT '업종',
+    `address` VARCHAR(255) NOT NULL COMMENT '주소',
+    `location` TEXT NULL COMMENT '위치 정보 (JSON)',
+    `open_hours` VARCHAR(100) NOT NULL COMMENT '영업 시간',
+    `contact` VARCHAR(50) NOT NULL COMMENT '연락처',
+    `media` TEXT NOT NULL DEFAULT '[]' COMMENT '미디어 URL (JSON)',
+    `min_language_level` VARCHAR(50) NOT NULL COMMENT '최소 언어 수준',
+    `need_visa` TEXT NOT NULL DEFAULT '[]' COMMENT '필요 비자 (JSON)',
+    `base_wage` INT NOT NULL COMMENT '기본 임금',
+    `schedule` VARCHAR(100) NOT NULL COMMENT '일정',
+    `rating` FLOAT NULL COMMENT '평점'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='기존 시스템 고용주 테이블';
+
+-- Jobs Table
+CREATE TABLE IF NOT EXISTS `jobs` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '구인 공고 고유 ID',
+    `employer_id` VARCHAR(50) NOT NULL COMMENT '고용주 ID',
+    `title` VARCHAR(200) NOT NULL COMMENT '제목',
+    `description` TEXT NOT NULL COMMENT '설명',
+    `category` VARCHAR(100) NOT NULL COMMENT '카테고리',
+    `wage` INT NOT NULL COMMENT '임금',
+    `work_days` VARCHAR(100) NOT NULL COMMENT '근무일',
+    `work_hours` VARCHAR(100) NOT NULL COMMENT '근무시간',
+    `deadline` VARCHAR(50) NOT NULL COMMENT '마감일 (ISO8601)',
+    `positions` INT NOT NULL COMMENT '채용 인원',
+    `required_language` VARCHAR(50) NOT NULL COMMENT '필요 언어',
+    `required_visa` TEXT NOT NULL DEFAULT '[]' COMMENT '필요 비자 (JSON)',
+    `benefits` TEXT NULL COMMENT '혜택',
+    `employer_message` TEXT NULL COMMENT '고용주 메시지',
+    `created_at` VARCHAR(50) NOT NULL COMMENT '생성일시 (ISO8601)',
+    INDEX `idx_employer_id` (`employer_id`),
+    FOREIGN KEY (`employer_id`) REFERENCES `employers`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='구인 공고 테이블';
+
+-- Applications Table
+CREATE TABLE IF NOT EXISTS `applications` (
+    `application_id` VARCHAR(50) PRIMARY KEY COMMENT '지원서 고유 ID',
+    `seeker_id` VARCHAR(50) NOT NULL COMMENT '구직자 ID',
+    `job_id` VARCHAR(50) NOT NULL COMMENT '구인 공고 ID',
+    `status` VARCHAR(20) NOT NULL DEFAULT 'applied' COMMENT '상태 (applied, hired, rejected)',
+    `applied_at` VARCHAR(50) NOT NULL COMMENT '지원일시 (ISO8601)',
+    `updated_at` VARCHAR(50) NOT NULL COMMENT '수정일시 (ISO8601)',
+    `hired_at` VARCHAR(50) NULL COMMENT '채용일시 (ISO8601)',
+    INDEX `idx_seeker_id` (`seeker_id`),
+    INDEX `idx_job_id` (`job_id`),
+    INDEX `idx_status` (`status`),
+    FOREIGN KEY (`seeker_id`) REFERENCES `jobseekers`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`job_id`) REFERENCES `jobs`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지원서 테이블';
+
+-- Conversations Table
+CREATE TABLE IF NOT EXISTS `conversations` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '대화 고유 ID',
+    `participants` TEXT NOT NULL DEFAULT '[]' COMMENT '참여자 ID 목록 (JSON)',
+    `updated_at` VARCHAR(50) NOT NULL COMMENT '수정일시 (ISO8601)',
+    INDEX `idx_updated_at` (`updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='대화 테이블';
+
+-- Messages Table
+CREATE TABLE IF NOT EXISTS `messages` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '메시지 고유 ID',
+    `conversation_id` VARCHAR(50) NOT NULL COMMENT '대화 ID',
+    `sender_id` VARCHAR(50) NOT NULL COMMENT '발신자 ID',
+    `text` TEXT NOT NULL COMMENT '메시지 내용',
+    `translated_text` TEXT NULL COMMENT '번역된 메시지',
+    `timestamp` VARCHAR(50) NOT NULL COMMENT '발신일시 (ISO8601)',
+    `read` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '읽음 여부',
+    INDEX `idx_conversation_id` (`conversation_id`),
+    INDEX `idx_sender_id` (`sender_id`),
+    INDEX `idx_timestamp` (`timestamp`),
+    FOREIGN KEY (`conversation_id`) REFERENCES `conversations`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='메시지 테이블';
+
+-- Learning Progress Table
+CREATE TABLE IF NOT EXISTS `learning_progress` (
+    `id` VARCHAR(50) PRIMARY KEY COMMENT '학습 진행도 고유 ID',
+    `seeker_id` VARCHAR(50) NOT NULL COMMENT '구직자 ID',
+    `current_level` VARCHAR(100) NOT NULL COMMENT '현재 레벨',
+    `completed_lessons` INT NOT NULL DEFAULT 0 COMMENT '완료한 레슨 수',
+    `total_lessons` INT NOT NULL DEFAULT 100 COMMENT '전체 레슨 수',
+    `progress_percent` INT NOT NULL DEFAULT 0 COMMENT '진행률 (%)',
+    INDEX `idx_seeker_id` (`seeker_id`),
+    FOREIGN KEY (`seeker_id`) REFERENCES `jobseekers`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='학습 진행도 테이블';
+
+-- ============================================
+-- Initial Data (시드 데이터)
+-- ============================================
+
+-- Nationalities 기본 데이터
+INSERT INTO `nationalities` (`code`, `name`, `phone_code`) VALUES
+('US', 'United States', '+1'),
+('CA', 'Canada', '+1'),
+('EG', 'مصر‎ (Egypt)', '+20'),
+('ZA', 'South Africa', '+27'),
+('GR', 'Ελλάδα (Greece)', '+30'),
+('NL', 'Nederland', '+31'),
+('FR', 'France', '+33'),
+('ES', 'España', '+34'),
+('IT', 'Italia', '+39'),
+('GB', 'United Kingdom', '+44'),
+('DE', 'Deutschland (Germany)', '+49'),
+('MX', 'México', '+52'),
+('BR', 'Brasil', '+55'),
+('AU', 'Australia', '+61'),
+('ID', 'Indonesia', '+62'),
+('PH', 'Pilipinas (Philippines)', '+63'),
+('NZ', 'Aotearoa (New Zealand)', '+64'),
+('TH', 'ประเทศไทย (Thailand)', '+66'),
+('JP', '日本 (Japan)', '+81'),
+('KR', '대한민국 (South Korea)', '+82'),
+('VN', 'Việt Nam (Vietnam)', '+84'),
+('CN', '中国 (China)', '+86'),
+('IN', 'भारत (India)', '+91'),
+('PK', 'پاکستان (Pakistan)', '+92'),
+('LK', 'ශ්‍රී ලංකාව (Sri Lanka)', '+94'),
+('MM', 'မြန်မာ (Myanmar)', '+95'),
+('RU', 'Россия (Russia)', '+7'),
+('UA', 'Україна (Ukraine)', '+380'),
+('KW', 'الكويت‎ (Kuwait)', '+965'),
+('SA', 'السعودية‎ (Saudi Arabia)', '+966'),
+('AE', 'الإمارات العربية المتحدة‎ (United Arab Emirates)', '+971'),
+('QA', 'قطر‎ (Qatar)', '+974')
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `phone_code` = VALUES(`phone_code`);
+
+

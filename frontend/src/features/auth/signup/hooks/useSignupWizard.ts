@@ -11,6 +11,7 @@ import {
 } from '../types';
 import { fetchNationalities, signup } from '../api';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/useAuth';
 
 // Default nationalities list (from schema.sql)
 const getDefaultNationalities = (): NationalityOption[] => [
@@ -77,6 +78,7 @@ const getDays = (year: number, month: number) => {
 
 export function useSignupWizard() {
   const navigate = useNavigate();
+  const { setUserMode } = useAuthStore();
   const [step, setStep] = useState<SignupStep>(1);
   const [values, setValues] = useState<SignupFormValues>(INITIAL_VALUES);
   const [birthdateSheetOpen, setBirthdateSheetOpen] = useState(false);
@@ -210,9 +212,18 @@ export function useSignupWizard() {
         // 회원가입 완료 후 user_id와 이름을 localStorage에 저장
         localStorage.setItem('signup_user_id', response.id);
         localStorage.setItem('signup_user_name', values.name);
-        // 온보딩으로 이동
-        console.log('온보딩 페이지로 이동합니다...');
-        navigate('/onboarding');
+        
+        // role에 따라 올바른 홈으로 리다이렉트 및 userMode 설정
+        if (values.role === 'employer') {
+          console.log('고용주 홈으로 이동합니다...');
+          setUserMode('employer');
+          navigate('/employer/home');
+        } else {
+          // 구직자는 온보딩 후 홈으로 이동
+          console.log('온보딩 페이지로 이동합니다...');
+          setUserMode('jobseeker');
+          navigate('/onboarding');
+        }
       } catch (error) {
         console.error('회원가입 에러:', error);
         const errorMessage = error instanceof Error ? error.message : '회원가입에 실패했습니다.';

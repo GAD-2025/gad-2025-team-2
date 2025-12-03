@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/useAuth';
 
 export interface EmployerSignupData {
   name: string;
@@ -14,6 +15,7 @@ export interface EmployerSignupData {
 
 export function useEmployerSignupWizard() {
   const navigate = useNavigate();
+  const { setUserMode } = useAuthStore();
   const [step, setStep] = useState(1);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -133,6 +135,9 @@ export function useEmployerSignupWizard() {
       
       // Store user ID for later use
       localStorage.setItem('signup_user_id', data.id);
+      
+      // 고용주 모드로 설정
+      setUserMode('employer');
       
       // 회원가입 완료 후 홈으로 이동
       navigate('/employer/home');
