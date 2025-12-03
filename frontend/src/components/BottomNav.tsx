@@ -109,11 +109,21 @@ export const BottomNav = () => {
       ];
 
   const isActive = (tabId: string, path: string) => {
+    const isOnHomePage = location.pathname === '/jobseeker/home' || location.pathname === '/employer/home' || 
+                         location.pathname.startsWith('/jobseeker/home/') || location.pathname.startsWith('/employer/home/');
+    
     if (tabId === 'home') {
-      // 홈 탭은 현재 모드에 맞는 홈 페이지에 있을 때 활성화
-      return location.pathname.startsWith('/jobseeker/home') || location.pathname.startsWith('/employer/home');
+      // 홈 탭은 현재 모드에 맞는 홈 페이지에 있을 때만 활성화
+      return isOnHomePage;
     }
-    return location.pathname.startsWith(path);
+    
+    // 홈 페이지에 있을 때는 다른 탭들이 활성화되지 않도록
+    if (isOnHomePage) {
+      return false;
+    }
+    
+    // 홈 페이지가 아닐 때는 일반적인 경로 매칭 로직 사용
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   return (
