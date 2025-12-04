@@ -53,6 +53,9 @@ export function SignIn() {
       // Store user info
       localStorage.setItem('signup_user_id', response.user_id);
       localStorage.setItem('user_role', role);
+      if (response.name) {
+        localStorage.setItem('user_name', response.name);
+      }
       if (response.profile_photo) {
         localStorage.setItem('profile_photo', response.profile_photo);
       }

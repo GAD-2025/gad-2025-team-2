@@ -55,7 +55,7 @@ export const MyPage = () => {
   const profilePhoto = localStorage.getItem('profile_photo') || undefined;
 
   const profile: Profile = {
-    name: signupUserData?.name || "사용자",
+    name: signupUserData?.name || localStorage.getItem('user_name') || "사용자",
     role: (signupUserData?.role === 'employer' ? 'employer' : 'jobseeker') as "jobseeker" | "employer",
     avatarUrl: profilePhoto,
     joinedAtISO: signupUserData?.created_at || new Date().toISOString(),

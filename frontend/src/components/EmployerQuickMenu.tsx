@@ -30,7 +30,7 @@ export const EmployerQuickMenu = () => {
         </svg>
       ), 
       label: '지원자 확인',
-      path: '/employer/home' // TODO: 지원자 목록 페이지로 변경
+      path: '/recruitment'
     },
     { 
       id: 'search', 
