@@ -132,6 +132,31 @@ export async function getJobSeekerProfile(userId: string): Promise<JobSeekerProf
   return response.json();
 }
 
+export interface JobSeekerListItem {
+  id: string;
+  user_id: string;
+  name: string;
+  nationality: string;
+  birthdate: string | null;
+  preferred_regions: string[];
+  preferred_jobs: string[];
+  work_available_dates: string[];
+  work_start_time: string | null;
+  work_end_time: string | null;
+  work_days_of_week: string[];
+  experience_skills: string | null;
+  experience_introduction: string | null;
+  created_at: string;
+}
+
+export async function listJobSeekers(limit: number = 50): Promise<JobSeekerListItem[]> {
+  const response = await fetch(`${API_BASE_URL}/job-seeker/profiles?limit=${limit}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch job seekers');
+  }
+  return response.json();
+}
+
 export default {
   auth: authAPI,
   jobs: jobsAPI,

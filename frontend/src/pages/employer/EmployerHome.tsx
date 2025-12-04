@@ -7,7 +7,7 @@ import { EmployerFilterModal, type EmployerFilterState } from '@/components/Empl
 import { ApplicantCard } from '@/components/ApplicantCard';
 import { EmployerQuickMenu } from '@/components/EmployerQuickMenu';
 import { GuideCard } from '@/components/GuideCard';
-import { jobsAPI } from '@/api/endpoints';
+import { listJobSeekers } from '@/api/endpoints';
 import type { JobSeeker } from '@/types';
 
 export const EmployerHome = () => {
@@ -27,9 +27,28 @@ export const EmployerHome = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // TODO: Implement API call to fetch applicants/job seekers
-        // For now, showing empty state
-        setApplicants([]);
+        const jobSeekers = await listJobSeekers(20);
+        
+        // Convert API response to JobSeeker type
+        const formattedApplicants: JobSeeker[] = jobSeekers.map((seeker) => ({
+          id: seeker.id,
+          name: seeker.name,
+          nationality: seeker.nationality,
+          age: calculateAge(seeker.birthdate),
+          languageLevel: 'Lv.2 중급', // Default value
+          visaType: 'E-9',
+          experience: '1년',
+          location: seeker.preferred_regions[0] || '서울',
+          rating: 4.5,
+          matchScore: 85,
+          workSchedule: seeker.work_days_of_week,
+          skills: parseSkills(seeker.experience_skills),
+          introduction: seeker.experience_introduction || '',
+          verified: true,
+        }));
+        
+        setApplicants(formattedApplicants);
+        console.log(`Loaded ${formattedApplicants.length} job seekers`);
       } catch (error) {
         console.error('데이터 로딩 오류:', error);
         toast.error('데이터를 불러오는데 실패했습니다');
@@ -41,6 +60,28 @@ export const EmployerHome = () => {
 
     fetchData();
   }, []);
+
+  const calculateAge = (birthdate: string | null): number => {
+    if (!birthdate) return 25;
+    const birth = new Date(birthdate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const parseSkills = (skillsJson: string | null): string[] => {
+    if (!skillsJson) return [];
+    try {
+      const parsed = JSON.parse(skillsJson);
+      return [...(parsed.workSkills || []), ...(parsed.strengths || [])];
+    } catch {
+      return [];
+    }
+  };
 
   const handleFilterApply = (filters: FilterState) => {
     setAppliedFilters(filters);

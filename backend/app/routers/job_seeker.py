@@ -129,6 +129,45 @@ async def create_job_seeker_profile(
         )
 
 
+@router.get("/profiles", response_model=list)
+async def list_job_seeker_profiles(
+    limit: int = 50,
+    offset: int = 0,
+    session: Session = Depends(get_session)
+):
+    """List all job seeker profiles"""
+    from app.models import SignupUser
+    
+    statement = select(JobSeekerProfile).offset(offset).limit(limit)
+    profiles = session.exec(statement).all()
+    
+    result = []
+    for profile in profiles:
+        # Get user info
+        user_stmt = select(SignupUser).where(SignupUser.id == profile.user_id)
+        user = session.exec(user_stmt).first()
+        
+        profile_dict = {
+            "id": profile.id,
+            "user_id": profile.user_id,
+            "name": user.name if user else "Unknown",
+            "nationality": user.nationality_code if user else "Unknown",
+            "birthdate": user.birthdate if user else None,
+            "preferred_regions": json.loads(profile.preferred_regions) if profile.preferred_regions else [],
+            "preferred_jobs": json.loads(profile.preferred_jobs) if profile.preferred_jobs else [],
+            "work_available_dates": json.loads(profile.work_available_dates) if profile.work_available_dates else [],
+            "work_start_time": profile.work_start_time,
+            "work_end_time": profile.work_end_time,
+            "work_days_of_week": json.loads(profile.work_days_of_week) if profile.work_days_of_week else [],
+            "experience_skills": profile.experience_skills,
+            "experience_introduction": profile.experience_introduction,
+            "created_at": profile.created_at.isoformat(),
+        }
+        result.append(profile_dict)
+    
+    return result
+
+
 @router.get("/profile/{user_id}", response_model=JobSeekerProfileResponse)
 async def get_job_seeker_profile(
     user_id: str, session: Session = Depends(get_session)
