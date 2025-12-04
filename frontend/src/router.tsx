@@ -34,6 +34,7 @@ import { ProfileEdit } from './pages/profile/ProfileEdit';
 import { EmployeeScheduleList } from './pages/employer/EmployeeScheduleList';
 import { SharedSchedule } from './pages/employer/SharedSchedule';
 import { MySchedule } from './pages/jobseeker/MySchedule';
+import { ResumeEdit } from './pages/jobseeker/ResumeEdit';
 import { NotFound } from './pages/NotFound';
 import { CommunityDetail } from './pages/network/CommunityDetail';
 
@@ -117,6 +118,10 @@ export const router = createBrowserRouter([
       {
         path: 'my-applications',
         element: <MyApplications />,
+      },
+      {
+        path: 'resume/edit',
+        element: <ResumeEdit />,
       },
       {
         path: 'learning',

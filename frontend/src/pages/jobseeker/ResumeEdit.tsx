@@ -28,12 +28,21 @@ export const ResumeEdit = () => {
       return;
     }
 
+    // Get user ID from localStorage
+    const userId = localStorage.getItem('signup_user_id');
+    if (!userId) {
+      toast.error('로그인이 필요합니다');
+      navigate('/auth/signin');
+      return;
+    }
+
     try {
       // 이력서 수정 후 지원
-      await applicationsAPI.create('seeker-1', jobId);
+      await applicationsAPI.create(userId, jobId);
       toast.success('이력서가 수정되고 지원이 완료되었습니다');
       navigate('/jobseeker/apply-done');
     } catch (error: any) {
+      console.error('지원 실패:', error);
       if (error.response?.status === 409) {
         toast.warning('이미 지원한 공고입니다');
       } else {

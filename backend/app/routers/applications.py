@@ -38,7 +38,15 @@ async def create_application(
     session.commit()
     session.refresh(application)
     
-    return application.dict()
+    return {
+        "applicationId": application.applicationId,
+        "seekerId": application.seekerId,
+        "jobId": application.jobId,
+        "status": application.status,
+        "appliedAt": application.appliedAt,
+        "updatedAt": application.updatedAt,
+        "hiredAt": application.hiredAt,
+    }
 
 
 @router.get("", response_model=List[dict])
@@ -56,7 +64,15 @@ async def list_applications(
         statement = statement.where(Application.jobId == jobId)
     
     applications = session.exec(statement).all()
-    return [app.dict() for app in applications]
+    return [{
+        "applicationId": app.applicationId,
+        "seekerId": app.seekerId,
+        "jobId": app.jobId,
+        "status": app.status,
+        "appliedAt": app.appliedAt,
+        "updatedAt": app.updatedAt,
+        "hiredAt": app.hiredAt,
+    } for app in applications]
 
 
 @router.patch("/{application_id}", response_model=dict)
@@ -82,5 +98,13 @@ async def update_application(
     session.commit()
     session.refresh(application)
     
-    return application.dict()
+    return {
+        "applicationId": application.applicationId,
+        "seekerId": application.seekerId,
+        "jobId": application.jobId,
+        "status": application.status,
+        "appliedAt": application.appliedAt,
+        "updatedAt": application.updatedAt,
+        "hiredAt": application.hiredAt,
+    }
 

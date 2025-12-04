@@ -52,13 +52,22 @@ export const JobDetail = () => {
   const handleApplyWithBasicResume = async () => {
     if (!id) return;
     
+    // Get user ID from localStorage
+    const userId = localStorage.getItem('signup_user_id');
+    if (!userId) {
+      toast.error('로그인이 필요합니다');
+      navigate('/auth/signin');
+      return;
+    }
+    
     setIsApplyModalOpen(false);
     try {
       setApplying(true);
-      await applicationsAPI.create('seeker-1', id);
+      await applicationsAPI.create(userId, id);
       toast.success('지원이 완료되었습니다');
       navigate('/jobseeker/apply-done');
     } catch (error: any) {
+      console.error('지원 실패:', error);
       if (error.response?.status === 409) {
         toast.warning('이미 지원한 공고입니다');
       } else {

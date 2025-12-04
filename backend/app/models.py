@@ -86,8 +86,8 @@ class Application(SQLModel, table=True):
     __tablename__ = "applications"
     
     applicationId: str = Field(primary_key=True)
-    seekerId: str = Field(foreign_key="jobseekers.id")
-    jobId: str = Field(foreign_key="jobs.id")
+    seekerId: str  # User ID (signup_user_id)
+    jobId: str  # Job ID
     status: str = Field(default="applied")  # applied, hired, rejected
     appliedAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     updatedAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
