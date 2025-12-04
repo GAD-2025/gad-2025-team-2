@@ -73,10 +73,26 @@ export const MyPage = () => {
     lastUpdatedISO: new Date().toISOString(),
   };
 
+  // Parse skills from JSON string if available
+  const parseSkills = (skillsJson: string | null): string[] => {
+    if (!skillsJson) return [];
+    try {
+      const parsed = JSON.parse(skillsJson);
+      if (parsed.workSkills && Array.isArray(parsed.workSkills)) {
+        return parsed.workSkills;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  };
+
   const resume: Resume = {
     birthYear: signupUserData?.birthdate ? new Date(signupUserData.birthdate).getFullYear() : undefined,
     country: "대한민국",
-    city: profileData?.preferred_regions[0] || "미설정",
+    city: profileData?.preferred_regions && profileData.preferred_regions.length > 0 
+      ? profileData.preferred_regions.join(", ") 
+      : "미설정",
     nationality: signupUserData?.nationality_name || "미설정",
     visaType: "미설정",
     visaExpiryISO: "2025-12-31T00:00:00Z",
@@ -84,7 +100,7 @@ export const MyPage = () => {
       { code: "ko", level: "B1" },
     ],
     desiredRoles: profileData?.preferred_jobs || [],
-    skills: [],
+    skills: parseSkills(profileData?.experience_skills || null),
     availability: {
       days: profileData?.work_days_of_week || [],
       timeRange: profileData?.work_start_time && profileData?.work_end_time
@@ -93,10 +109,12 @@ export const MyPage = () => {
     },
     hobbies: [],
     pets: "없음",
-    introShort: "프로필을 작성해주세요!",
-    introLong: "프로필 수정에서 자기소개를 작성할 수 있습니다.",
+    introShort: profileData?.experience_introduction 
+      ? profileData.experience_introduction.substring(0, 100) 
+      : "프로필을 작성해주세요!",
+    introLong: profileData?.experience_introduction || "프로필 수정에서 자기소개를 작성할 수 있습니다.",
     contacts: {
-      email: user?.email || "user@workfair.com",
+      email: user?.email || signupUserData?.phone || "user@workfair.com",
       phone: signupUserData?.phone || "미설정",
       kakao: "",
       whatsapp: "",

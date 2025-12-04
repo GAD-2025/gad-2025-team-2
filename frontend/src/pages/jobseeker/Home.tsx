@@ -1,121 +1,59 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { SearchBar } from '@/components/SearchBar';
-import { FilterChips } from '@/components/FilterChips';
-import { FilterModal, type FilterState } from '@/components/FilterModal';
-import { JobCard } from '@/components/JobCard';
-import { ProgressCard } from '@/components/ProgressCard';
-import { QuickMenuGrid } from '@/components/QuickMenuGrid';
-import { GuideCard } from '@/components/GuideCard';
-import { JobCardSkeleton } from '@/components/Skeleton';
-import { SafetyNoticeModal } from '@/components/SafetyNoticeModal';
-import { jobsAPI, learningAPI } from '@/api/endpoints';
-import type { Job, LearningProgress } from '@/types';
-
-const mockJobs: Job[] = [
-  {
-    id: 'mock-1',
-    title: '카페 바리스타 (주말)',
-    employer: { shopName: '스타커피 광화문점', rating: 4.8, industry: '음식료품', address: '서울 종로구' },
-    wage: 12500,
-    workDays: ['토', '일'],
-    workHours: '14:00 ~ 22:00',
-    location: '서울 종로구',
-    deadline: '2025-12-31',
-    requiredLanguage: 'Lv.3 중급',
-    requiredVisa: ['F-4'],
-  },
-  {
-    id: 'mock-2',
-    title: '편의점 야간 스태프',
-    employer: { shopName: 'CU 종로점', rating: 4.5, industry: '소매업', address: '서울 종로구' },
-    wage: 11000,
-    workDays: ['월', '화', '수'],
-    workHours: '22:00 ~ 06:00',
-    location: '서울 종로구',
-    deadline: '2025-12-25',
-    requiredLanguage: 'Lv.2 초급',
-    requiredVisa: ['D-2', 'D-4'],
-  },
-  {
-    id: 'mock-3',
-    title: '레스토랑 주방 보조',
-    employer: { shopName: '이탈리안 키친', rating: 4.9, industry: '음식료품', address: '서울 강남구' },
-    wage: 13000,
-    workDays: ['주말'],
-    workHours: '18:00 ~ 23:00',
-    location: '서울 강남구',
-    deadline: '2026-01-15',
-    requiredLanguage: 'Lv.3 중급',
-    requiredVisa: ['H-1'],
-  },
-  {
-    id: 'mock-4',
-    title: '의류 매장 판매원',
-    employer: { shopName: '패션하우스 명동점', rating: 4.6, industry: '소매업', address: '서울 중구' },
-    wage: 11500,
-    workDays: ['수', '목', '금'],
-    workHours: '12:00 ~ 20:00',
-    location: '서울 중구',
-    deadline: '2026-01-10',
-    requiredLanguage: 'Lv.4 상급',
-    requiredVisa: ['F-6'],
-  },
-  {
-    id: 'mock-5',
-    title: '호텔 룸서비스',
-    employer: { shopName: '그랜드 호텔 서울', rating: 4.7, industry: '숙박업', address: '서울 중구' },
-    wage: 14000,
-    workDays: ['주말포함', '주5일'],
-    workHours: '09:00 ~ 18:00',
-    location: '서울 중구',
-    deadline: '2026-01-20',
-    requiredLanguage: 'Lv.3 중급',
-    requiredVisa: ['E-7', 'F-2'],
-  },
-];
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { SearchBar } from "@/components/SearchBar";
+import { FilterChips } from "@/components/FilterChips";
+import { FilterModal, type FilterState } from "@/components/FilterModal";
+import { JobCard } from "@/components/JobCard";
+import { ProgressCard } from "@/components/ProgressCard";
+import { QuickMenuGrid } from "@/components/QuickMenuGrid";
+import { GuideCard } from "@/components/GuideCard";
+import { JobCardSkeleton } from "@/components/Skeleton";
+import { SafetyNoticeModal } from "@/components/SafetyNoticeModal";
+import { jobsAPI, learningAPI } from "@/api/endpoints";
+import type { Job, LearningProgress } from "@/types";
 
 export const JobSeekerHome = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [learningProgress, setLearningProgress] = useState<LearningProgress | null>(null);
+  const [learningProgress, setLearningProgress] =
+    useState<LearningProgress | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [showSafetyNotice, setShowSafetyNotice] = useState(false);
   // 기본 필터 설정 - 사용자의 실제 언어 레벨만 설정
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({
-    languageLevel: ['Lv.3 중급'], // 수정님의 실제 언어 레벨
-    locations: ['종로구'],
-    experience: ['주말', '비자:C-4'],
+    languageLevel: ["Lv.3 중급"], // 수정님의 실제 언어 레벨
+    locations: ["종로구"],
+    experience: ["주말", "비자:C-4"],
   });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         const [jobsRes, progressRes] = await Promise.all([
           jobsAPI.list({ limit: 10 }),
-          learningAPI.getSummary('seeker-test-001').catch(() => null),
+          learningAPI.getSummary("seeker-test-001").catch(() => null),
         ]);
-        
-        if (jobsRes.data && jobsRes.data.length > 0) {
+
+        if (jobsRes.data) {
           setJobs(jobsRes.data);
           console.log(`Loaded ${jobsRes.data.length} jobs from API`);
         } else {
-          setJobs(mockJobs);
-          console.log(`Loaded ${mockJobs.length} mock jobs`);
+          setJobs([]);
+          console.log('No jobs available');
         }
-        
+
         if (progressRes) {
           setLearningProgress(progressRes.data);
         }
       } catch (error) {
-        console.error('데이터 로딩 오류:', error);
-        toast.error('데이터를 불러오는데 실패했습니다');
-        setJobs(mockJobs); // API 호출 실패 시에도 목 데이터 사용
+        console.error("데이터 로딩 오류:", error);
+        toast.error("데이터를 불러오는데 실패했습니다");
+        setJobs([]); // API 호출 실패 시 빈 배열
       } finally {
         setLoading(false);
       }
@@ -126,9 +64,11 @@ export const JobSeekerHome = () => {
 
   // Safety Notice Modal 표시 여부 확인
   useEffect(() => {
-    const fromOnboarding = searchParams.get('from') === 'onboarding';
-    const hideFlag = typeof window !== 'undefined' && localStorage.getItem('hideSafetyNotice') === 'true';
-    
+    const fromOnboarding = searchParams.get("from") === "onboarding";
+    const hideFlag =
+      typeof window !== "undefined" &&
+      localStorage.getItem("hideSafetyNotice") === "true";
+
     if (fromOnboarding && !hideFlag) {
       setShowSafetyNotice(true);
     }
@@ -136,7 +76,7 @@ export const JobSeekerHome = () => {
 
   const handleFilterApply = (filters: FilterState) => {
     setAppliedFilters(filters);
-    console.log('Applied filters:', filters);
+    console.log("Applied filters:", filters);
     // TODO: 필터 적용 로직 추가 (API 호출 등)
   };
 
@@ -155,12 +95,22 @@ export const JobSeekerHome = () => {
       <header className="bg-mint-600 px-8 pt-4 pb-5">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-white text-[24px] font-bold">WorkFair</h1>
-          <button 
-            className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center" 
+          <button
+            className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"
             aria-label="Notifications"
           >
-            <svg className="w-[18px] h-[18px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            <svg
+              className="w-[18px] h-[18px] text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
             </svg>
           </button>
         </div>
@@ -169,7 +119,7 @@ export const JobSeekerHome = () => {
 
       {/* Recommended filters */}
       <div className="bg-white border-b border-line-200">
-        <FilterChips 
+        <FilterChips
           filters={getSelectedFiltersArray()}
           title="수정님께 추천하는 맞춤 필터"
           icon="✨"
@@ -194,7 +144,7 @@ export const JobSeekerHome = () => {
             progress={learningProgress.progressPercent}
             completed={learningProgress.completedLessons}
             total={learningProgress.totalLessons}
-            onClick={() => navigate('/learning')}
+            onClick={() => navigate("/learning")}
           />
         </div>
       )}
@@ -205,15 +155,27 @@ export const JobSeekerHome = () => {
         <div className="flex items-center justify-between px-8 mb-3">
           <div className="flex items-center gap-2">
             <span className="text-[16px]">🚀</span>
-            <h2 className="text-[18px] font-semibold text-text-900">수정님을 위한 AI 맞춤 공고</h2>
+            <h2 className="text-[18px] font-semibold text-text-900">
+              수정님을 위한 맞춤 공고
+            </h2>
           </div>
           <button className="text-text-700">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>
-        
+
         {/* Horizontal Scroll */}
         <div className="ml-8 mr-8 overflow-x-auto pb-2">
           <div className="flex gap-3 snap-x snap-mandatory">
@@ -224,9 +186,11 @@ export const JobSeekerHome = () => {
                 <JobCardSkeleton />
               </>
             ) : (
-              jobs.slice(0, 10).map((job) => (
-                <JobCard key={job.id} job={job} variant="featured" />
-              ))
+              jobs
+                .slice(0, 10)
+                .map((job) => (
+                  <JobCard key={job.id} job={job} variant="featured" />
+                ))
             )}
           </div>
         </div>
@@ -246,9 +210,11 @@ export const JobSeekerHome = () => {
         {/* Section header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-[16px]">🍯</span>
-          <h2 className="text-[18px] font-semibold text-text-900">생활 꿀팁 & 필수 가이드</h2>
+          <h2 className="text-[18px] font-semibold text-text-900">
+            생활 꿀팁 & 필수 가이드
+          </h2>
         </div>
-        
+
         {/* Grid - 2 columns */}
         <div className="grid grid-cols-2 gap-3">
           <GuideCard
@@ -272,4 +238,3 @@ export const JobSeekerHome = () => {
     </div>
   );
 };
-

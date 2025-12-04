@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SkillsStepProps {
+  skillsData?: string;
   onChangeData: (value: string) => void;
   onNext: () => void;
   onSkip: () => void;
@@ -143,6 +144,7 @@ function CategorySection({ title, keywords, selectedKeywords, onSelectKeyword }:
 }
 
 export function SkillsStep({
+  skillsData,
   onChangeData,
   onNext,
   onSkip,
@@ -150,6 +152,24 @@ export function SkillsStep({
 }: SkillsStepProps) {
   const [workSkills, setWorkSkills] = useState<string[]>([]);
   const [newWorkSkill, setNewWorkSkill] = useState('');
+  const [strengths, setStrengths] = useState<string[]>([]);
+  const [newStrength, setNewStrength] = useState('');
+  const [mbti, setMbti] = useState<string[]>([]);
+  const [newMbti, setNewMbti] = useState('');
+
+  // Load initial data from skillsData prop
+  useEffect(() => {
+    if (skillsData) {
+      try {
+        const parsed = JSON.parse(skillsData);
+        if (parsed.workSkills) setWorkSkills(parsed.workSkills);
+        if (parsed.strengths) setStrengths(parsed.strengths);
+        if (parsed.mbti) setMbti(parsed.mbti);
+      } catch (error) {
+        console.error('Failed to parse skills data:', error);
+      }
+    }
+  }, [skillsData]);
   
   const handleAddWorkSkill = (skill?: string) => {
     const skillToAdd = skill || newWorkSkill.trim();
@@ -171,9 +191,6 @@ export function SkillsStep({
     }
   };
 
-  const [strengths, setStrengths] = useState<string[]>([]);
-  const [newStrength, setNewStrength] = useState('');
-
   const handleAddStrength = (strength?: string) => {
     const strengthToAdd = strength || newStrength.trim();
     if (strengthToAdd) {
@@ -193,9 +210,6 @@ export function SkillsStep({
       handleAddStrength();
     }
   };
-
-  const [mbti, setMbti] = useState<string[]>([]);
-  const [newMbti, setNewMbti] = useState('');
 
   const handleAddMbti = (mbtiValue?: string) => {
     const mbtiToAdd = mbtiValue || newMbti.trim();

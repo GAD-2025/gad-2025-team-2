@@ -17,46 +17,15 @@ export const EmployeeScheduleList = () => {
     try {
       setLoading(true);
       
-      // Mock data - 실제로는 API 호출
+      // TODO: Implement API call to fetch employees
       // const response = await fetch('/api/schedule/employees');
       // const data = await response.json();
+      // setEmployees(data);
       
-      const mockEmployees: Employee[] = [
-        {
-          id: 'emp-1',
-          name: '김수정',
-          nationality: '우즈베키스탄',
-          position: '서빙',
-          profileImageUrl: undefined,
-          totalShifts: 24,
-          completedShifts: 20,
-          upcomingShifts: 4
-        },
-        {
-          id: 'emp-2',
-          name: '이민수',
-          nationality: '베트남',
-          position: '주방보조',
-          profileImageUrl: undefined,
-          totalShifts: 18,
-          completedShifts: 16,
-          upcomingShifts: 2
-        },
-        {
-          id: 'emp-3',
-          name: '박지영',
-          nationality: '한국',
-          position: '매니저',
-          profileImageUrl: undefined,
-          totalShifts: 30,
-          completedShifts: 28,
-          upcomingShifts: 2
-        }
-      ];
-
-      setEmployees(mockEmployees);
+      setEmployees([]);
     } catch (error) {
       console.error('Failed to fetch employees:', error);
+      setEmployees([]);
     } finally {
       setLoading(false);
     }

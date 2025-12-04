@@ -7,12 +7,23 @@ export interface WorkSchedulePayload {
   days_of_week: string[]; // ['MON', 'TUE', ...] or ['월', '화', ...]
 }
 
+export interface ExperiencePayload {
+  sections: string[]; // ['career', 'license', 'skills', 'introduction']
+  data: {
+    career?: string;
+    license?: string;
+    skills?: string;
+    introduction?: string;
+  };
+}
+
 export interface JobSeekerProfileCreate {
   user_id: string;
   basic_info_file_name?: string | null;
   preferred_regions: string[];
   preferred_jobs: string[];
   work_schedule: WorkSchedulePayload;
+  experience?: ExperiencePayload;
 }
 
 export interface JobSeekerProfileResponse {

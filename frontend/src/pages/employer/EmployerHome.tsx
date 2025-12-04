@@ -27,81 +27,13 @@ export const EmployerHome = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Mock applicants data - in real app, fetch from API
-        const mockApplicants: JobSeeker[] = [
-          {
-            id: 'seeker-1',
-            name: '소피아',
-            nationality: '우즈베키스탄',
-            phone: '010-1234-5678',
-            languageLevel: 'Lv.3 중급',
-            visaType: 'C-4',
-            availability: '주말 가능',
-            experience: [
-              {
-                role: '레스토랑 2년 근무',
-                years: 2,
-                tags: ['영어 가능', '용산구 거주', '주말 근무 가능']
-              }
-            ],
-            preferences: {
-              industries: ['식음료'],
-              wageRange: { min: 12000, max: 15000 },
-              area: '용산구',
-              radiusKm: 5,
-              preferDays: ['토', '일']
-            }
-          },
-          {
-            id: 'seeker-2',
-            name: '알렉스',
-            nationality: '필리핀',
-            phone: '010-2345-6789',
-            languageLevel: 'Lv.2 초급',
-            visaType: 'F-4',
-            availability: '평일 가능',
-            experience: [
-              {
-                role: '카페 1년 근무',
-                years: 1,
-                tags: ['영어 가능', '강남구 거주']
-              }
-            ],
-            preferences: {
-              industries: ['카페'],
-              wageRange: { min: 11000, max: 14000 },
-              area: '강남구',
-              radiusKm: 3,
-              preferDays: ['월', '화', '수', '목', '금']
-            }
-          },
-          {
-            id: 'seeker-3',
-            name: '마리아',
-            nationality: '베트남',
-            phone: '010-3456-7890',
-            languageLevel: 'Lv.4 상급',
-            visaType: 'E-9',
-            availability: '주말 가능',
-            experience: [
-              {
-                role: '편의점 3년 근무',
-                years: 3,
-                tags: ['영어 가능', '마포구 거주', '야간 근무 가능']
-              }
-            ],
-            preferences: {
-              industries: ['편의점'],
-              wageRange: { min: 13000, max: 16000 },
-              area: '마포구',
-              radiusKm: 7,
-              preferDays: ['토', '일']
-            }
-          }
-        ];
-        setApplicants(mockApplicants);
+        // TODO: Implement API call to fetch applicants/job seekers
+        // For now, showing empty state
+        setApplicants([]);
       } catch (error) {
+        console.error('데이터 로딩 오류:', error);
         toast.error('데이터를 불러오는데 실패했습니다');
+        setApplicants([]);
       } finally {
         setLoading(false);
       }

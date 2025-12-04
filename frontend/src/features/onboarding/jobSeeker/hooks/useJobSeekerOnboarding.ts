@@ -183,6 +183,13 @@ export function useJobSeekerOnboarding() {
       }
 
       // Prepare payload with work schedule and experience
+      // Build experience sections array based on filled data
+      const experienceSections: string[] = [];
+      if (values.experienceData.career) experienceSections.push('career');
+      if (values.experienceData.license) experienceSections.push('license');
+      if (values.experienceData.skills) experienceSections.push('skills');
+      if (values.experienceData.introduction) experienceSections.push('introduction');
+
       const payload = {
         user_id: userId,
         basic_info_file_name:
@@ -197,7 +204,10 @@ export function useJobSeekerOnboarding() {
           end_time: values.workSchedule.endTime,
           days_of_week: values.workSchedule.daysOfWeek,
         },
-        experience: values.experienceData,
+        experience: {
+          sections: experienceSections,
+          data: values.experienceData,
+        },
       };
 
       console.log('Sending profile data:', payload);

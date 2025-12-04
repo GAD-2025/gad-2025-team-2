@@ -27,6 +27,7 @@ export const useAuthStore = create<AuthState>()(
       },
       clearAuth: () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('auth-storage'); // zustand persist 스토리지도 제거
         set({ user: null, token: null, isAuthenticated: false });
       },
       setUserMode: (mode) => {
