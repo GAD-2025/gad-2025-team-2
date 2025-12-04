@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
+import { applicationsAPI, jobsAPI } from '@/api/endpoints';
+import type { Job } from '@/types';
 
 interface Application {
   id: string;
@@ -13,6 +15,20 @@ interface Application {
   appliedDate: string;
   status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
 }
+
+// Backend status to frontend status mapping
+const mapStatus = (backendStatus: string): Application['status'] => {
+  switch (backendStatus) {
+    case 'applied':
+      return 'pending';
+    case 'hired':
+      return 'accepted';
+    case 'rejected':
+      return 'rejected';
+    default:
+      return 'pending';
+  }
+};
 
 export const MyApplications = () => {
   const navigate = useNavigate();
@@ -28,52 +44,62 @@ export const MyApplications = () => {
     try {
       setLoading(true);
       
-      // Mock data
-      const mockData: Application[] = [
-        {
-          id: '1',
-          jobId: 'job-1',
-          jobTitle: '카페 바리스타',
-          shopName: '스타벅스 강남점',
-          wage: 12000,
-          location: '강남구',
-          appliedDate: '2024-11-08',
-          status: 'pending'
-        },
-        {
-          id: '2',
-          jobId: 'job-2',
-          jobTitle: '레스토랑 서빙',
-          shopName: '올리브영 홍대점',
-          wage: 11000,
-          location: '마포구',
-          appliedDate: '2024-11-07',
-          status: 'reviewed'
-        },
-        {
-          id: '3',
-          jobId: 'job-3',
-          jobTitle: '편의점 야간 근무',
-          shopName: 'CU 신촌점',
-          wage: 10500,
-          location: '서대문구',
-          appliedDate: '2024-11-05',
-          status: 'accepted'
-        },
-        {
-          id: '4',
-          jobId: 'job-4',
-          jobTitle: '주방 보조',
-          shopName: '백다방',
-          wage: 10000,
-          location: '용산구',
-          appliedDate: '2024-11-03',
-          status: 'rejected'
-        }
-      ];
+      // Get current user ID
+      const userId = localStorage.getItem('signup_user_id');
+      if (!userId) {
+        console.error('No user ID found');
+        toast.error('로그인이 필요합니다');
+        navigate('/signin');
+        return;
+      }
 
-      setApplications(mockData);
+      // Fetch applications from backend
+      const applicationsResponse = await applicationsAPI.list(userId);
+      console.log('Fetched applications:', applicationsResponse.data);
+
+      // If no applications, show empty state
+      if (!applicationsResponse.data || applicationsResponse.data.length === 0) {
+        setApplications([]);
+        return;
+      }
+
+      // Fetch job details for each application
+      const applicationsWithJobDetails = await Promise.all(
+        applicationsResponse.data.map(async (app: any) => {
+          try {
+            const jobResponse = await jobsAPI.get(app.jobId);
+            const job: Job = jobResponse.data;
+            
+            return {
+              id: app.applicationId,
+              jobId: app.jobId,
+              jobTitle: job.title,
+              shopName: job.employer?.name || job.employer?.industry || '회사명 미등록',
+              wage: job.wage,
+              location: job.employer?.address || '위치 미등록',
+              appliedDate: app.appliedAt.split('T')[0], // Extract date from ISO string
+              status: mapStatus(app.status),
+            } as Application;
+          } catch (error) {
+            console.error(`Failed to fetch job ${app.jobId}:`, error);
+            // Return a fallback application entry
+            return {
+              id: app.applicationId,
+              jobId: app.jobId,
+              jobTitle: '공고 정보를 불러올 수 없습니다',
+              shopName: '정보 없음',
+              wage: 0,
+              location: '정보 없음',
+              appliedDate: app.appliedAt.split('T')[0],
+              status: mapStatus(app.status),
+            } as Application;
+          }
+        })
+      );
+
+      setApplications(applicationsWithJobDetails);
     } catch (error) {
+      console.error('Failed to fetch applications:', error);
       toast.error('지원 내역을 불러오는데 실패했습니다');
     } finally {
       setLoading(false);
