@@ -8,6 +8,7 @@ interface WorkScheduleDetailStepProps {
   onToggleAllDays: () => void;
   onPrev: () => void;
   onSubmit: () => Promise<void>;
+  onSkip: () => void;
   isSubmitting: boolean;
 }
 
@@ -25,6 +26,7 @@ export function WorkScheduleDetailStep({
   onToggleAllDays,
   onPrev,
   onSubmit,
+  onSkip,
   isSubmitting,
 }: WorkScheduleDetailStepProps) {
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -210,18 +212,28 @@ export function WorkScheduleDetailStep({
 
       {/* 하단 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 max-w-[420px] mx-auto">
-        <button
-          type="button"
-          onClick={handleComplete}
-          disabled={!canConfirm || isSubmitting}
-          className={`h-12 w-full rounded-full text-[17px] font-semibold text-white transition ${
-            canConfirm && !isSubmitting
-              ? 'bg-primary-mint'
-              : 'bg-gray-200 text-gray-400'
-          }`}
-        >
-          {isSubmitting ? '저장 중...' : '확인'}
-        </button>
+        <div className="flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={handleComplete}
+            disabled={!canConfirm || isSubmitting}
+            className={`h-12 w-full rounded-full text-[17px] font-semibold text-white transition ${
+              canConfirm && !isSubmitting
+                ? 'bg-primary-mint'
+                : 'bg-gray-200 text-gray-400'
+            }`}
+          >
+            {isSubmitting ? '저장 중...' : '확인'}
+          </button>
+          <button
+            type="button"
+            onClick={onSkip}
+            disabled={isSubmitting}
+            className="h-12 w-full rounded-full border border-gray-300 bg-white text-[17px] font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+          >
+            건너뛰기
+          </button>
+        </div>
       </div>
     </div>
   );

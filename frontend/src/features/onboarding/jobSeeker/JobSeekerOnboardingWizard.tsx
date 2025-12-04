@@ -60,6 +60,7 @@ export default function JobSeekerOnboardingWizard() {
           selectedRegions={values.preferredRegions}
           onRegionSelect={handleRegionSelect}
           onNext={goNext}
+          onSkip={goNext}
           onPrev={goPrev}
         />
       )}
@@ -69,6 +70,7 @@ export default function JobSeekerOnboardingWizard() {
           onJobToggle={handleJobToggle}
           onPrev={goPrev}
           onNext={goNext}
+          onSkip={goNext}
         />
       )}
       {step === 5 && (
@@ -76,6 +78,7 @@ export default function JobSeekerOnboardingWizard() {
           availableDates={values.workSchedule.availableDates}
           onToggleDate={handleToggleDate}
           onConfirm={handleConfirmCalendar}
+          onSkip={handleConfirmCalendar}
           onPrev={goPrev}
         />
       )}
@@ -87,6 +90,7 @@ export default function JobSeekerOnboardingWizard() {
           onToggleAllDays={handleToggleAllDays}
           onPrev={goPrev}
           onSubmit={goNext}
+          onSkip={goNext}
           isSubmitting={false}
         />
       )}

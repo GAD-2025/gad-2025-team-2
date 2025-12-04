@@ -1,10 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export interface WorkSchedulePayload {
-  available_dates: string[]; // 'YYYY-MM-DD'
-  start_time: string; // 'HH:mm'
-  end_time: string; // 'HH:mm'
-  days_of_week: string[]; // ['MON', 'TUE', ...] or ['월', '화', ...]
+  available_dates?: string[]; // 'YYYY-MM-DD'
+  start_time?: string | null; // 'HH:mm'
+  end_time?: string | null; // 'HH:mm'
+  days_of_week?: string[]; // ['MON', 'TUE', ...] or ['월', '화', ...]
 }
 
 export interface ExperiencePayload {
@@ -22,7 +22,7 @@ export interface JobSeekerProfileCreate {
   basic_info_file_name?: string | null;
   preferred_regions: string[];
   preferred_jobs: string[];
-  work_schedule: WorkSchedulePayload;
+  work_schedule?: WorkSchedulePayload;
   experience?: ExperiencePayload;
 }
 

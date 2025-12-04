@@ -53,18 +53,18 @@ export function IntroductionStep({
             type="button"
             onClick={onNext}
             disabled={!canProceed}
-            className={`w-full rounded-full px-4 py-3 text-[17px] font-semibold ${
+            className={`h-12 w-full rounded-full text-[17px] font-semibold transition ${
               canProceed
-                ? 'bg-primary-mint text-white'
-                : 'bg-gray-200 text-gray-400'
+                ? 'bg-primary-mint text-white hover:bg-primary-mint/90'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
-            저장하기
+            확인
           </button>
           <button
             type="button"
             onClick={onSkip}
-            className="w-full rounded-full border border-gray-300 bg-white px-4 py-3 text-[17px] font-semibold text-gray-700"
+            className="h-12 w-full rounded-full border border-gray-300 bg-white text-[17px] font-semibold text-gray-700 transition hover:bg-gray-50"
           >
             건너뛰기
           </button>

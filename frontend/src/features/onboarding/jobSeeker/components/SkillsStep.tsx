@@ -103,12 +103,12 @@ function RecommendationTag({ keyword, isSelected, onClick }: RecommendationTagPr
       onClick={onClick}
       disabled={isSelected}
       className={`
-        rounded-full px-3 py-2 text-[13px] font-medium
-        transition-all duration-200
+        rounded-lg px-4 py-2.5 text-[13px] font-medium
+        transition-all duration-200 border
         ${
           isSelected
-            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-[#F3F5F7] text-gray-700 hover:bg-[#E0E7EA] hover:shadow-sm active:scale-95'
+            ? 'bg-mint-50 text-mint-600 border-mint-300 cursor-not-allowed'
+            : 'bg-white text-gray-700 border-gray-200 hover:border-mint-400 hover:bg-mint-50 hover:text-mint-600 active:scale-95'
         }
       `}
     >
@@ -126,19 +126,38 @@ interface CategorySectionProps {
 }
 
 function CategorySection({ title, keywords, selectedKeywords, onSelectKeyword }: CategorySectionProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <div className="mb-4">
-      <h3 className="mb-2 text-[13px] font-medium text-gray-600">{title}</h3>
-      <div className="flex flex-wrap gap-2">
-        {keywords.map((keyword) => (
-          <RecommendationTag
-            key={keyword}
-            keyword={keyword}
-            isSelected={selectedKeywords.includes(keyword)}
-            onClick={() => onSelectKeyword(keyword)}
-          />
-        ))}
-      </div>
+    <div className="mb-3">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+      >
+        <h3 className="text-[14px] font-semibold text-gray-800">{title}</h3>
+        <svg 
+          className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-2 px-2 py-3 flex flex-wrap gap-2">
+          {keywords.map((keyword) => (
+            <RecommendationTag
+              key={keyword}
+              keyword={keyword}
+              isSelected={selectedKeywords.includes(keyword)}
+              onClick={() => onSelectKeyword(keyword)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -229,7 +248,8 @@ export function SkillsStep({
     }
   };
 
-
+  // 확인 버튼 활성화 조건: 업무 스킬 OR 강점 OR MBTI 중 하나라도 입력
+  const canConfirm = workSkills.length > 0 || strengths.length > 0 || mbti.length > 0;
 
   return (
     <div className="mx-auto flex h-screen w-full max-w-[420px] flex-col bg-white pb-24">
@@ -276,18 +296,21 @@ export function SkillsStep({
                 <button
                   key={`${skill}-${index}`}
                   onClick={() => handleRemoveWorkSkill(skill)}
-                  className="rounded-full bg-mint-100 px-4 py-2 text-[14px] text-mint-700 border border-mint-200 flex items-center gap-2"
+                  className="rounded-lg bg-mint-600 px-4 py-2.5 text-[14px] text-white font-medium flex items-center gap-2 hover:bg-mint-700 transition-colors shadow-sm"
                 >
                   {skill}
-                  <span className="text-mint-500">×</span>
+                  <span className="text-white text-[16px] font-bold">×</span>
                 </button>
               ))}
             </div>
           )}
 
           {/* 추천 키워드 */}
-          <div className="rounded-xl bg-gray-50 p-4">
-            <p className="mb-3 text-[14px] font-medium text-gray-700">💡 추천 키워드</p>
+          <div className="rounded-xl bg-white border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[16px]">💡</span>
+              <p className="text-[15px] font-semibold text-gray-800">추천 키워드</p>
+            </div>
             {WORK_SKILLS_CATEGORIES.map((category) => (
               <CategorySection
                 key={category.title}
@@ -333,18 +356,21 @@ export function SkillsStep({
                 <button
                   key={`${strength}-${index}`}
                   onClick={() => handleRemoveStrength(strength)}
-                  className="rounded-full bg-blue-50 px-4 py-2 text-[14px] text-blue-600 border border-blue-200 flex items-center gap-2"
+                  className="rounded-lg bg-blue-600 px-4 py-2.5 text-[14px] text-white font-medium flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm"
                 >
                   {strength}
-                  <span className="text-blue-400">×</span>
+                  <span className="text-white text-[16px] font-bold">×</span>
                 </button>
               ))}
             </div>
           )}
 
           {/* 추천 키워드 */}
-          <div className="rounded-xl bg-gray-50 p-4">
-            <p className="mb-3 text-[14px] font-medium text-gray-700">💡 추천 키워드</p>
+          <div className="rounded-xl bg-white border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[16px]">💡</span>
+              <p className="text-[15px] font-semibold text-gray-800">추천 키워드</p>
+            </div>
             {STRENGTHS_CATEGORIES.map((category) => (
               <CategorySection
                 key={category.title}
@@ -390,18 +416,21 @@ export function SkillsStep({
                 <button
                   key={`${m}-${index}`}
                   onClick={() => handleRemoveMbti(m)}
-                  className="rounded-full bg-green-50 px-4 py-2 text-[14px] text-green-600 border border-green-200 flex items-center gap-2"
+                  className="rounded-lg bg-purple-600 px-4 py-2.5 text-[14px] text-white font-medium flex items-center gap-2 hover:bg-purple-700 transition-colors shadow-sm"
                 >
                   {m}
-                  <span className="text-green-400">×</span>
+                  <span className="text-white text-[16px] font-bold">×</span>
                 </button>
               ))}
             </div>
           )}
 
           {/* 추천 키워드 */}
-          <div className="rounded-xl bg-gray-50 p-4">
-            <p className="mb-3 text-[14px] font-medium text-gray-700">💡 추천 키워드</p>
+          <div className="rounded-xl bg-white border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[16px]">💡</span>
+              <p className="text-[15px] font-semibold text-gray-800">추천 키워드</p>
+            </div>
             {MBTI_CATEGORIES.map((category) => (
               <CategorySection
                 key={category.title}
@@ -428,14 +457,19 @@ export function SkillsStep({
               onChangeData(JSON.stringify(data));
               onNext();
             }}
-            className="w-full rounded-xl bg-primary-mint px-4 py-3.5 text-[17px] font-semibold text-white"
+            disabled={!canConfirm}
+            className={`h-12 w-full rounded-full text-[17px] font-semibold transition ${
+              canConfirm
+                ? 'bg-primary-mint text-white hover:bg-primary-mint/90'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
-            저장하기
+            확인
           </button>
           <button
             type="button"
             onClick={onSkip}
-            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3.5 text-[17px] font-semibold text-gray-700"
+            className="h-12 w-full rounded-full border border-gray-300 bg-white text-[17px] font-semibold text-gray-700 transition hover:bg-gray-50"
           >
             건너뛰기
           </button>

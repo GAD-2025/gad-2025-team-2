@@ -104,10 +104,10 @@ class SignupUserResponse(BaseModel):
 
 
 class WorkSchedulePayload(BaseModel):
-    available_dates: List[str]  # ['YYYY-MM-DD', ...]
-    start_time: str  # 'HH:mm'
-    end_time: str  # 'HH:mm'
-    days_of_week: List[str]  # ['MON', 'TUE', ...] or ['월', '화', ...]
+    available_dates: List[str] = []  # ['YYYY-MM-DD', ...]
+    start_time: Optional[str] = None  # 'HH:mm'
+    end_time: Optional[str] = None  # 'HH:mm'
+    days_of_week: List[str] = []  # ['MON', 'TUE', ...] or ['월', '화', ...]
 
 
 class ExperiencePayload(BaseModel):
@@ -120,7 +120,7 @@ class JobSeekerProfileCreate(BaseModel):
     basic_info_file_name: Optional[str] = None
     preferred_regions: List[str] = []
     preferred_jobs: List[str] = []
-    work_schedule: WorkSchedulePayload
+    work_schedule: Optional[WorkSchedulePayload] = None
     experience: Optional[ExperiencePayload] = None
 
 

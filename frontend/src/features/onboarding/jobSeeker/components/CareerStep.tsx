@@ -69,7 +69,8 @@ export function CareerStep({
     setCareers(careers.filter((career) => career.id !== id));
   };
   
-
+  // 확인 버튼 활성화 조건: 경력 없는 신입 체크 OR 경력이 1개 이상
+  const canConfirm = isNewbie || careers.length > 0;
 
   return (
     <div className="mx-auto flex h-screen w-full max-w-[420px] flex-col bg-gray-50 pb-24">
@@ -239,20 +240,25 @@ export function CareerStep({
         </button>      </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 max-w-[420px] mx-auto">
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onSkip}
-            className="flex-1 rounded-xl bg-gray-200 px-4 py-3.5 text-[17px] font-semibold text-gray-700 hover:bg-gray-300 transition-colors"
-          >
-            나중에 추가하기
-          </button>
+        <div className="flex flex-col gap-2.5">
           <button
             type="button"
             onClick={onNext}
-            className="flex-1 rounded-xl bg-primary-mint px-4 py-3.5 text-[17px] font-semibold text-white hover:bg-primary-mint/90 transition-colors"
+            disabled={!canConfirm}
+            className={`h-12 w-full rounded-full text-[17px] font-semibold transition ${
+              canConfirm
+                ? 'bg-primary-mint text-white hover:bg-primary-mint/90'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
-            저장하기
+            확인
+          </button>
+          <button
+            type="button"
+            onClick={onSkip}
+            className="h-12 w-full rounded-full border border-gray-300 bg-white text-[17px] font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
+            건너뛰기
           </button>
         </div>
       </div>

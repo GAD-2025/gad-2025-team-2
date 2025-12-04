@@ -2,6 +2,7 @@ interface PreferredRegionStepProps {
   selectedRegions: string[];
   onRegionSelect: (regions: string[]) => void;
   onNext: () => void;
+  onSkip: () => void;
   onPrev: () => void;
 }
 
@@ -21,6 +22,7 @@ export function PreferredRegionStep({
   selectedRegions,
   onRegionSelect,
   onNext,
+  onSkip,
   onPrev,
 }: PreferredRegionStepProps) {
   const handleSelect = (region: string) => {
@@ -77,18 +79,27 @@ export function PreferredRegionStep({
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 max-w-[420px] mx-auto">
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!hasSelection}
-          className={`h-12 w-full rounded-full text-[17px] font-semibold ${
-            hasSelection
-              ? 'bg-primary-mint text-white'
-              : 'bg-gray-200 text-gray-400'
-          }`}
-        >
-          다음
-        </button>
+        <div className="flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!hasSelection}
+            className={`h-12 w-full rounded-full text-[17px] font-semibold transition ${
+              hasSelection
+                ? 'bg-primary-mint text-white'
+                : 'bg-gray-200 text-gray-400'
+            }`}
+          >
+            다음
+          </button>
+          <button
+            type="button"
+            onClick={onSkip}
+            className="h-12 w-full rounded-full border border-gray-300 bg-white text-[17px] font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
+            건너뛰기
+          </button>
+        </div>
       </div>
     </div>
   );

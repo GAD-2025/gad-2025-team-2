@@ -23,8 +23,16 @@ async def create_job_seeker_profile(
     existing = session.exec(statement).first()
 
     # Convert work_schedule to DB format
-    work_available_dates_json = json.dumps(request.work_schedule.available_dates)
-    work_days_of_week_json = json.dumps(request.work_schedule.days_of_week)
+    if request.work_schedule:
+        work_available_dates_json = json.dumps(request.work_schedule.available_dates)
+        work_days_of_week_json = json.dumps(request.work_schedule.days_of_week)
+        work_start_time = request.work_schedule.start_time
+        work_end_time = request.work_schedule.end_time
+    else:
+        work_available_dates_json = json.dumps([])
+        work_days_of_week_json = json.dumps([])
+        work_start_time = None
+        work_end_time = None
 
     # Extract experience data
     experience_sections = []
@@ -47,8 +55,8 @@ async def create_job_seeker_profile(
         existing.preferred_regions = json.dumps(request.preferred_regions)
         existing.preferred_jobs = json.dumps(request.preferred_jobs)
         existing.work_available_dates = work_available_dates_json
-        existing.work_start_time = request.work_schedule.start_time
-        existing.work_end_time = request.work_schedule.end_time
+        existing.work_start_time = work_start_time
+        existing.work_end_time = work_end_time
         existing.work_days_of_week = work_days_of_week_json
         existing.experience_sections = json.dumps(experience_sections)
         existing.experience_career = experience_career
@@ -88,8 +96,8 @@ async def create_job_seeker_profile(
             preferred_regions=json.dumps(request.preferred_regions),
             preferred_jobs=json.dumps(request.preferred_jobs),
             work_available_dates=work_available_dates_json,
-            work_start_time=request.work_schedule.start_time,
-            work_end_time=request.work_schedule.end_time,
+            work_start_time=work_start_time,
+            work_end_time=work_end_time,
             work_days_of_week=work_days_of_week_json,
             experience_sections=json.dumps(experience_sections),
             experience_career=experience_career,

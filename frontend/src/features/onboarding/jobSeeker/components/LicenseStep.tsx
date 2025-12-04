@@ -76,9 +76,12 @@ export function LicenseStep({
     setAwards(awards.filter((_, i) => i !== index));
   };
 
-
-
-
+  // 확인 버튼 활성화 조건: 언어 레벨 선택 OR 공인시험 추가 OR 추가정보 OR 자격증 OR 수상/수료/활동
+  const canConfirm = languageLevel !== '' || 
+                     officialExams.length > 0 || 
+                     additionalLanguageInfoList.length > 0 || 
+                     licenses.length > 0 || 
+                     awards.length > 0;
 
   return (
     <div className="mx-auto flex h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-32">
@@ -400,14 +403,19 @@ export function LicenseStep({
               onChangeData(data);
               onNext();
             }}
-            className={`w-full rounded-full px-4 py-3 text-[17px] font-semibold bg-primary-mint text-white`}
+            disabled={!canConfirm}
+            className={`h-12 w-full rounded-full text-[17px] font-semibold transition ${
+              canConfirm
+                ? 'bg-primary-mint text-white hover:bg-primary-mint/90'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
-            저장하기
+            확인
           </button>
           <button
             type="button"
             onClick={onSkip}
-            className="w-full rounded-full border border-gray-300 bg-white px-4 py-3 text-[17px] font-semibold text-gray-700"
+            className="h-12 w-full rounded-full border border-gray-300 bg-white text-[17px] font-semibold text-gray-700 transition hover:bg-gray-50"
           >
             건너뛰기
           </button>

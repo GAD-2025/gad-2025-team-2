@@ -174,14 +174,6 @@ export function useJobSeekerOnboarding() {
         throw new Error('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
       }
 
-      // Validate work schedule
-      if (!values.workSchedule.startTime || !values.workSchedule.endTime) {
-        throw new Error('근무 시간을 선택해주세요.');
-      }
-      if (values.workSchedule.daysOfWeek.length === 0) {
-        throw new Error('근무 가능 요일을 선택해주세요.');
-      }
-
       // Prepare payload with work schedule and experience
       // Build experience sections array based on filled data
       const experienceSections: string[] = [];
@@ -190,7 +182,13 @@ export function useJobSeekerOnboarding() {
       if (values.experienceData.skills) experienceSections.push('skills');
       if (values.experienceData.introduction) experienceSections.push('introduction');
 
-      const payload = {
+      // Check if work schedule has any data
+      const hasWorkSchedule = values.workSchedule.startTime || 
+                              values.workSchedule.endTime || 
+                              values.workSchedule.daysOfWeek.length > 0 ||
+                              values.workSchedule.availableDates.length > 0;
+
+      const payload: any = {
         user_id: userId,
         basic_info_file_name:
           values.uploadedFiles.length > 0
@@ -198,17 +196,21 @@ export function useJobSeekerOnboarding() {
             : null,
         preferred_regions: values.preferredRegions,
         preferred_jobs: values.preferredJobs,
-        work_schedule: {
-          available_dates: values.workSchedule.availableDates,
-          start_time: values.workSchedule.startTime,
-          end_time: values.workSchedule.endTime,
-          days_of_week: values.workSchedule.daysOfWeek,
-        },
         experience: {
           sections: experienceSections,
           data: values.experienceData,
         },
       };
+
+      // Only include work_schedule if user has entered any data
+      if (hasWorkSchedule) {
+        payload.work_schedule = {
+          available_dates: values.workSchedule.availableDates,
+          start_time: values.workSchedule.startTime,
+          end_time: values.workSchedule.endTime,
+          days_of_week: values.workSchedule.daysOfWeek,
+        };
+      }
 
       console.log('Sending profile data:', payload);
 
