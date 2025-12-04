@@ -69,31 +69,31 @@ async def signin_new(request: NewSignInRequest, session: Session = Depends(get_s
     """New signin endpoint for identifier (email or phone) + password + role"""
     try:
         # 전화번호에서 하이픈(-) 제거
-        identifier = request.identifier.replace('-', '') if request.role == "job_seeker" else request.identifier
+        identifier = request.identifier.replace('-', '')
         
         print(f"🔐 로그인 시도: role={request.role}, identifier={identifier}")
         
-        # Find user by identifier (email or phone) and role
-        if request.role == "employer":
-            # Employer logs in with email
-            statement = select(SignupUser).where(
-                SignupUser.email == identifier,
-                SignupUser.role == "employer"
-            )
-        else:
-            # Job seeker logs in with phone
-            statement = select(SignupUser).where(
-                SignupUser.phone == identifier,
-                SignupUser.role == "job_seeker"
-            )
+        # Find user by identifier (email or phone) - try both
+        user = None
         
+        # Try to find by phone first (for job seekers)
+        statement = select(SignupUser).where(SignupUser.phone == identifier)
         user = session.exec(statement).first()
+        
+        # If not found, try to find by email (for employers)
+        if not user:
+            statement = select(SignupUser).where(SignupUser.email == identifier)
+            user = session.exec(statement).first()
         
         if not user:
             print(f"❌ 사용자를 찾을 수 없음: {request.identifier}")
             raise HTTPException(status_code=401, detail="계정을 찾을 수 없습니다")
         
-        print(f"✅ 사용자 발견: id={user.id}, name={user.name}, has_password={user.password is not None}")
+        print(f"✅ 사용자 발견: id={user.id}, name={user.name}, role={user.role}, has_password={user.password is not None}")
+        
+        # Check if selected role matches actual role
+        if request.role != user.role:
+            print(f"⚠️ 선택한 role({request.role})과 실제 role({user.role})이 다릅니다. 실제 role로 로그인합니다.")
         
         # Verify password
         if not user.password:
@@ -108,7 +108,7 @@ async def signin_new(request: NewSignInRequest, session: Session = Depends(get_s
             print(f"❌ 비밀번호 불일치")
             raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다")
         
-        print(f"✅ 로그인 성공: {user.id}")
+        print(f"✅ 로그인 성공: {user.id} (role: {user.role})")
         
         # Create token
         token = create_access_token({"sub": user.id, "role": user.role})

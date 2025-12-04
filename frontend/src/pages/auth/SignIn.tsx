@@ -50,9 +50,9 @@ export function SignIn() {
       
       console.log('✅ 로그인 성공:', response);
       
-      // Store user info
+      // Store user info - use actual role from API response
       localStorage.setItem('signup_user_id', response.user_id);
-      localStorage.setItem('user_role', role);
+      localStorage.setItem('user_role', response.role); // 실제 role 저장
       if (response.name) {
         localStorage.setItem('user_name', response.name);
       }
@@ -60,10 +60,16 @@ export function SignIn() {
         localStorage.setItem('profile_photo', response.profile_photo);
       }
 
-      toast.success('로그인 성공!');
+      // Check if selected role matches actual role
+      if (response.role !== role) {
+        const roleName = response.role === 'employer' ? '고용주' : '구직자';
+        toast.warning(`${roleName} 계정으로 로그인되었습니다.`);
+      } else {
+        toast.success('로그인 성공!');
+      }
       
-      // Redirect based on role
-      if (role === 'employer') {
+      // Redirect based on actual role from API response
+      if (response.role === 'employer') {
         navigate('/employer/home');
       } else {
         navigate('/jobseeker/home');
