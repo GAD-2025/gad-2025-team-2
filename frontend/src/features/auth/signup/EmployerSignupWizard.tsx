@@ -39,21 +39,27 @@ export function EmployerSignupWizard() {
   };
 
   return (
-    <div className="relative flex h-screen flex-col bg-white">
+    <div className="relative flex h-screen flex-col bg-gray-50">
       {/* Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-10 bg-white">
-        <ProgressBar currentStep={step} totalSteps={4} />
+        <div className="mx-auto max-w-[420px]">
+          <ProgressBar currentStep={step} totalSteps={4} />
+        </div>
       </div>
 
       {/* Back Button */}
-      <button
-        onClick={goPrev}
-        className="fixed left-4 top-6 z-20 flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
-      >
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+      <div className="fixed top-6 left-0 right-0 z-20">
+        <div className="mx-auto max-w-[420px] px-4">
+          <button
+            onClick={goPrev}
+            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       {/* Step Content */}
       <div className="flex-1 overflow-y-auto">
@@ -62,11 +68,11 @@ export function EmployerSignupWizard() {
 
       {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white px-6 py-4 shadow-lg">
-        <div className="flex flex-col items-center gap-2">
+        <div className="mx-auto flex max-w-[420px] flex-col items-center gap-2">
           <button
             onClick={goNext}
             disabled={!canProceed()}
-            className="w-full max-w-md rounded-xl bg-primary-mint py-3.5 text-[16px] font-semibold text-white transition-colors hover:bg-primary-mint/90 disabled:bg-gray-300 disabled:text-gray-500"
+            className="w-full rounded-xl bg-primary-mint py-3.5 text-[16px] font-semibold text-white transition-colors hover:bg-primary-mint/90 disabled:bg-gray-300 disabled:text-gray-500"
           >
             다음
           </button>

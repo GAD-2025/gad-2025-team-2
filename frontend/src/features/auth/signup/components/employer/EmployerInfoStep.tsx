@@ -10,7 +10,7 @@ export function EmployerInfoStep({ formData, updateFormData }: EmployerInfoStepP
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="flex h-full flex-col bg-white px-6 pt-20 pb-32">
+    <div className="mx-auto flex h-full w-full max-w-[420px] flex-col bg-white px-6 pt-20 pb-32">
       <h1 className="mb-6 text-[26px] font-bold text-gray-900">
         정보를 입력해 주세요
       </h1>
