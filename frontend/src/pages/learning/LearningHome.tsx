@@ -132,15 +132,8 @@ export const LearningHome = () => {
         {/* Lesson List */}
         <div className="space-y-3">
           {filteredLessons.map((lesson) => {
-            const levelOrder: { [key: string]: number } = {
-              'Lv.1 기초': 1,
-              'Lv.2 초급': 2,
-              'Lv.3 중급': 3,
-              'Lv.4 상급': 4,
-            };
-            const userLevelValue = userLevel ? levelOrder[userLevel] : 0;
-            const lessonLevelValue = levelOrder[lesson.level];
-            const isLocked = lessonLevelValue > userLevelValue;
+            // 사용자의 정확한 레벨과 일치하는 강의만 열림
+            const isLocked = userLevel ? lesson.level !== userLevel : true;
 
             if (isLocked) {
               return (
