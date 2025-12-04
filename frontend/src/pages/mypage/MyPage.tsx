@@ -9,7 +9,7 @@ import type { Profile, Verifications, Resume } from "@/types/profile";
 import { getSignupUser, getJobSeekerProfile, type SignupUserData, type JobSeekerProfileData } from "@/api/endpoints";
 
 export const MyPage = () => {
-  const { userMode, setUserMode, user } = useAuthStore();
+  const { userMode, setUserMode, user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showVerifications, setShowVerifications] = useState(false);
   const [showResume, setShowResume] = useState(false);
@@ -130,7 +130,10 @@ export const MyPage = () => {
   };
 
   const handleLogout = () => {
-    // localStorage 클리어
+    // zustand 스토어 클리어 (localStorage의 auth-storage와 token도 함께 정리됨)
+    clearAuth();
+    
+    // 추가 localStorage 항목 클리어
     localStorage.removeItem('signup_user_id');
     localStorage.removeItem('profile_photo');
     localStorage.removeItem('user_role');
@@ -175,112 +178,6 @@ export const MyPage = () => {
             />
           </div>
         )}
-
-        {/* Mode Selection */}
-        <div className="bg-white rounded-[16px] border border-line-200 p-5">
-          <h3 className="text-[16px] font-semibold text-text-900 mb-4">
-            이용 모드 선택
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleModeChange("jobseeker")}
-              className={`
-                  relative h-[120px] rounded-card-sm border-2 transition-all
-                  flex flex-col items-center justify-center gap-3
-                  ${
-                    userMode === "jobseeker"
-                      ? "border-mint-600 bg-mint-50"
-                      : "border-line-200 bg-white hover:border-mint-600/50"
-                  }
-                `}
-            >
-              {userMode === "jobseeker" && (
-                <div
-                  className="absolute top-2 right-2 w-6 h-6 bg-mint-600 rounded-full 
-                                flex items-center justify-center"
-                >
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-              )}
-              <div className="w-14 h-14 bg-mint-100 rounded-full flex items-center justify-center">
-                <span className="text-3xl">🔍</span>
-              </div>
-              <div className="text-center">
-                <p
-                  className={`text-[16px] font-bold ${
-                    userMode === "jobseeker" ? "text-mint-600" : "text-text-900"
-                  }`}
-                >
-                  나는 구직자
-                </p>
-                <p className="text-[12px] text-text-700 mt-1">
-                  일자리를 찾고 있어요
-                </p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleModeChange("employer")}
-              className={`
-                  relative h-[120px] rounded-card-sm border-2 transition-all
-                  flex flex-col items-center justify-center gap-3
-                  ${
-                    userMode === "employer"
-                      ? "border-mint-600 bg-mint-50"
-                      : "border-line-200 bg-white hover:border-mint-600/50"
-                  }
-                `}
-            >
-              {userMode === "employer" && (
-                <div
-                  className="absolute top-2 right-2 w-6 h-6 bg-mint-600 rounded-full 
-                                flex items-center justify-center"
-                >
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-              )}
-              <div className="w-14 h-14 bg-mint-100 rounded-full flex items-center justify-center">
-                <span className="text-3xl">💼</span>
-              </div>
-              <div className="text-center">
-                <p
-                  className={`text-[16px] font-bold ${
-                    userMode === "employer" ? "text-mint-600" : "text-text-900"
-                  }`}
-                >
-                  나는 고용주
-                </p>
-                <p className="text-[12px] text-text-700 mt-1">
-                  직원을 구하고 있어요
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
 
         {/* Resume Details Toggle */}
         <button
