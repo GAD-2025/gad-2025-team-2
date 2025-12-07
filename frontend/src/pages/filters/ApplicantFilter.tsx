@@ -11,6 +11,7 @@ export const ApplicantFilter = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string[]>(['1개월 미만']);
   const [selectedDays, setSelectedDays] = useState<string[]>(['주말']);
   const [selectedTime, setSelectedTime] = useState<string[]>(['오전']);
+  const [selectedVisa, setSelectedVisa] = useState<string | null>(null);
 
   const toggleSelection = (
     category: string[],
@@ -25,12 +26,20 @@ export const ApplicantFilter = () => {
   };
 
   const handleApply = () => {
-    navigate('/employer/home');
+    // Collect selected filters and navigate to employer home so results can be shown
+    const filters = {
+      employmentType: selectedEmploymentType,
+      period: selectedPeriod,
+      days: selectedDays,
+      time: selectedTime,
+      visas: selectedVisa,
+    };
+    navigate('/employer/home', { state: { filters } });
   };
 
   return (
     <div className="min-h-screen bg-white pb-24">
-      <Header showBack title="나의 필터 설정" />
+  <Header showBack title="인재 필터 설정" />
 
       <div className="p-4 space-y-6">
         {/* Employment Type */}
@@ -98,6 +107,22 @@ export const ApplicantFilter = () => {
         </FilterSection>
 
         {/* Location */}
+        {/* Visa */}
+        <FilterSection title="비자 조건">
+          <div className="flex flex-wrap gap-2">
+            {['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'].map((visa) => (
+              <Tag
+                key={visa}
+                variant="outline-mint"
+                active={selectedVisa === visa}
+                onClick={() => setSelectedVisa(selectedVisa === visa ? null : visa)}
+              >
+                {visa}
+              </Tag>
+            ))}
+          </div>
+        </FilterSection>
+
         <FilterSection title="지역">
           <div className="bg-mint-50 rounded-xl p-4 text-center">
             <p className="text-[14px] text-primary-mint font-medium">
@@ -110,7 +135,7 @@ export const ApplicantFilter = () => {
       {/* Apply button */}
       <BottomCTA>
         <CTAButton variant="primary" fullWidth onClick={handleApply}>
-          적용하기
+          검색하기
         </CTAButton>
       </BottomCTA>
     </div>

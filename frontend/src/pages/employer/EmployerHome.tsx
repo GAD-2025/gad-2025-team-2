@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { SearchBar } from '@/components/SearchBar';
 import { FilterChips } from '@/components/FilterChips';
@@ -23,30 +23,47 @@ export const EmployerHome = () => {
     workSchedule: ['주말'],
   });
 
+  const location = useLocation();
+
+  // If navigation provided filters (e.g., from ApplicantFilter), merge them into appliedFilters on mount
+  useEffect(() => {
+    const navFilters = (location.state as any)?.filters;
+    if (navFilters && Object.keys(navFilters).length > 0) {
+      setAppliedFilters((prev) => ({ ...prev, ...(navFilters as Partial<EmployerFilterState>) }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch applicants whenever appliedFilters change
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-  const jobSeekers = await listJobSeekers(20, { visa_type: appliedFilters.visas || undefined });
-        
+        const jobSeekers = await listJobSeekers(20, { visa_type: appliedFilters.visas || undefined });
+
         // Convert API response to JobSeeker type
-        const formattedApplicants: JobSeeker[] = jobSeekers.map((seeker) => ({
-          id: seeker.id,
-          name: seeker.name,
-          nationality: seeker.nationality,
-          age: calculateAge(seeker.birthdate),
-          languageLevel: 'Lv.2 중급', // Default value
-          visaType: 'E-9',
-          experience: '1년',
-          location: seeker.preferred_regions[0] || '서울',
-          rating: 4.5,
-          matchScore: 85,
-          workSchedule: seeker.work_days_of_week,
-          skills: parseSkills(seeker.experience_skills),
-          introduction: seeker.experience_introduction || '',
-          verified: true,
-        }));
-        
+        const formattedApplicants: JobSeeker[] = jobSeekers.map((seeker) => {
+          const s: any = seeker;
+          return {
+            id: s.id,
+            name: s.name,
+            nationality: s.nationality || '국적 미상',
+            phone: s.phone || '',
+            languageLevel: s.language_level || 'Lv.2 중급', // Default value
+            visaType: s.visa_type || (appliedFilters.visas || 'E-9'),
+            availability: s.availability || '즉시',
+            location: s.location ? { lat: s.location.lat, lng: s.location.lng } : undefined,
+            experience: [],
+            preferences: {
+              industries: [],
+              wageRange: { min: 0, max: 0 },
+              area: s.preferred_regions?.[0] || '',
+              radiusKm: 5,
+              preferDays: s.work_days_of_week || [],
+            },
+          } as JobSeeker;
+        });
+
         setApplicants(formattedApplicants);
         console.log(`Loaded ${formattedApplicants.length} job seekers`);
       } catch (error) {
@@ -59,29 +76,9 @@ export const EmployerHome = () => {
     };
 
     fetchData();
-  }, []);
+  }, [appliedFilters]);
 
-  const calculateAge = (birthdate: string | null): number => {
-    if (!birthdate) return 25;
-    const birth = new Date(birthdate);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const parseSkills = (skillsJson: string | null): string[] => {
-    if (!skillsJson) return [];
-    try {
-      const parsed = JSON.parse(skillsJson);
-      return [...(parsed.workSkills || []), ...(parsed.strengths || [])];
-    } catch {
-      return [];
-    }
-  };
+  
 
   const handleFilterApply = (filters: EmployerFilterState) => {
     setAppliedFilters(filters);

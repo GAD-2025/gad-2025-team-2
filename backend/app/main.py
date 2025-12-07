@@ -53,7 +53,10 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    # Allow common dev origins (vite default 5173) and enable a regex to match LAN IPs
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://127.0.0.1:5173"],
+    # This regex allows any host on port 5173 (useful when developing from another device on LAN)
+    allow_origin_regex=r"^http://.*:5173$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,23 +69,25 @@ async def global_exception_handler(request: Request, exc: Exception):
     import traceback
     # HTTPException은 FastAPI가 이미 처리하므로 제외 (re-raise)
     if isinstance(exc, HTTPException):
-        # HTTPException에 CORS 헤더 추가
+        # HTTPException에 CORS 헤더 추가 (요청 Origin을 그대로 echo)
+        origin = request.headers.get("origin", "http://localhost:5173")
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.detail},
             headers={
-                "Access-Control-Allow-Origin": "http://localhost:5173",
+                "Access-Control-Allow-Origin": origin,
                 "Access-Control-Allow-Credentials": "true",
             }
         )
     
     error_detail = f"Internal server error: {str(exc)}\n{traceback.format_exc()}"
     print(error_detail)  # 로그 출력
+    origin = request.headers.get("origin", "http://localhost:5173")
     return JSONResponse(
         status_code=500,
         content={"detail": f"Internal server error: {str(exc)}"},
         headers={
-            "Access-Control-Allow-Origin": "http://localhost:5173",
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Credentials": "true",
         }
     )
