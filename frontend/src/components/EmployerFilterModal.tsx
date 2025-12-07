@@ -12,6 +12,7 @@ export interface EmployerFilterState {
   locations: string[];
   experience: string;
   workSchedule: string[];
+  visas?: string | null;
 }
 
 export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }: EmployerFilterModalProps) => {
@@ -21,6 +22,7 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
       locations: ['종로구'],
       experience: '경력 무관',
       workSchedule: ['주말'],
+      visas: null,
     }
   );
 
@@ -43,8 +45,14 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
   ];
 
   const workSchedules = [
-    '주말', '평일', '주 2-3일', '주 4-5일', '풀타임'
+    '주말', '평일', '주 2-3일', '주 4-5일', '풀타임', '무관'
   ];
+
+  const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
+
+  const setVisa = (value: string) => {
+    setSelectedFilters((prev) => ({ ...prev, visas: prev.visas === value ? null : value }));
+  };
 
   const setLanguageLevel = (value: string) => {
     setSelectedFilters((prev) => ({ ...prev, languageLevel: value }));
@@ -98,7 +106,7 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
             </svg>
           </button>
           <h2 className="flex-1 text-center text-[18px] font-bold text-text-900 -ml-10">
-            인재 필터 설정
+            검색 조건 설정
           </h2>
         </div>
 
@@ -126,7 +134,7 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
 
           {/* 거주지 */}
           <div className="mb-8">
-            <h3 className="text-[17px] font-bold text-text-900 mb-4">거주지</h3>
+            <h3 className="text-[17px] font-bold text-text-900 mb-4">지역 설정</h3>
             <div className="flex flex-wrap gap-2">
               {locations.map((location) => (
                 <button
@@ -179,6 +187,26 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
                   }`}
                 >
                   {schedule}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 비자 종류 */}
+          <div className="mb-8">
+            <h3 className="text-[17px] font-bold text-text-900 mb-4">비자 종류</h3>
+            <div className="flex flex-wrap gap-2">
+              {visaOptions.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setVisa(v)}
+                  className={`px-5 py-3 rounded-full text-[14px] font-medium transition-all ${
+                    selectedFilters.visas === v
+                      ? 'bg-mint-600 text-white shadow-sm'
+                      : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {v}
                 </button>
               ))}
             </div>

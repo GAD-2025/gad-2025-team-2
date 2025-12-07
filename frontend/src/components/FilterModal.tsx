@@ -11,6 +11,7 @@ export interface FilterState {
   languageLevel: string[];
   locations: string[];
   experience: string[];
+  visas?: string | null;
 }
 
 export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: FilterModalProps) => {
@@ -19,6 +20,7 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
       languageLevel: [],
       locations: [],
       experience: [],
+      visas: null,
     }
   );
 
@@ -27,11 +29,16 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
   const languageLevels = ['Lv.1 기초', 'Lv.2 초급', 'Lv.3 중급', 'Lv.4 상급'];
   const locations = ['종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구', '선택없음'];
   const experiences = ['경력 없음', '1년 미만', '1-2년', '2-3년', '3년 이상'];
-  const workPreferences = ['주말', '평일', '비자:C-4', '비자:F-4'];
+  const workPreferences = ['주말', '평일', '무관'];
+  const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
 
-  const toggleFilter = (category: keyof FilterState, value: string) => {
+  const toggleVisa = (value: string) => {
+    setSelectedFilters((prev) => ({ ...prev, visas: prev.visas === value ? null : value }));
+  };
+
+  const toggleFilter = (category: 'languageLevel' | 'locations' | 'experience', value: string) => {
     setSelectedFilters((prev) => {
-      const currentValues = prev[category];
+      const currentValues = prev[category] as string[];
       const newValues = currentValues.includes(value)
         ? currentValues.filter((v) => v !== value)
         : [...currentValues, value];
@@ -63,7 +70,7 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
             </svg>
           </button>
           <h2 className="flex-1 text-center text-[18px] font-bold text-text-900 -ml-10">
-            인재 필터 설정
+            검색 조건 설정
           </h2>
         </div>
 
@@ -91,7 +98,7 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
 
           {/* 거주지 */}
           <div className="mb-8">
-            <h3 className="text-[16px] font-semibold text-text-900 mb-3">거주지</h3>
+            <h3 className="text-[16px] font-semibold text-text-900 mb-3">지역 설정</h3>
             <div className="flex flex-wrap gap-2">
               {locations.map((location) => (
                 <button
@@ -144,6 +151,26 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
                   }`}
                 >
                   {pref}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 비자 종류 */}
+          <div className="mb-8">
+            <h3 className="text-[16px] font-semibold text-text-900 mb-3">비자 종류</h3>
+            <div className="flex flex-wrap gap-2">
+              {visaOptions.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => toggleVisa(v)}
+                  className={`px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
+                    selectedFilters.visas === v
+                      ? 'bg-mint-600 text-white'
+                      : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {v}
                 </button>
               ))}
             </div>

@@ -150,8 +150,11 @@ export interface JobSeekerListItem {
   created_at: string;
 }
 
-export async function listJobSeekers(limit: number = 50): Promise<JobSeekerListItem[]> {
-  const response = await fetch(`${API_BASE_URL}/job-seeker/profiles?limit=${limit}`);
+export async function listJobSeekers(limit: number = 50, params?: { visa_type?: string }): Promise<JobSeekerListItem[]> {
+  const qs = new URLSearchParams();
+  qs.set('limit', String(limit));
+  if (params?.visa_type) qs.set('visa_type', params.visa_type);
+  const response = await fetch(`${API_BASE_URL}/job-seeker/profiles?${qs.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch job seekers');
   }

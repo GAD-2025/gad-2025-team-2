@@ -182,6 +182,7 @@ class JobSeekerProfile(SQLModel, table=True):
     experience_introduction: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    visa_type: Optional[str] = None
 
 
 class EmployerProfile(SQLModel, table=True):

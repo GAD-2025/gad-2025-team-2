@@ -31,10 +31,28 @@ async def list_jobs(
     for job in jobs:
         employer_stmt = select(Employer).where(Employer.id == job.employerId)
         employer = session.exec(employer_stmt).first()
-        
+        # Basic active filter
+        if hasattr(job, 'status') and job.status != 'active':
+            continue
+
+        # Filter by visaType if provided
+        try:
+            required_visas = json.loads(job.requiredVisa) if job.requiredVisa else []
+        except Exception:
+            required_visas = []
+
+        if visaType:
+            # required_visas may be list or string; normalize
+            if isinstance(required_visas, list):
+                if visaType not in required_visas:
+                    continue
+            else:
+                if visaType not in str(required_visas):
+                    continue
+
         job_dict = job.dict()
         job_dict["employer"] = employer.dict() if employer else {}
-        job_dict["requiredVisa"] = json.loads(job.requiredVisa)
+        job_dict["requiredVisa"] = required_visas
         result.append(job_dict)
     
     return result

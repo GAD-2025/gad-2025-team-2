@@ -19,7 +19,7 @@ export const QuickMenuGrid = () => {
         </svg>
       ), 
       label: '높은 시급',
-      path: '/jobs'
+      path: '/jobs?sort=high-wage'
     },
     { 
       id: 'popular', 
@@ -42,8 +42,8 @@ export const QuickMenuGrid = () => {
         </svg>
       ), 
       label: '신뢰 공고',
-      // navigate to jobs filtered by trusted companies
-      path: '/jobs?filter=trusted'
+      // navigate to jobs sorted/filtered by trusted companies
+      path: '/jobs?sort=trusted'
     },
     { 
       id: 'urgent', 
@@ -53,7 +53,7 @@ export const QuickMenuGrid = () => {
         </svg>
       ), 
       label: '단기 알바',
-      path: '/jobs'
+      path: '/jobs?sort=short-term'
     },
   ];
 

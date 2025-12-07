@@ -26,7 +26,8 @@ export const JobSeekerHome = () => {
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({
     languageLevel: ["Lv.3 중급"], // 수정님의 실제 언어 레벨
     locations: ["종로구"],
-    experience: ["주말", "비자:C-4"],
+    experience: ["주말"],
+    visas: null,
   });
 
   useEffect(() => {
@@ -86,6 +87,7 @@ export const JobSeekerHome = () => {
       ...appliedFilters.languageLevel,
       ...appliedFilters.locations,
       ...appliedFilters.experience,
+      ...(appliedFilters.visas ? [appliedFilters.visas] : []),
     ];
   };
 

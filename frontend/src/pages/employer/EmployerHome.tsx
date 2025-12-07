@@ -27,7 +27,7 @@ export const EmployerHome = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const jobSeekers = await listJobSeekers(20);
+  const jobSeekers = await listJobSeekers(20, { visa_type: appliedFilters.visas || undefined });
         
         // Convert API response to JobSeeker type
         const formattedApplicants: JobSeeker[] = jobSeekers.map((seeker) => ({
@@ -83,7 +83,7 @@ export const EmployerHome = () => {
     }
   };
 
-  const handleFilterApply = (filters: FilterState) => {
+  const handleFilterApply = (filters: EmployerFilterState) => {
     setAppliedFilters(filters);
     console.log('Applied filters:', filters);
     // TODO: 필터 적용 로직 추가 (API 호출 등)
@@ -99,6 +99,7 @@ export const EmployerHome = () => {
       ...appliedFilters.locations,
       appliedFilters.experience,
       ...appliedFilters.workSchedule,
+      ...(appliedFilters.visas ? [appliedFilters.visas] : []),
     ];
   };
 
@@ -124,7 +125,7 @@ export const EmployerHome = () => {
       <div className="bg-white border-b border-line-200">
         <FilterChips 
           filters={getSelectedFiltersArray()}
-          title="인재 필터 설정"
+          title="검색 조건 설정"
           icon="⚙️"
           onFilterClick={() => setIsFilterModalOpen(true)}
         />

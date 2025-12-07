@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 import uuid
 import json
 from datetime import datetime
+from typing import Optional
 
 from app.db import get_session
 from app.models import JobSeekerProfile
@@ -63,6 +64,8 @@ async def create_job_seeker_profile(
         existing.experience_license = experience_license
         existing.experience_skills = experience_skills
         existing.experience_introduction = experience_introduction
+        # Persist visa type if provided
+        existing.visa_type = getattr(request, 'visa_type', None)
         existing.updated_at = datetime.utcnow()
         session.add(existing)
         session.commit()
@@ -72,6 +75,7 @@ async def create_job_seeker_profile(
             id=existing.id,
             user_id=existing.user_id,
             basic_info_file_name=existing.basic_info_file_name,
+            visa_type=existing.visa_type,
             preferred_regions=json.loads(existing.preferred_regions),
             preferred_jobs=json.loads(existing.preferred_jobs),
             work_available_dates=json.loads(existing.work_available_dates),
@@ -104,6 +108,7 @@ async def create_job_seeker_profile(
             experience_license=experience_license,
             experience_skills=experience_skills,
             experience_introduction=experience_introduction,
+            visa_type=getattr(request, 'visa_type', None),
         )
         session.add(profile)
         session.commit()
@@ -113,6 +118,7 @@ async def create_job_seeker_profile(
             id=profile.id,
             user_id=profile.user_id,
             basic_info_file_name=profile.basic_info_file_name,
+            visa_type=profile.visa_type,
             preferred_regions=json.loads(profile.preferred_regions),
             preferred_jobs=json.loads(profile.preferred_jobs),
             work_available_dates=json.loads(profile.work_available_dates),
@@ -133,6 +139,7 @@ async def create_job_seeker_profile(
 async def list_job_seeker_profiles(
     limit: int = 50,
     offset: int = 0,
+    visa_type: Optional[str] = None,
     session: Session = Depends(get_session)
 ):
     """List all job seeker profiles"""
@@ -143,12 +150,17 @@ async def list_job_seeker_profiles(
     
     result = []
     for profile in profiles:
+        # filter by visa_type if requested
+        if visa_type:
+            if not profile.visa_type or profile.visa_type != visa_type:
+                continue
         # Get user info
         user_stmt = select(SignupUser).where(SignupUser.id == profile.user_id)
         user = session.exec(user_stmt).first()
         
         profile_dict = {
             "id": profile.id,
+            "visa_type": profile.visa_type,
             "user_id": profile.user_id,
             "name": user.name if user else "Unknown",
             "nationality": user.nationality_code if user else "Unknown",

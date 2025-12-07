@@ -122,6 +122,7 @@ class JobSeekerProfileCreate(BaseModel):
     preferred_jobs: List[str] = []
     work_schedule: Optional[WorkSchedulePayload] = None
     experience: Optional[ExperiencePayload] = None
+    visa_type: Optional[str] = None
 
 
 class JobSeekerProfileResponse(BaseModel):
@@ -139,6 +140,7 @@ class JobSeekerProfileResponse(BaseModel):
     experience_license: Optional[str] = None
     experience_skills: Optional[str] = None
     experience_introduction: Optional[str] = None
+    visa_type: Optional[str] = None
     created_at: str
     updated_at: str
 
