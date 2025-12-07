@@ -150,11 +150,22 @@ export interface JobSeekerListItem {
   created_at: string;
 }
 
-export async function listJobSeekers(limit: number = 50, params?: { visa_type?: string }): Promise<JobSeekerListItem[]> {
+export async function listJobSeekers(
+  limit: number = 50,
+  params?: { visa_type?: string },
+): Promise<JobSeekerListItem[]> {
   const qs = new URLSearchParams();
   qs.set('limit', String(limit));
   if (params?.visa_type) qs.set('visa_type', params.visa_type);
+
   const response = await fetch(`${API_BASE_URL}/job-seeker/profiles?${qs.toString()}`);
+
+  // 배포 서버에 해당 엔드포인트가 없거나 404인 경우, 빈 목록으로 처리해 UI가 깨지지 않도록 함
+  if (response.status === 404) {
+    console.warn('job-seeker/profiles endpoint not found, returning empty list.');
+    return [];
+  }
+
   if (!response.ok) {
     throw new Error('Failed to fetch job seekers');
   }

@@ -16,7 +16,8 @@ export function AutoRedirect() {
 
       // 가입한 경우 -> role에 따라 홈으로
       try {
-        const response = await fetch(`http://localhost:8000/auth/signup-user/${userId}`);
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_BASE_URL}/auth/signup-user/${userId}`);
         if (!response.ok) {
           // 사용자 정보 없으면 회원가입으로
           localStorage.removeItem('signup_user_id');

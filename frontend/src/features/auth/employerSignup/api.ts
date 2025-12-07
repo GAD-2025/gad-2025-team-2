@@ -6,6 +6,11 @@ export interface EmployerSignupPayload {
   role: 'employer';
   name: string;
   email: string;
+  password: string;
+  business_type?: string;
+  company_name?: string;
+  address?: string;
+  address_detail?: string;
 }
 
 export interface EmployerSignupResponse {
@@ -31,18 +36,21 @@ export async function signupEmployer(
         role: payload.role,
         name: payload.name,
         email: payload.email,
-        // 고용주는 phone, birthdate 등이 필요 없을 수 있으므로
-        // 백엔드에서 선택적으로 처리하도록 함
+        password: payload.password,
         phone: '',
-        birthdate: new Date().toISOString().split('T')[0], // 오늘 날짜
-        gender: 'male', // 기본값
-        nationality_code: null, // 고용주는 국적 코드 불필요
+        birthdate: new Date().toISOString().split('T')[0],
+        gender: 'male',
+        nationality_code: null,
         terms: {
           tos_required: true,
           privacy_required: true,
           sms_optional: false,
           marketing_optional: false,
         },
+        business_type: payload.business_type || '',
+        company_name: payload.company_name || '',
+        address: payload.address || '',
+        address_detail: payload.address_detail || '',
       }),
     });
 

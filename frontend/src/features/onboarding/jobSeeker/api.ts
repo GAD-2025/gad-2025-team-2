@@ -55,6 +55,13 @@ export async function createJobSeekerProfile(
     const error = await response.json().catch(() => ({
       detail: '프로필 저장에 실패했습니다.',
     }));
+    
+    // 422 에러의 경우 상세 메시지 추출
+    if (response.status === 422 && error.detail && Array.isArray(error.detail)) {
+      const messages = error.detail.map((err: any) => err.msg).join(', ');
+      throw new Error(`필수 정보를 입력해주세요: ${messages}`);
+    }
+    
     throw new Error(error.detail || '프로필 저장에 실패했습니다.');
   }
 

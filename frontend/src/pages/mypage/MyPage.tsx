@@ -87,6 +87,8 @@ export const MyPage = () => {
     }
   };
 
+  const isEmployer = signupUserData?.role === 'employer';
+
   const resume: Resume = {
     birthYear: signupUserData?.birthdate ? new Date(signupUserData.birthdate).getFullYear() : undefined,
     country: "대한민국",
@@ -114,8 +116,10 @@ export const MyPage = () => {
       : "프로필을 작성해주세요!",
     introLong: profileData?.experience_introduction || "프로필 수정에서 자기소개를 작성할 수 있습니다.",
     contacts: {
-      email: user?.email || signupUserData?.phone || "user@workfair.com",
-      phone: signupUserData?.phone || "미설정",
+      // 구직자: 이메일 숨김, 전화번호만 노출
+      // 고용주: 전화번호 숨김, 이메일만 노출
+      email: isEmployer ? (signupUserData?.email || user?.email || "미설정") : undefined,
+      phone: isEmployer ? undefined : (signupUserData?.phone || user?.phone || "미설정"),
       kakao: "",
       whatsapp: "",
     },

@@ -162,6 +162,14 @@ class EmployerSignupResponse(BaseModel):
     message: str = "고용주 회원가입이 완료되었습니다."
 
 
+class EmployerProfileCreate(BaseModel):
+    user_id: str
+    business_type: str  # 'business' or 'individual'
+    company_name: str
+    address: str
+    address_detail: Optional[str] = None
+
+
 class EmployerProfileResponse(BaseModel):
     id: str
     user_id: str

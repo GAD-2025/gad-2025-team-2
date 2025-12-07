@@ -67,8 +67,8 @@ export const EmployerHome = () => {
         setApplicants(formattedApplicants);
         console.log(`Loaded ${formattedApplicants.length} job seekers`);
       } catch (error) {
-        console.error('데이터 로딩 오류:', error);
-        toast.error('데이터를 불러오는데 실패했습니다');
+        console.warn('데이터 로딩 오류 (구직자 목록 없음 또는 엔드포인트 미구현):', error);
+        // 404 등으로 실패해도 UI는 빈 목록으로 표시
         setApplicants([]);
       } finally {
         setLoading(false);

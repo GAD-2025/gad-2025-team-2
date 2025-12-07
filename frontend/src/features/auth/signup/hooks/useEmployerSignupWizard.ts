@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuth';
+import { signupEmployer } from '@/features/auth/employerSignup/api';
 
 export interface EmployerSignupData {
   name: string;
@@ -110,31 +111,22 @@ export function useEmployerSignupWizard() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://localhost:8000/auth/signup/employer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          business_type: formData.businessType,
-          company_name: formData.companyName,
-          address: formData.address,
-          address_detail: formData.addressDetail,
-        }),
+      const data = await signupEmployer({
+        role: 'employer',
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        business_type: formData.businessType,
+        company_name: formData.companyName,
+        address: formData.address,
+        address_detail: formData.addressDetail,
       });
-
-      if (!response.ok) {
-        throw new Error('회원가입에 실패했습니다.');
-      }
-
-      const data = await response.json();
       console.log('고용주 회원가입 성공:', data);
       
       // Store user ID for later use
-      localStorage.setItem('signup_user_id', data.id);
+      if (data?.id) {
+        localStorage.setItem('signup_user_id', data.id);
+      }
       
       // 고용주 모드로 설정
       setUserMode('employer');

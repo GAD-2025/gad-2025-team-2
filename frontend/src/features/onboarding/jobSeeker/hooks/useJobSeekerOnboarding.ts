@@ -188,39 +188,69 @@ export function useJobSeekerOnboarding() {
                               values.workSchedule.daysOfWeek.length > 0 ||
                               values.workSchedule.availableDates.length > 0;
 
+      // Check if experience has any data
+      const hasExperience = experienceSections.length > 0;
+
+      // 기본값 정의: 건너뛰기 시 무관/전체 선택 처리
+      const ALL_REGIONS = ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종'];
+      const ALL_JOBS = ['store', 'service', 'serving', 'kitchen', 'labor', 'delivery', 'event', 'office', 'sales'];
+      const DEFAULT_REGION = ['무관'];
+      const DEFAULT_JOB = ['무관'];
+      const DEFAULT_WORK_SCHEDULE = {
+        available_dates: [] as string[],
+        start_time: '00:00',
+        end_time: '00:00',
+        days_of_week: ['무관'],
+      };
+
+      // 모든 필드를 포함한 페이로드 (배포 서버 호환)
       const payload: any = {
         user_id: userId,
         basic_info_file_name:
-          values.uploadedFiles.length > 0
-            ? values.uploadedFiles[0].name
-            : null,
-        preferred_regions: values.preferredRegions,
-        preferred_jobs: values.preferredJobs,
+          values.uploadedFiles.length > 0 ? values.uploadedFiles[0].name : '미입력',
+        // 빈 배열이면 무관 값으로 처리 (나중에 수정 가능)
+        preferred_regions:
+          values.preferredRegions && values.preferredRegions.length > 0
+            ? values.preferredRegions
+            : DEFAULT_REGION,
+        preferred_jobs:
+          values.preferredJobs && values.preferredJobs.length > 0
+            ? values.preferredJobs
+            : DEFAULT_JOB,
         experience: {
           sections: experienceSections,
-          data: values.experienceData,
+          data: values.experienceData || {},
         },
       };
 
-      // Only include work_schedule if user has entered any data
-      if (hasWorkSchedule) {
-        payload.work_schedule = {
-          available_dates: values.workSchedule.availableDates,
-          start_time: values.workSchedule.startTime,
-          end_time: values.workSchedule.endTime,
-          days_of_week: values.workSchedule.daysOfWeek,
-        };
-      }
+      // work_schedule은 반드시 포함 (배포 서버 필수). 값이 없으면 기본값 채움.
+      payload.work_schedule =
+        hasWorkSchedule &&
+        values.workSchedule.startTime &&
+        values.workSchedule.endTime
+          ? {
+              available_dates: values.workSchedule.availableDates || [],
+              start_time: values.workSchedule.startTime,
+              end_time: values.workSchedule.endTime,
+              days_of_week:
+                values.workSchedule.daysOfWeek && values.workSchedule.daysOfWeek.length > 0
+                  ? values.workSchedule.daysOfWeek
+                  : ['무관'],
+            }
+          : DEFAULT_WORK_SCHEDULE;
 
       console.log('Sending profile data:', payload);
 
       await createJobSeekerProfile(payload);
       navigate('/jobseeker/home');
-    } catch (err) {
+    } catch (err: any) {
+      console.error('프로필 저장 실패:', err);
       const errorMessage =
-        err instanceof Error ? err.message : '프로필 저장에 실패했습니다.';
+        err?.response?.data?.detail || 
+        err?.message || 
+        '프로필 저장에 실패했습니다.';
       setError(errorMessage);
-      alert(errorMessage);
+      alert(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
     } finally {
       setIsSubmitting(false);
     }
