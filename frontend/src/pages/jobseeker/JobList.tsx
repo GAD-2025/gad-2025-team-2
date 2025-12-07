@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { SearchBar } from '@/components/SearchBar';
 import { FilterChips } from '@/components/FilterChips';
@@ -23,6 +23,13 @@ export const JobList = () => {
   });
   const [searchParams] = useSearchParams();
   const sortParam = searchParams.get('sort') || '';
+  const fromParam = searchParams.get('from') || '';
+  const location = useLocation();
+  const navFrom = (location.state as any)?.from || '';
+  const navPreset = (location.state as any)?.preset || (location.state as any)?.sort || '';
+  // Also hide when a sort preset is active (e.g., ?sort=popular)
+  const hideNewJobs = Boolean(sortParam) || Boolean(navPreset) || fromParam === 'quick' || navFrom === 'quick';
+  const isDefaultJobs = !sortParam && !navPreset && fromParam !== 'quick' && navFrom !== 'quick';
   const headerTitle =
     sortParam === 'high-wage'
       ? '높은 시급'
@@ -32,9 +39,17 @@ export const JobList = () => {
       ? '신뢰 공고'
       : sortParam === 'short-term'
       ? '단기 알바'
+  : isDefaultJobs
+  ? '어떤 일을 찾고 계시나요?'
       : '공고';
+  // Increase header/subtitle size slightly when navigated from quick menu or using a preset
+  const headerSizeClass = hideNewJobs ? 'text-[22px]' : 'text-[20px]';
+  const subtitleSizeClass = hideNewJobs ? 'text-base' : 'text-sm';
 
   useEffect(() => {
+    // Debug: log navigation and params so we can verify detection when clicking QuickMenu
+    console.log('JobList params:', { sortParam, fromParam, navFrom, hideNewJobs });
+
     const fetchJobs = async () => {
       try {
         setLoading(true);
@@ -74,9 +89,9 @@ export const JobList = () => {
     <div className="min-h-screen bg-background pb-20">
       {/* Header with search */}
       <header className="bg-white border-b border-line-200 px-4 pt-4 pb-3 sticky top-0 z-10">
-        <h1 className="text-[20px] font-bold text-text-900 mb-2">{headerTitle}</h1>
+        <h1 className={`${headerSizeClass} font-bold text-text-900 mb-2`}>{headerTitle}</h1>
         {sortParam && JOB_PRESET_DESCRIPTIONS[sortParam] && (
-          <p className="text-sm text-text-600 mb-3">{JOB_PRESET_DESCRIPTIONS[sortParam]}</p>
+          <p className={`${subtitleSizeClass} text-text-600 mb-3`}>{JOB_PRESET_DESCRIPTIONS[sortParam]}</p>
         )}
         <SearchBar placeholder="직종, 지역으로 검색..." />
       </header>
@@ -101,11 +116,13 @@ export const JobList = () => {
 
       {/* Job Cards Section */}
       <div className="px-4 py-4">
-        {/* Section header */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[16px]">📄</span>
-          <h2 className="text-[18px] font-semibold text-text-900">새로 올라온 공고</h2>
-        </div>
+        {/* Section header (hidden when navigated from quick menu) */}
+        {!hideNewJobs && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[16px]">📄</span>
+            <h2 className="text-[18px] font-semibold text-text-900">새로 올라온 공고</h2>
+          </div>
+        )}
 
         {/* Job Grid */}
         <div className="grid grid-cols-1 gap-3">

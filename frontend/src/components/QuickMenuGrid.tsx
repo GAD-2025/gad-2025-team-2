@@ -36,9 +36,9 @@ export const QuickMenuGrid = () => {
     { 
       id: 'trusted', 
       icon: (
-        // heart icon for '신뢰 공고'
-        <svg className="w-5 h-5 text-mint-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" fill="currentColor" />
+        // outline heart icon for '신뢰 공고' (unfilled to match other icons)
+        <svg className="w-5 h-5 text-mint-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.682l-7.682-7.682a4.5 4.5 0 010-6.364z" />
         </svg>
       ), 
       label: '신뢰 공고',
@@ -62,7 +62,14 @@ export const QuickMenuGrid = () => {
       {menuItems.map((item) => (
         <button
           key={item.id}
-          onClick={() => navigate(item.path)}
+          onClick={() => {
+            // derive preset (sort) from menu item id or path
+            const preset = item.id;
+            navigate(
+              item.path + (item.path.includes('?') ? '&from=quick' : '?from=quick'),
+              { state: { from: 'quick', preset } }
+            );
+          }}
           className="flex flex-col items-center justify-center h-[74px] bg-white rounded-card-sm 
                    border border-line-200 hover:border-mint-600 transition-all active:scale-95"
         >
