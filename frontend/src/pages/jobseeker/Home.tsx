@@ -229,12 +229,7 @@ export const JobSeekerHome = () => {
       </div>
 
       {/* Safety Notice Modal */}
-      {showSafetyNotice && (
-        <SafetyNoticeModal
-          onClose={() => setShowSafetyNotice(false)}
-          onNeverShowAgain={() => setShowSafetyNotice(false)}
-        />
-      )}
+      <SafetyNoticeModal isOpen={showSafetyNotice} onClose={() => setShowSafetyNotice(false)} />
     </div>
   );
 };

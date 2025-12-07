@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './pages/layout/AppLayout';
 import { Home } from './pages/Home';
 import { JobSeekerHome } from './pages/jobseeker/Home';
@@ -8,7 +8,6 @@ import { ApplyDone } from './pages/jobseeker/ApplyDone';
 import { MyApplications } from './pages/jobseeker/MyApplications';
 import { TalentFilter } from './pages/filters/TalentFilter';
 import { ApplicantFilter } from './pages/filters/ApplicantFilter';
-import { EmployerHome as EmployerHomeOriginal } from './pages/employer/Home';
 import { EmployerHome } from './pages/employer/EmployerHome';
 import { ApplicantDetail } from './pages/employer/ApplicantDetail';
 import { HireDone } from './pages/employer/HireDone';
