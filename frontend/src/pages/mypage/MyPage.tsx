@@ -25,6 +25,8 @@ export const MyPage = () => {
         const userId = localStorage.getItem('signup_user_id') || user?.id;
         if (!userId) {
           console.error('No user ID found');
+          toast.error('로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+          navigate('/signin', { replace: true });
           setLoading(false);
           return;
         }
@@ -71,7 +73,7 @@ export const MyPage = () => {
       }
     };
     loadUserData();
-  }, []);
+  }, [user?.id, navigate]);
 
   // 프로필 사진 가져오기
   const profilePhoto = localStorage.getItem('profile_photo') || undefined;

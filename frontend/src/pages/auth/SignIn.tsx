@@ -47,17 +47,30 @@ export function SignIn() {
       });
 
       const response = await authAPI.signIn(loginData);
+      const data = (response as any)?.data ?? response;
       
-      console.log('✅ 로그인 성공:', response);
+      console.log('✅ 로그인 성공:', data);
       
       // Store user info - use actual role from API response
-      localStorage.setItem('signup_user_id', response.user_id);
-      localStorage.setItem('user_role', response.role); // 실제 role 저장
-      if (response.name) {
-        localStorage.setItem('user_name', response.name);
+      const resolvedUserId =
+        data?.user_id ||
+        data?.id ||
+        data?.user?.id;
+
+      if (resolvedUserId) {
+        localStorage.setItem('signup_user_id', resolvedUserId);
+      } else {
+        console.warn('로그인 응답에 user_id/id 필드가 없습니다. MyPage 로딩에 영향을 줄 수 있습니다.', data);
       }
-      if (response.profile_photo) {
-        localStorage.setItem('profile_photo', response.profile_photo);
+
+      localStorage.setItem('user_role', data?.role);
+      const resolvedName = data?.name || data?.user?.name;
+      if (resolvedName) {
+        localStorage.setItem('user_name', resolvedName);
+      }
+      const resolvedPhoto = data?.profile_photo || data?.user?.profile_photo;
+      if (resolvedPhoto) {
+        localStorage.setItem('profile_photo', resolvedPhoto);
       }
 
       // Check if selected role matches actual role
