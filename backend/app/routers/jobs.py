@@ -139,10 +139,17 @@ async def get_job(job_id: str, session: Session = Depends(get_session)):
     
     job_dict = job.dict()
     job_dict["employer"] = employer.dict() if employer else {}
-    job_dict["requiredVisa"] = json.loads(job.requiredVisa)
-    job_dict["applicationsCount"] = session.exec(
-        select(func.count(Application.applicationId)).where(Application.jobId == job.id)
-    ).one()[0]
+    # requiredVisa가 문자열/JSON 형태 모두 안전하게 처리
+    try:
+        job_dict["requiredVisa"] = json.loads(job.requiredVisa)
+    except Exception:
+        job_dict["requiredVisa"] = job.requiredVisa if isinstance(job.requiredVisa, list) else []
+    job_dict["applicationsCount"] = (
+        session.exec(
+            select(func.count(Application.applicationId)).where(Application.jobId == job.id)
+        ).scalar_one()
+        or 0
+    )
     job_dict["isTrusted"] = is_trusted
     
     return job_dict
