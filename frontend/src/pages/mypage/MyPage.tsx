@@ -22,7 +22,7 @@ export const MyPage = () => {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const userId = localStorage.getItem('signup_user_id');
+        const userId = localStorage.getItem('signup_user_id') || user?.id;
         if (!userId) {
           console.error('No user ID found');
           setLoading(false);
