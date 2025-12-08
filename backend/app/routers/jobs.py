@@ -144,12 +144,10 @@ async def get_job(job_id: str, session: Session = Depends(get_session)):
         job_dict["requiredVisa"] = json.loads(job.requiredVisa)
     except Exception:
         job_dict["requiredVisa"] = job.requiredVisa if isinstance(job.requiredVisa, list) else []
-    job_dict["applicationsCount"] = (
-        session.exec(
-            select(func.count(Application.applicationId)).where(Application.jobId == job.id)
-        ).scalar_one()
-        or 0
-    )
+    count_row = session.exec(
+        select(func.count(Application.applicationId)).where(Application.jobId == job.id)
+    ).first()
+    job_dict["applicationsCount"] = count_row or 0
     job_dict["isTrusted"] = is_trusted
     
     return job_dict

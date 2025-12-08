@@ -6,10 +6,48 @@ from datetime import datetime
 import json
 
 from app.db import get_session
-from app.models import Application, Job, JobSeeker, Employer
+from app.models import Application, Job, JobSeeker, Employer, SignupUser, JobSeekerProfile
 from app.schemas import ApplicationCreate, ApplicationUpdate
 
 router = APIRouter(prefix="/applications", tags=["applications"])
+
+
+def ensure_jobseeker_exists(session: Session, seeker_id: str):
+    """Ensure a JobSeeker row exists for the signup user so FK constraint passes."""
+    js = session.get(JobSeeker, seeker_id)
+    if js:
+        return js
+
+    signup_user = session.get(SignupUser, seeker_id)
+    profile = session.exec(
+        select(JobSeekerProfile).where(JobSeekerProfile.user_id == seeker_id)
+    ).first()
+
+    # Fallback defaults if profile data 부족
+    name = signup_user.name if signup_user else "Unknown"
+    nationality = signup_user.nationality_code if signup_user else "Unknown"
+    phone = signup_user.phone if signup_user else ""
+    language_level = "Lv.2 초급"
+    visa_type = profile.visa_type if profile and profile.visa_type else "F-4"
+    availability = "full-time"
+    preferences = json.dumps({})
+    experience = json.dumps([])
+
+    js = JobSeeker(
+        id=seeker_id,
+        name=name,
+        nationality=nationality,
+        phone=phone,
+        languageLevel=language_level,
+        visaType=visa_type,
+        availability=availability,
+        preferences=preferences,
+        experience=experience,
+    )
+    session.add(js)
+    session.commit()
+    session.refresh(js)
+    return js
 
 
 @router.post("", response_model=dict, status_code=201)
@@ -18,6 +56,9 @@ async def create_application(
     session: Session = Depends(get_session),
 ):
     """Create new application"""
+    # Ensure jobseeker exists for FK
+    ensure_jobseeker_exists(session, request.seekerId)
+
     # Check for duplicate
     statement = select(Application).where(
         Application.seekerId == request.seekerId,
