@@ -137,19 +137,18 @@ export const JobSeekerHome = () => {
         initialFilters={appliedFilters}
       />
 
-      {/* Learning progress */}
-      {learningProgress && (
-        <div className="px-8 mb-4">
-          <ProgressCard
-            title="현재 학습 상태"
-            level={learningProgress.currentLevel}
-            progress={learningProgress.progressPercent}
-            completed={learningProgress.completedLessons}
-            total={learningProgress.totalLessons}
-            onClick={() => navigate("/learning")}
-          />
-        </div>
-      )}
+{learningProgress && (
+  <div className="px-8 mt-8 mb-4">
+    <ProgressCard
+      title="현재 학습 상태"
+      level={learningProgress.currentLevel}
+      progress={learningProgress.progressPercent}
+      completed={learningProgress.completedLessons}
+      total={learningProgress.totalLessons}
+      onClick={() => navigate("/learning")}
+    />
+  </div>
+)}
 
       {/* AI recommendations */}
       <div className="pt-4 bg-background mb-4">

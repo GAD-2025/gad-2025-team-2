@@ -91,11 +91,19 @@ export const BottomNav = () => {
           label: '네트워킹', 
           icon: (
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h1a2 2 0 002-2v-1a2 2 0 012-2h2.945M18 10a2 2 0 012 2v1a2 2 0 002 2h1M5 10a2 2 0 012 2v1a2 2 0 002 2h1a2 2 0 002-2v-1a2 2 0 012-2h2.945M12 16l-3-3m0 0l-3 3m3-3v8" />
+              <circle cx="12" cy="4" r="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="4" cy="12" r="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="20" cy="12" r="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="20" r="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              
+              <line x1="12" y1="6" x2="12" y2="10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="12" y1="14" x2="12" y2="18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="6" y1="12" x2="10" y2="12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="14" y1="12" x2="18" y2="12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          ), 
+          ),
           path: '/network' 
-        },
+        },        
         { 
           id: 'mypage', 
           label: '마이', 
