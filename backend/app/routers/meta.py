@@ -16,3 +16,4 @@ async def get_nationalities(session: Session = Depends(get_session)):
     return [NationalityResponse(code=n.code, name=n.name, phone_code=n.phone_code) for n in nationalities]
 
 
+

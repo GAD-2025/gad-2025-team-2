@@ -67,8 +67,9 @@ export const JobManagement = () => {
     e.stopPropagation();
     
     try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const newStatus = currentStatus === 'active' ? 'paused' : 'active';
-      const response = await fetch(`http://localhost:8000/jobs/${jobId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +101,8 @@ export const JobManagement = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/jobs/${jobId}`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
         method: 'DELETE',
       });
 

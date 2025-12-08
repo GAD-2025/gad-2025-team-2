@@ -22,7 +22,11 @@ export interface EmployerCompanyInfo {
   baseAddress: string; // 기본 주소
   detailAddress: string; // 상세 주소
   hasNoDetailAddress: boolean;
+  businessLicense: File | null; // 사업자 등록증
+  phone?: string; // 전화번호 (온보딩에서 입력)
+  industry?: string; // 업종 (온보딩에서 입력)
 }
+
 
 
 

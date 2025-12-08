@@ -24,33 +24,22 @@ export interface EmployerSignupResponse {
 export async function signupEmployer(
   payload: EmployerSignupPayload,
 ): Promise<EmployerSignupResponse> {
-  console.log('고용주 회원가입 API 호출:', `${API_BASE_URL}/auth/signup`, payload);
+  console.log('고용주 회원가입 API 호출:', `${API_BASE_URL}/auth/signup/employer`, payload);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+    const response = await fetch(`${API_BASE_URL}/auth/signup/employer`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        role: payload.role,
         name: payload.name,
         email: payload.email,
         password: payload.password,
-        phone: '',
-        birthdate: new Date().toISOString().split('T')[0],
-        gender: 'male',
-        nationality_code: null,
-        terms: {
-          tos_required: true,
-          privacy_required: true,
-          sms_optional: false,
-          marketing_optional: false,
-        },
-        business_type: payload.business_type || '',
+        business_type: payload.business_type || 'business',
         company_name: payload.company_name || '',
         address: payload.address || '',
-        address_detail: payload.address_detail || '',
+        address_detail: payload.address_detail && payload.address_detail.trim() ? payload.address_detail : undefined,
       }),
     });
 
@@ -75,6 +64,7 @@ export async function signupEmployer(
     throw error;
   }
 }
+
 
 
 

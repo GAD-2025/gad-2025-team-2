@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
+import { getStores, getStore, type StoreData } from '@/api/endpoints';
 
 interface JobFormData {
   title: string;
@@ -67,6 +68,8 @@ export const JobCreate = () => {
   const [submitting, setSubmitting] = useState(false);
   const [employerProfileId, setEmployerProfileId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [stores, setStores] = useState<StoreData[]>([]);
+  const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
   
@@ -109,21 +112,59 @@ export const JobCreate = () => {
         }
 
         // Fetch employer profile
-        const response = await fetch(`http://localhost:8000/employer/profile/${userId}`);
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_BASE_URL}/employer/profile/${userId}`);
         if (!response.ok) {
           if (response.status === 404) {
-            toast.error('고용주 프로필을 찾을 수 없습니다. 테스트 데이터를 실행해주세요.');
+            // 프로필이 없으면 공고 등록 불가 - 사용자에게 안내
+            console.warn('고용주 프로필을 찾을 수 없습니다.');
+            toast.error('고용주 프로필이 없습니다. 먼저 프로필을 생성해주세요.');
+            // 홈으로 리다이렉트하거나 프로필 생성 페이지로 이동
+            setTimeout(() => {
+              navigate('/employer/home');
+            }, 2000);
+            return;
           } else {
-            toast.error('프로필 정보를 가져오는데 실패했습니다');
+            console.error('프로필 정보를 가져오는데 실패했습니다');
+            toast.error('프로필 정보를 불러올 수 없습니다.');
+            setTimeout(() => {
+              navigate('/employer/home');
+            }, 2000);
+            return;
           }
-          throw new Error('프로필 정보를 가져올 수 없습니다');
         }
 
         const profile = await response.json();
         setEmployerProfileId(profile.id);
         console.log('Loaded employer profile:', profile);
+
+        // 매장 목록 가져오기
+        try {
+          const storesData = await getStores(userId);
+          setStores(storesData);
+          // 대표가게가 있으면 자동 선택
+          const mainStore = storesData.find(s => s.is_main);
+          if (mainStore) {
+            setSelectedStore(mainStore);
+            // 매장 정보를 폼에 자동 입력
+            setFormData(prev => ({
+              ...prev,
+              shopName: mainStore.store_name,
+              shopAddress: mainStore.address,
+              shopAddressDetail: mainStore.address_detail || '',
+              shopPhone: mainStore.phone,
+              industry: mainStore.industry,
+            }));
+          }
+        } catch (error) {
+          console.error('매장 목록 로드 실패:', error);
+        }
       } catch (error) {
         console.error('프로필 로드 실패:', error);
+        toast.error('프로필을 불러오는 중 오류가 발생했습니다.');
+        setTimeout(() => {
+          navigate('/employer/home');
+        }, 2000);
       } finally {
         setLoading(false);
       }
@@ -138,6 +179,19 @@ export const JobCreate = () => {
 
   const handleChange = (field: keyof JobFormData, value: string | string[] | boolean | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleStoreSelect = async (store: StoreData) => {
+    setSelectedStore(store);
+    // 매장 정보를 폼에 자동 입력 (수정 불가)
+    setFormData(prev => ({
+      ...prev,
+      shopName: store.store_name,
+      shopAddress: store.address,
+      shopAddressDetail: store.address_detail || '',
+      shopPhone: store.phone,
+      industry: store.industry,
+    }));
   };
 
   const handleAddressSearch = () => {
@@ -218,24 +272,12 @@ export const JobCreate = () => {
 
   const handleSubmit = async (isDraft = false) => {
     // Validation
+    if (!selectedStore) {
+      toast.error('매장을 선택해주세요');
+      return;
+    }
     if (!formData.title.trim()) {
       toast.error('공고 제목을 입력해주세요');
-      return;
-    }
-    if (!formData.shopName.trim()) {
-      toast.error('가게 이름을 입력해주세요');
-      return;
-    }
-    if (!formData.shopAddress.trim()) {
-      toast.error('가게 위치를 등록해주세요');
-      return;
-    }
-    if (!formData.shopPhone.trim()) {
-      toast.error('전화번호를 입력해주세요');
-      return;
-    }
-    if (!formData.businessLicense) {
-      toast.error('사업자 등록증을 첨부해주세요');
       return;
     }
     if (!formData.wage || parseFloat(formData.wage) <= 0) {
@@ -267,11 +309,11 @@ export const JobCreate = () => {
       const jobData = {
         employer_profile_id: employerProfileId,
         title: formData.title,
-        shop_name: formData.shopName,
-        shop_address: formData.shopAddress,
-        shop_address_detail: formData.shopAddressDetail,
-        shop_phone: formData.shopPhone,
-        location: formData.shopAddress, // location 필드에도 주소 설정
+        shop_name: selectedStore.store_name,
+        shop_address: selectedStore.address,
+        shop_address_detail: selectedStore.address_detail || '',
+        shop_phone: selectedStore.phone,
+        location: selectedStore.address, // location 필드에도 주소 설정
         description: formData.employerMessage || '자세한 내용은 문의 바랍니다.',
         category: finalIndustry,
         wage: parseInt(formData.wage),
@@ -293,7 +335,8 @@ export const JobCreate = () => {
       }
 
       // API call to create job posting
-      const response = await fetch('http://localhost:8000/jobs', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -334,169 +377,85 @@ export const JobCreate = () => {
       <Header title="새 공고 등록" showBack />
 
       <div className="p-4 space-y-5">
-        {/* Basic Info Section */}
+        {/* 매장 선택 Section */}
         <div className="bg-white rounded-[16px] p-5 shadow-card">
           <h3 className="text-[16px] font-bold text-text-900 mb-4">기본 정보</h3>
           
-          <div className="space-y-4">
-            <div>
-              <label className="block text-[14px] font-medium text-text-900 mb-2">
-                공고 제목 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
-                placeholder="예: 카페 바리스타 구합니다"
-                className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
-                         text-[14px] text-text-900 placeholder:text-text-500
-                         focus:outline-none focus:ring-2 focus:ring-mint-600"
-              />
+          {!selectedStore ? (
+            <div className="space-y-3">
+              <p className="text-[14px] text-text-700 mb-4">공고를 등록할 매장을 선택해주세요</p>
+              {stores.length > 0 ? (
+                stores.map((store) => (
+                  <button
+                    key={store.id}
+                    type="button"
+                    onClick={() => handleStoreSelect(store)}
+                    className="w-full p-4 bg-background rounded-[12px] border-2 border-line-200 hover:border-mint-600 transition-all text-left"
+                  >
+                    {store.is_main && (
+                      <span className="inline-block px-2 py-1 mb-2 bg-mint-100 text-mint-700 text-[11px] font-semibold rounded-[6px]">
+                        대표가게
+                      </span>
+                    )}
+                    <h4 className="text-[15px] font-semibold text-text-900 mb-1">{store.store_name}</h4>
+                    <p className="text-[13px] text-text-700 mb-1">{store.address}</p>
+                    <p className="text-[13px] text-text-500">{store.industry}</p>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-[14px] text-text-500 mb-4">등록된 매장이 없습니다</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/employer/store-add')}
+                    className="px-4 py-2 bg-mint-600 text-white rounded-[12px] text-[14px] font-semibold"
+                  >
+                    매장 추가하기
+                  </button>
+                </div>
+              )}
             </div>
-
-            <div>
-              <label className="block text-[14px] font-medium text-text-900 mb-2">
-                업직종 <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowIndustryDropdown(!showIndustryDropdown)}
-                  className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
-                           text-[14px] text-left text-text-900 placeholder:text-text-500
-                           focus:outline-none focus:ring-2 focus:ring-mint-600 flex items-center justify-between"
-                >
-                  <span className={formData.industry ? 'text-text-900' : 'text-text-500'}>
-                    {formData.industry || '업직종을 선택하세요'}
+          ) : (
+            <div className="space-y-4">
+              {/* 선택된 매장 정보 표시 (수정 불가) */}
+              <div className="p-4 bg-mint-50 rounded-[12px] border border-mint-200">
+                {selectedStore.is_main && (
+                  <span className="inline-block px-2 py-1 mb-2 bg-mint-600 text-white text-[11px] font-semibold rounded-[6px]">
+                    대표가게
                   </span>
-                  <svg className="w-5 h-5 text-text-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showIndustryDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-line-200 rounded-[12px] shadow-lg max-h-60 overflow-y-auto">
-                    {INDUSTRY_OPTIONS.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => handleIndustrySelect(option)}
-                        className="w-full px-4 py-3 text-left text-[14px] text-text-900 hover:bg-mint-50 transition-colors"
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
                 )}
-              </div>
-              {formData.industry === '기타' && (
-                <input
-                  type="text"
-                  value={formData.industryCustom}
-                  onChange={(e) => handleChange('industryCustom', e.target.value)}
-                  placeholder="업직종을 직접 입력하세요"
-                  className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200 mt-2
-                           text-[14px] text-text-900 placeholder:text-text-500
-                           focus:outline-none focus:ring-2 focus:ring-mint-600"
-                />
-              )}
-            </div>
-
-            <div>
-              <label className="block text-[14px] font-medium text-text-900 mb-2">
-                가게 이름 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.shopName}
-                onChange={(e) => handleChange('shopName', e.target.value)}
-                placeholder="가게 이름을 입력하세요"
-                className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
-                         text-[14px] text-text-900 placeholder:text-text-500
-                         focus:outline-none focus:ring-2 focus:ring-mint-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[14px] font-medium text-text-900 mb-2">
-                가게 위치 <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.shopAddress}
-                  readOnly
-                  onClick={handleAddressSearch}
-                  placeholder="주소를 검색하세요"
-                  className="w-full h-[48px] px-4 pr-12 bg-background rounded-[12px] border border-line-200
-                           text-[14px] text-text-900 placeholder:text-text-500 cursor-pointer
-                           focus:outline-none focus:ring-2 focus:ring-mint-600"
-                />
+                <h4 className="text-[15px] font-semibold text-text-900 mb-2">{selectedStore.store_name}</h4>
+                <div className="space-y-1 text-[13px] text-text-700">
+                  <p>위치: {selectedStore.address} {selectedStore.address_detail || ''}</p>
+                  <p>전화번호: {selectedStore.phone}</p>
+                  <p>업종: {selectedStore.industry}</p>
+                </div>
                 <button
                   type="button"
-                  onClick={handleAddressSearch}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-500 hover:text-text-700"
+                  onClick={() => setSelectedStore(null)}
+                  className="mt-3 text-[12px] text-mint-600 hover:text-mint-700"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                  다른 매장 선택하기
                 </button>
               </div>
-              {formData.shopAddress && (
+
+              {/* 공고 제목 */}
+              <div>
+                <label className="block text-[14px] font-medium text-text-900 mb-2">
+                  공고 제목 <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  value={formData.shopAddressDetail}
-                  onChange={(e) => handleChange('shopAddressDetail', e.target.value)}
-                  placeholder="상세 주소를 입력하세요"
-                  className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200 mt-2
+                  value={formData.title}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  placeholder="예: 카페 바리스타 구합니다"
+                  className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                            text-[14px] text-text-900 placeholder:text-text-500
                            focus:outline-none focus:ring-2 focus:ring-mint-600"
                 />
-              )}
+              </div>
             </div>
-
-            <div>
-              <label className="block text-[14px] font-medium text-text-900 mb-2">
-                전화번호 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                value={formData.shopPhone}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '');
-                  handleChange('shopPhone', digits);
-                }}
-                placeholder="01012345678"
-                maxLength={11}
-                className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
-                         text-[14px] text-text-900 placeholder:text-text-500
-                         focus:outline-none focus:ring-2 focus:ring-mint-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[14px] font-medium text-text-900 mb-2">
-                사업자 등록증 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                id="businessLicense"
-              />
-              <label
-                htmlFor="businessLicense"
-                className="flex items-center justify-center w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
-                         text-[14px] text-text-700 cursor-pointer hover:bg-mint-50 transition-colors"
-              >
-                {formData.businessLicense ? (
-                  <span className="text-mint-600">{formData.businessLicense.name}</span>
-                ) : (
-                  <span className="text-text-500">사업자 등록증 사진을 첨부하세요</span>
-                )}
-              </label>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Work Conditions Section */}
@@ -522,6 +481,9 @@ export const JobCreate = () => {
                   원
                 </span>
               </div>
+              {formData.wage && parseFloat(formData.wage) < 10320 && (
+                <p className="mt-1 text-[12px] text-red-500">최저시급 이하입니다</p>
+              )}
             </div>
 
             <div>

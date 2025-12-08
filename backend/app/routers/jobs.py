@@ -207,9 +207,13 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
     # Determine status from request or default to 'active'
     job_status = getattr(request, 'status', 'active') or 'active'
     
-    # Extract location from address
-    location = None
-    if employer.address:
+    # Use location from request if provided, otherwise extract from address
+    location = request.location or None
+    if not location and request.shop_address:
+        parts = request.shop_address.split()
+        if len(parts) >= 2:
+            location = f"{parts[0]} {parts[1]}"
+    elif not location and employer.address:
         parts = employer.address.split()
         if len(parts) >= 2:
             location = f"{parts[0]} {parts[1]}"
@@ -235,6 +239,10 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         views=0,
         applications=0,
         location=location,
+        shop_name=getattr(request, 'shop_name', None),
+        shop_address=getattr(request, 'shop_address', None),
+        shop_address_detail=getattr(request, 'shop_address_detail', None),
+        shop_phone=getattr(request, 'shop_phone', None),
     )
     
     session.add(job)

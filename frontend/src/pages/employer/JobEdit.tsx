@@ -72,7 +72,8 @@ export const JobEdit = () => {
         // Get employer profile ID
         const userId = localStorage.getItem('signup_user_id');
         if (userId) {
-          const response = await fetch(`http://localhost:8000/employer/profile/${userId}`);
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+          const response = await fetch(`${API_BASE_URL}/employer/profile/${userId}`);
           if (response.ok) {
             const profile = await response.json();
             setEmployerProfileId(profile.id);
@@ -145,7 +146,8 @@ export const JobEdit = () => {
         employer_message: formData.employerMessage || null,
       };
 
-      const response = await fetch(`http://localhost:8000/jobs/${id}`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

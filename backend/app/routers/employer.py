@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
+from typing import List
 import uuid
 from datetime import datetime
 
 from app.db import get_session
-from app.models import EmployerProfile, SignupUser
-from app.schemas import EmployerProfileResponse, EmployerProfileCreate
+from app.models import EmployerProfile, SignupUser, Store
+from app.schemas import EmployerProfileResponse, EmployerProfileCreate, StoreCreate, StoreResponse
 
 router = APIRouter(prefix="/employer", tags=["employer"])
 
@@ -76,4 +77,114 @@ async def create_or_update_employer_profile(
         address_detail=profile.address_detail,
         created_at=profile.created_at.isoformat(),
         updated_at=profile.updated_at.isoformat(),
+    )
+
+
+@router.get("/stores/{user_id}", response_model=List[StoreResponse])
+async def get_stores(user_id: str, session: Session = Depends(get_session)):
+    """Get all stores for an employer"""
+    print(f"Fetching stores for user_id: {user_id}")
+    statement = select(Store).where(Store.user_id == user_id).order_by(Store.is_main.desc(), Store.created_at)
+    stores = session.exec(statement).all()
+    print(f"Found {len(stores)} stores for user {user_id}")
+    
+    if not stores:
+        # 매장이 없으면 빈 배열 반환 (404가 아닌 200 OK)
+        return []
+    
+    return [
+        StoreResponse(
+            id=store.id,
+            user_id=store.user_id,
+            is_main=store.is_main,
+            store_name=store.store_name,
+            address=store.address,
+            address_detail=store.address_detail,
+            phone=store.phone,
+            industry=store.industry,
+            business_license=store.business_license,
+            management_role=store.management_role,
+            store_type=store.store_type,
+            created_at=store.created_at.isoformat(),
+            updated_at=store.updated_at.isoformat(),
+        )
+        for store in stores
+    ]
+
+
+@router.get("/stores/{user_id}/{store_id}", response_model=StoreResponse)
+async def get_store(user_id: str, store_id: str, session: Session = Depends(get_session)):
+    """Get a specific store"""
+    statement = select(Store).where(Store.id == store_id, Store.user_id == user_id)
+    store = session.exec(statement).first()
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="매장을 찾을 수 없습니다.")
+    
+    return StoreResponse(
+        id=store.id,
+        user_id=store.user_id,
+        is_main=store.is_main,
+        store_name=store.store_name,
+        address=store.address,
+        address_detail=store.address_detail,
+        phone=store.phone,
+        industry=store.industry,
+        business_license=store.business_license,
+        management_role=store.management_role,
+        store_type=store.store_type,
+        created_at=store.created_at.isoformat(),
+        updated_at=store.updated_at.isoformat(),
+    )
+
+
+@router.post("/stores", response_model=StoreResponse, status_code=201)
+async def create_store(payload: StoreCreate, session: Session = Depends(get_session)):
+    """Create a new store"""
+    user = session.exec(select(SignupUser).where(SignupUser.id == payload.user_id)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    if user.role != "employer":
+        raise HTTPException(status_code=400, detail="고용주가 아닌 사용자입니다.")
+    
+    # If this is set as main store, unset other main stores
+    if payload.is_main:
+        statement = select(Store).where(Store.user_id == payload.user_id, Store.is_main == True)
+        existing_main = session.exec(statement).all()
+        for main_store in existing_main:
+            main_store.is_main = False
+            session.add(main_store)
+    
+    store = Store(
+        id=f"store-{uuid.uuid4().hex[:8]}",
+        user_id=payload.user_id,
+        is_main=payload.is_main,
+        store_name=payload.store_name,
+        address=payload.address,
+        address_detail=payload.address_detail,
+        phone=payload.phone,
+        industry=payload.industry,
+        business_license=payload.business_license,
+        management_role=payload.management_role,
+        store_type=payload.store_type,
+    )
+    
+    session.add(store)
+    session.commit()
+    session.refresh(store)
+    
+    return StoreResponse(
+        id=store.id,
+        user_id=store.user_id,
+        is_main=store.is_main,
+        store_name=store.store_name,
+        address=store.address,
+        address_detail=store.address_detail,
+        phone=store.phone,
+        industry=store.industry,
+        business_license=store.business_license,
+        management_role=store.management_role,
+        store_type=store.store_type,
+        created_at=store.created_at.isoformat(),
+        updated_at=store.updated_at.isoformat(),
     )

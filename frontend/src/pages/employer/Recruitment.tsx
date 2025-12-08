@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 interface Applicant {
   id: string;
@@ -18,9 +19,90 @@ interface Applicant {
 export const Recruitment = () => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'reviewed' | 'accepted' | 'rejected'>('all');
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
-  const applicants: Applicant[] = [
+  useEffect(() => {
+    fetchApplicants();
+  }, []);
+
+  const fetchApplicants = async () => {
+    try {
+      setLoading(true);
+      
+      // Get user ID
+      const userId = localStorage.getItem('signup_user_id');
+      if (!userId) {
+        toast.error('로그인이 필요합니다');
+        return;
+      }
+
+      // Get all applications for this employer using userId
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const applicationsRes = await fetch(`${API_BASE_URL}/applications?userId=${userId}`);
+      if (!applicationsRes.ok) {
+        throw new Error('지원 내역을 가져올 수 없습니다');
+      }
+      const applications = await applicationsRes.json();
+
+      // Transform to Applicant format
+      const applicantsData: Applicant[] = applications
+        .filter((app: any) => app.jobseeker) // Only include apps with jobseeker info
+        .map((app: any) => {
+          const seeker = app.jobseeker;
+          let experience = [];
+          try {
+            experience = typeof seeker.experience === 'string' 
+              ? JSON.parse(seeker.experience || '[]')
+              : (seeker.experience || []);
+          } catch {
+            experience = [];
+          }
+          
+          const expStr = experience.length > 0 
+            ? experience.map((e: any) => {
+                if (typeof e === 'string') return e;
+                return `${e.role || ''} ${e.years || ''}년`.trim();
+              }).filter(Boolean).join(', ')
+            : '경력 없음';
+          
+          // Extract tags from preferences or experience
+          const tags: string[] = [];
+          try {
+            const preferences = typeof seeker.preferences === 'string'
+              ? JSON.parse(seeker.preferences || '{}')
+              : (seeker.preferences || {});
+            // Add tags based on preferences if needed
+          } catch {}
+
+          return {
+            id: app.applicationId,
+            name: seeker.name || '이름 없음',
+            age: 28, // Default age, can be calculated from birthdate if available
+            nationality: seeker.nationality || '국적 없음',
+            jobTitle: app.job?.title || '공고 제목 없음',
+            appliedDate: app.appliedAt || new Date().toISOString(),
+            status: app.status === 'applied' ? 'pending' :
+                    app.status === 'hired' ? 'accepted' :
+                    app.status === 'rejected' ? 'rejected' : 'reviewed',
+            languageLevel: seeker.languageLevel || '정보 없음',
+            experience: expStr,
+            tags: tags
+          };
+        });
+
+      setApplicants(applicantsData);
+    } catch (error) {
+      console.error('지원자 목록 로딩 실패:', error);
+      toast.error('지원자 목록을 불러오는데 실패했습니다');
+      setApplicants([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock data for fallback (remove later)
+  const mockApplicants: Applicant[] = [
     {
       id: '1',
       name: '소피아',
@@ -154,7 +236,11 @@ export const Recruitment = () => {
 
       {/* Applicants List */}
       <div className="p-4 space-y-3">
-        {filteredApplicants.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-text-500">불러오는 중...</p>
+          </div>
+        ) : filteredApplicants.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

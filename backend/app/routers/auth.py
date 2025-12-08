@@ -8,7 +8,7 @@ import hashlib
 import traceback
 
 from app.db import get_session
-from app.models import User, JobSeeker, Employer, SignupUser, Nationality, EmployerProfile
+from app.models import User, JobSeeker, Employer, SignupUser, Nationality, EmployerProfile, Store
 from app.schemas import (
     SignInRequest, NewSignInRequest, SignUpRequest, AuthResponse, SignupPayload, SignupResponse, 
     SignupUserResponse, EmployerSignupPayload, EmployerSignupResponse
@@ -345,6 +345,33 @@ async def signup_employer(request: EmployerSignupPayload, session: Session = Dep
     session.add(employer_profile)
     session.commit()
     session.refresh(employer_profile)
+    
+    # Create main store (기본매장) from signup data
+    # 회사 정보가 있는 경우에만 매장 생성
+    print(f"Creating store for user {user_id}, company_name: {request.company_name}, address: {request.address}")
+    if request.company_name and request.company_name.strip() and request.address and request.address.strip():
+        store_id = f"store-{uuid.uuid4().hex[:8]}"
+        # address_detail이 빈 문자열이면 None으로 변환
+        address_detail = request.address_detail if request.address_detail and request.address_detail.strip() else None
+        main_store = Store(
+            id=store_id,
+            user_id=user_id,
+            is_main=True,  # 기본매장
+            store_name=request.company_name.strip(),
+            address=request.address.strip(),
+            address_detail=address_detail,
+            phone="",  # 회원가입 시 전화번호는 없을 수 있음
+            industry="기타",  # 기본값, 나중에 수정 가능
+            business_license=None,
+            management_role="본사 관리자",  # 기본값
+            store_type="직영점",  # 기본값
+        )
+        session.add(main_store)
+        session.commit()
+        session.refresh(main_store)
+        print(f"Store created successfully: {store_id}, is_main: {main_store.is_main}")
+    else:
+        print(f"Store not created: company_name={request.company_name}, address={request.address}")
     
     return EmployerSignupResponse(
         id=signup_user.id,

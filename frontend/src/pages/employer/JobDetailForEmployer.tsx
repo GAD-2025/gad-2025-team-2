@@ -40,8 +40,9 @@ export const JobDetailForEmployer = () => {
     if (!job) return;
     
     try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const newStatus = job.status === 'active' ? 'paused' : 'active';
-      const response = await fetch(`http://localhost:8000/jobs/${job.id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/jobs/${job.id}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +72,8 @@ export const JobDetailForEmployer = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/jobs/${job.id}`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/jobs/${job.id}`, {
         method: 'DELETE',
       });
 

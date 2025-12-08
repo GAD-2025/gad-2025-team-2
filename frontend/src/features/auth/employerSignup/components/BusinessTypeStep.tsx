@@ -2,18 +2,22 @@ import { BusinessType } from '../types';
 
 interface BusinessTypeStepProps {
   businessType: BusinessType | null;
+  businessLicense: File | null;
   onSelectBusinessType: (type: BusinessType) => void;
+  onBusinessLicenseChange: (file: File | null) => void;
   onNext: () => void;
   onPrev: () => void;
 }
 
 export function BusinessTypeStep({
   businessType,
+  businessLicense,
   onSelectBusinessType,
+  onBusinessLicenseChange,
   onNext,
   onPrev,
 }: BusinessTypeStepProps) {
-  const canProceed = businessType !== null;
+  const canProceed = businessType === 'business_owner' && businessLicense !== null;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col bg-white px-4 pb-10 pt-8">
@@ -28,58 +32,39 @@ export function BusinessTypeStep({
       </header>
 
       <h1 className="mb-6 text-xl font-semibold text-gray-900">
-        사업자 여부를 선택해 주세요
+        사업자 등록증을 등록해 주세요
       </h1>
 
       <div className="mb-6 space-y-3">
-        <button
-          type="button"
-          onClick={() => onSelectBusinessType('business_owner')}
-          className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-            businessType === 'business_owner'
-              ? 'border-emerald-500 bg-emerald-50'
-              : 'border-gray-200 bg-white'
-          }`}
-        >
-          <p
-            className={`text-base font-semibold ${
-              businessType === 'business_owner' ? 'text-emerald-700' : 'text-gray-900'
-            }`}
+        {/* 사업자 등록증 등록하기 버튼 */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-4">
+          <label className="mb-2 block text-sm font-medium text-gray-900">
+            사업자 등록증 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              if (file) {
+                onSelectBusinessType('business_owner');
+                onBusinessLicenseChange(file);
+              }
+            }}
+            className="hidden"
+            id="businessLicense"
+          />
+          <label
+            htmlFor="businessLicense"
+            className="flex items-center justify-center w-full h-12 px-4 bg-emerald-50 rounded-xl border-2 border-emerald-500
+                     text-sm font-semibold text-emerald-700 cursor-pointer hover:bg-emerald-100 transition-colors"
           >
-            개인/법인사업자예요
-          </p>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectBusinessType('not_business_owner')}
-          className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-            businessType === 'not_business_owner'
-              ? 'border-emerald-500 bg-emerald-50'
-              : 'border-gray-200 bg-white'
-          }`}
-        >
-          <p
-            className={`text-base font-semibold ${
-              businessType === 'not_business_owner' ? 'text-emerald-700' : 'text-gray-900'
-            }`}
-          >
-            사업자가 아니에요
-          </p>
-        </button>
-      </div>
-
-      {/* 안내 텍스트 */}
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
-        <div className="flex items-start gap-2">
-          <span className="text-gray-500">ℹ️</span>
-          <div className="flex-1 space-y-1 text-xs text-gray-600">
-            <p>정모코드로 회사를 추가하고 싶으신가요?</p>
-            <p>
-              정모코드로 회사 추가는 모맹이즈 본사에 등록된 휴대폰 번호로만 가능해요. 본사에
-              문의해 주세요.
-            </p>
-          </div>
+            {businessLicense ? (
+              <span className="text-emerald-600">{businessLicense.name}</span>
+            ) : (
+              <span>사업자 등록증 등록하기</span>
+            )}
+          </label>
         </div>
       </div>
 
@@ -101,6 +86,7 @@ export function BusinessTypeStep({
     </div>
   );
 }
+
 
 
 

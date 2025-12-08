@@ -2,8 +2,7 @@ import { EmployerInfoStep } from './components/EmployerInfoStep';
 import { EmployerWarningModal } from './components/EmployerWarningModal';
 import { EmployerRuleAgreementStep } from './components/EmployerRuleAgreementStep';
 import { BusinessTypeStep } from './components/BusinessTypeStep';
-import { CompanyNameStep } from './components/CompanyNameStep';
-import { CompanyAddressStep } from './components/CompanyAddressStep';
+import { CompanyInfoStep } from './components/CompanyInfoStep';
 import { useEmployerSignup } from './hooks/useEmployerSignup';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +27,7 @@ export default function EmployerSignupWizard() {
     handleConfirmGoRules,
     handleAgreeToRules,
     setBusinessType,
+    setBusinessLicense,
     setCompanyName,
     setBaseAddress,
     setDetailAddress,
@@ -97,28 +97,22 @@ export default function EmployerSignupWizard() {
       {step === 4 && (
         <BusinessTypeStep
           businessType={state.companyInfo.businessType}
+          businessLicense={state.companyInfo.businessLicense}
           onSelectBusinessType={setBusinessType}
+          onBusinessLicenseChange={setBusinessLicense}
           onNext={goNext}
           onPrev={goPrev}
         />
       )}
 
-      {/* Step 5: 회사 이름 입력 화면 */}
+      {/* Step 5: 회사 정보 입력 화면 (이름 + 주소) */}
       {step === 5 && (
-        <CompanyNameStep
+        <CompanyInfoStep
           companyName={state.companyInfo.companyName}
-          onChangeCompanyName={setCompanyName}
-          onNext={goNext}
-          onPrev={goPrev}
-        />
-      )}
-
-      {/* Step 6: 회사 주소 입력 화면 */}
-      {step === 6 && (
-        <CompanyAddressStep
           baseAddress={state.companyInfo.baseAddress}
           detailAddress={state.companyInfo.detailAddress}
           hasNoDetailAddress={state.companyInfo.hasNoDetailAddress}
+          onChangeCompanyName={setCompanyName}
           onChangeBaseAddress={setBaseAddress}
           onChangeDetailAddress={setDetailAddress}
           onToggleNoDetailAddress={toggleNoDetailAddress}
@@ -131,6 +125,7 @@ export default function EmployerSignupWizard() {
     </div>
   );
 }
+
 
 
 

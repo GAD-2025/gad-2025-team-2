@@ -54,3 +54,4 @@ export const SafetyNoticeModal = ({ isOpen, onClose }: SafetyNoticeModalProps) =
   );
 };
 
+

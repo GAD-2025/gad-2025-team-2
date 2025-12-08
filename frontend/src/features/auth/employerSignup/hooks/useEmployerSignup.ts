@@ -9,6 +9,7 @@ const INITIAL_COMPANY_INFO: EmployerCompanyInfo = {
   baseAddress: '',
   detailAddress: '',
   hasNoDetailAddress: false,
+  businessLicense: null,
 };
 
 const INITIAL_STATE: EmployerSignupState = {
@@ -26,7 +27,7 @@ export function useEmployerSignup() {
   const [error, setError] = useState<string | null>(null);
 
   const goNext = () => {
-    if (step < 6) {
+    if (step < 5) {
       setStep((prev) => (prev + 1) as EmployerSignupStep);
     }
   };
@@ -85,6 +86,13 @@ export function useEmployerSignup() {
     }));
   };
 
+  const setBusinessLicense = (file: File | null) => {
+    setState((prev) => ({
+      ...prev,
+      companyInfo: { ...prev.companyInfo, businessLicense: file },
+    }));
+  };
+
   const setCompanyName = (name: string) => {
     setState((prev) => ({
       ...prev,
@@ -135,20 +143,27 @@ export function useEmployerSignup() {
     }
 
     try {
-      // 먼저 고용주 계정 생성
+      // 먼저 고용주 계정 생성 (비밀번호는 임시로 이메일 사용)
+      // TODO: 실제 비밀번호 입력 단계 추가 필요
       const signupResponse = await signupEmployer({
         role: 'employer',
         name: state.name,
         email: state.email,
+        password: state.email, // 임시: 실제로는 비밀번호 입력 단계 필요
+        business_type: state.companyInfo.businessType === 'business_owner' ? 'business' : 'individual',
+        company_name: state.companyInfo.companyName,
+        address: state.companyInfo.baseAddress,
+        address_detail: state.companyInfo.hasNoDetailAddress ? undefined : state.companyInfo.detailAddress || undefined,
       });
 
       console.log('고용주 회원가입 성공:', signupResponse);
 
-      // TODO: 회사 정보 저장 API 호출 (나중에 구현)
-      // await saveEmployerCompany({
-      //   user_id: signupResponse.id,
-      //   ...state.companyInfo,
-      // });
+      // 사용자 ID 저장
+      const userId = signupResponse.id;
+      localStorage.setItem('signup_user_id', userId);
+
+      // 백엔드에서 이미 기본매장을 생성하므로, 여기서는 완료 메시지만 표시
+      console.log('기본매장 자동 등록 완료 (백엔드에서 처리됨)');
 
       // 성공 시 고용주 홈으로 이동
       navigate('/employer/home?from=employerSignup');
@@ -176,6 +191,7 @@ export function useEmployerSignup() {
     handleAgreeToRules,
     // 회사 정보 핸들러들
     setBusinessType,
+    setBusinessLicense,
     setCompanyName,
     setBaseAddress,
     setDetailAddress,
@@ -183,6 +199,7 @@ export function useEmployerSignup() {
     handleSubmitCompanyInfo,
   };
 }
+
 
 
 

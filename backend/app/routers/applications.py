@@ -3,9 +3,10 @@ from sqlmodel import Session, select
 from typing import Optional, List
 import uuid
 from datetime import datetime
+import json
 
 from app.db import get_session
-from app.models import Application
+from app.models import Application, Job, JobSeeker, Employer
 from app.schemas import ApplicationCreate, ApplicationUpdate
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -53,9 +54,25 @@ async def create_application(
 async def list_applications(
     seekerId: Optional[str] = None,
     jobId: Optional[str] = None,
+    employerId: Optional[str] = None,
+    userId: Optional[str] = None,  # For employer: signup_user_id
     session: Session = Depends(get_session),
 ):
-    """List applications with filters"""
+    """List applications with filters and JOINed data"""
+    # If userId is provided for employer, find employerId
+    if userId and not employerId and not seekerId:
+        from app.models import EmployerProfile, Employer, Job
+        # Get employer profile
+        profile_stmt = select(EmployerProfile).where(EmployerProfile.user_id == userId)
+        profile = session.exec(profile_stmt).first()
+        if profile:
+            # Find employer by businessNo matching profile.id
+            employer_stmt = select(Employer).where(Employer.businessNo == profile.id)
+            employer = session.exec(employer_stmt).first()
+            if employer:
+                employerId = employer.id
+    
+    # Base query
     statement = select(Application)
     
     if seekerId:
@@ -64,15 +81,81 @@ async def list_applications(
         statement = statement.where(Application.jobId == jobId)
     
     applications = session.exec(statement).all()
-    return [{
-        "applicationId": app.applicationId,
-        "seekerId": app.seekerId,
-        "jobId": app.jobId,
-        "status": app.status,
-        "appliedAt": app.appliedAt,
-        "updatedAt": app.updatedAt,
-        "hiredAt": app.hiredAt,
-    } for app in applications]
+    results = []
+    
+    for app in applications:
+        app_dict = app.dict()
+        
+        # If filtering by seekerId, include Job information
+        if seekerId:
+            job = session.exec(select(Job).where(Job.id == app.jobId)).first()
+            if job:
+                job_dict = job.dict()
+                # Get employer info
+                employer = session.exec(select(Employer).where(Employer.id == job.employerId)).first()
+                if employer:
+                    job_dict['employer'] = {
+                        'shopName': employer.shopName,
+                        'industry': employer.industry,
+                    }
+                
+                app_dict['job'] = {
+                    'id': job_dict['id'],
+                    'title': job_dict['title'],
+                    'shopName': job_dict.get('shop_name') or job_dict['employer'].get('shopName', ''),
+                    'wage': job_dict['wage'],
+                    'location': job_dict.get('location') or job_dict.get('shop_address', ''),
+                    'category': job_dict['category'],
+                    'workDays': job_dict['workDays'],
+                    'workHours': job_dict['workHours'],
+                    'employerId': job_dict['employerId'],
+                }
+        
+        # If filtering by jobId or employerId, include JobSeeker information
+        if jobId or employerId:
+            seeker = session.exec(select(JobSeeker).where(JobSeeker.id == app.seekerId)).first()
+            if seeker:
+                seeker_dict = seeker.dict()
+                # Parse JSON fields
+                experience = []
+                if seeker_dict.get('experience'):
+                    try:
+                        experience = json.loads(seeker_dict['experience']) if isinstance(seeker_dict['experience'], str) else seeker_dict['experience']
+                    except:
+                        experience = []
+                
+                preferences = {}
+                if seeker_dict.get('preferences'):
+                    try:
+                        preferences = json.loads(seeker_dict['preferences']) if isinstance(seeker_dict['preferences'], str) else seeker_dict['preferences']
+                    except:
+                        preferences = {}
+                
+                app_dict['jobseeker'] = {
+                    'id': seeker_dict['id'],
+                    'name': seeker_dict['name'],
+                    'nationality': seeker_dict['nationality'],
+                    'phone': seeker_dict['phone'],
+                    'languageLevel': seeker_dict['languageLevel'],
+                    'visaType': seeker_dict['visaType'],
+                    'experience': experience,
+                    'preferences': preferences,
+                }
+        
+        # If filtering by employerId (get all applications for employer's jobs)
+        if employerId:
+            job = session.exec(select(Job).where(Job.id == app.jobId).where(Job.employerId == employerId)).first()
+            if not job:
+                continue  # Skip if job doesn't belong to this employer
+            app_dict['job'] = {
+                'id': job.id,
+                'title': job.title,
+                'category': job.category,
+            }
+        
+        results.append(app_dict)
+    
+    return results
 
 
 @router.patch("/{application_id}", response_model=dict)

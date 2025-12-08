@@ -101,6 +101,8 @@ export const MyApplications = () => {
     } catch (error) {
       console.error('Failed to fetch applications:', error);
       toast.error('지원 내역을 불러오는데 실패했습니다');
+      // Fallback to empty array on error
+      setApplications([]);
     } finally {
       setLoading(false);
     }

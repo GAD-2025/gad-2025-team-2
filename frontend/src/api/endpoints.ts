@@ -172,6 +172,75 @@ export async function listJobSeekers(
   return response.json();
 }
 
+// Store (매장) API
+export interface StoreData {
+  id: string;
+  user_id: string;
+  is_main: boolean;
+  store_name: string;
+  address: string;
+  address_detail: string | null;
+  phone: string;
+  industry: string;
+  business_license: string | null;
+  management_role: string;
+  store_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoreCreatePayload {
+  user_id: string;
+  store_name: string;
+  address: string;
+  address_detail?: string;
+  phone: string;
+  industry: string;
+  business_license?: string;
+  management_role: string;
+  store_type: string;
+  is_main?: boolean;
+}
+
+export async function getStores(userId: string): Promise<StoreData[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/employer/stores/${userId}`);
+    if (!response.ok) {
+      // 404이거나 다른 에러인 경우 빈 배열 반환
+      console.warn(`Failed to fetch stores for user ${userId}: ${response.status} ${response.statusText}`);
+      return [];
+    }
+    const stores = await response.json();
+    console.log(`Loaded ${stores.length} stores for user ${userId}:`, stores);
+    return stores;
+  } catch (error) {
+    console.error(`Error fetching stores for user ${userId}:`, error);
+    return [];
+  }
+}
+
+export async function getStore(userId: string, storeId: string): Promise<StoreData> {
+  const response = await fetch(`${API_BASE_URL}/employer/stores/${userId}/${storeId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch store');
+  }
+  return response.json();
+}
+
+export async function createStore(payload: StoreCreatePayload): Promise<StoreData> {
+  const response = await fetch(`${API_BASE_URL}/employer/stores`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create store');
+  }
+  return response.json();
+}
+
 export default {
   auth: authAPI,
   jobs: jobsAPI,

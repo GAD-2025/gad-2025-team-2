@@ -6,7 +6,7 @@ import { TrustFlipCard } from "@/components/TrustFlipCard";
 import { VerificationList } from "@/components/VerificationList";
 import { ResumeSection } from "@/components/ResumeSection";
 import type { Profile, Verifications, Resume } from "@/types/profile";
-import { getSignupUser, getJobSeekerProfile, type SignupUserData, type JobSeekerProfileData } from "@/api/endpoints";
+import { getSignupUser, getJobSeekerProfile, getStores, type SignupUserData, type JobSeekerProfileData, type StoreData } from "@/api/endpoints";
 
 export const MyPage = () => {
   const { userMode, setUserMode, user, clearAuth } = useAuthStore();
@@ -16,6 +16,7 @@ export const MyPage = () => {
   const [loading, setLoading] = useState(true);
   const [signupUserData, setSignupUserData] = useState<SignupUserData | null>(null);
   const [profileData, setProfileData] = useState<JobSeekerProfileData | null>(null);
+  const [stores, setStores] = useState<StoreData[]>([]);
 
   // Load user data from database
   useEffect(() => {
@@ -41,7 +42,17 @@ export const MyPage = () => {
             console.log('Profile not found yet (user might not have completed onboarding)');
           }
         }
-        // 고용주인 경우는 employer profile은 필요 없음 (기본 정보만 사용)
+        // 고용주인 경우 매장 목록 가져오기
+        if (userData.role === 'employer') {
+          try {
+            const storesData = await getStores(userId);
+            console.log('Loaded stores:', storesData);
+            setStores(storesData);
+          } catch (error) {
+            console.error('Failed to load stores:', error);
+            setStores([]);
+          }
+        }
       } catch (error) {
         console.error('Failed to load user data:', error);
       } finally {
@@ -198,6 +209,46 @@ export const MyPage = () => {
               verifications={verifications}
               onVerifyClick={handleVerifyClick}
             />
+          </div>
+        )}
+
+        {/* 나의 매장 섹션 (고용주만) */}
+        {isEmployer && (
+          <div className="bg-white rounded-[16px] border border-line-200 p-5">
+            <h2 className="text-[18px] font-bold text-text-900 mb-4">나의 매장</h2>
+            <div className="space-y-3">
+              {stores.length > 0 ? (
+                <>
+                  {stores.map((store) => (
+                    <div
+                      key={store.id}
+                      className="p-4 bg-background rounded-[12px] border border-line-200"
+                    >
+                      {store.is_main && (
+                        <span className="inline-block px-2 py-1 mb-2 bg-mint-100 text-mint-700 text-[11px] font-semibold rounded-[6px]">
+                          기본매장
+                        </span>
+                      )}
+                      <h3 className="text-[15px] font-semibold text-text-900 mb-1">
+                        {store.store_name}
+                      </h3>
+                      <p className="text-[13px] text-text-700 mb-1">{store.address}</p>
+                      <p className="text-[13px] text-text-500">{store.industry}</p>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <p className="text-[14px] text-text-500 text-center py-4">
+                  등록된 매장이 없습니다
+                </p>
+              )}
+              <button
+                onClick={() => navigate('/employer/store-add')}
+                className="w-full h-[48px] bg-mint-600 text-white rounded-[12px] text-[15px] font-semibold hover:bg-mint-700 transition-colors"
+              >
+                매장 추가 등록하기
+              </button>
+            </div>
           </div>
         )}
 

@@ -44,7 +44,7 @@ export function useEmployerSignupWizard() {
       return;
     }
     
-    if (step < 4) {
+    if (step < 3) {
       setStep(step + 1);
     } else {
       handleSubmit();
@@ -65,16 +65,14 @@ export function useEmployerSignupWizard() {
       updateFormData({ businessType: 'business' });
     }
     if (step === 3 && !formData.companyName) {
-      updateFormData({ companyName: 'Test Company' });
-    }
-    if (step === 4 && !formData.address) {
       updateFormData({ 
+        companyName: 'Test Company',
         address: '서울특별시 강남구 테헤란로 123',
         addressDetail: '1층',
       });
     }
     
-    if (step < 4) {
+    if (step < 3) {
       setStep(step + 1);
     } else {
       handleSubmit();
@@ -111,28 +109,38 @@ export function useEmployerSignupWizard() {
 
   const handleSubmit = async () => {
     try {
-      const data = await signupEmployer({
+      // addressDetail이 빈 문자열이면 undefined로 변환 (백엔드에서 None으로 처리)
+      const addressDetail = formData.addressDetail && formData.addressDetail.trim() 
+        ? formData.addressDetail 
+        : undefined;
+      
+      // 회원가입 데이터 확인
+      const signupPayload = {
         role: 'employer',
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        business_type: formData.businessType,
+        business_type: formData.businessType || 'business',
         company_name: formData.companyName,
         address: formData.address,
-        address_detail: formData.addressDetail,
-      });
+        address_detail: addressDetail,
+      };
+      console.log('회원가입 데이터:', signupPayload);
+      
+      const data = await signupEmployer(signupPayload);
       console.log('고용주 회원가입 성공:', data);
       
       // Store user ID for later use
       if (data?.id) {
         localStorage.setItem('signup_user_id', data.id);
+        console.log('User ID saved to localStorage:', data.id);
       }
       
       // 고용주 모드로 설정
       setUserMode('employer');
       
-      // 회원가입 완료 후 홈으로 이동
-      navigate('/employer/home');
+      // 회원가입 완료 후 마이페이지로 이동하여 기본매장 확인
+      navigate('/mypage');
     } catch (error) {
       console.error('고용주 회원가입 실패:', error);
       alert('회원가입에 실패했습니다. 다시 시도해주세요.');
@@ -144,11 +152,10 @@ export function useEmployerSignupWizard() {
       case 1:
         return formData.name.length >= 2 && formData.email.includes('@') && formData.password.length >= 6;
       case 2:
-        return formData.businessType !== '';
+        // 사업자 등록증이 등록되어야 함 (businessType이 'business'여야 함)
+        return formData.businessType === 'business';
       case 3:
-        return formData.companyName.length > 0;
-      case 4:
-        return formData.address.length > 0 && (formData.addressDetail.length > 0 || formData.noDetailAddress);
+        return formData.companyName.length > 0 && formData.address.length > 0 && (formData.addressDetail.length > 0 || formData.noDetailAddress);
       default:
         return false;
     }

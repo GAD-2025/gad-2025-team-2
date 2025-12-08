@@ -3,8 +3,7 @@ import { EmployerInfoStep } from './components/employer/EmployerInfoStep';
 import { NotificationPermissionModal } from './components/employer/NotificationPermissionModal';
 import { EmployerTermsModal } from './components/employer/EmployerTermsModal';
 import { BusinessTypeStep } from './components/employer/BusinessTypeStep';
-import { CompanyNameStep } from './components/employer/CompanyNameStep';
-import { CompanyAddressStep } from './components/employer/CompanyAddressStep';
+import { CompanyInfoStep } from './components/employer/CompanyInfoStep';
 import { ProgressBar } from './components/ProgressBar';
 
 export function EmployerSignupWizard() {
@@ -30,9 +29,7 @@ export function EmployerSignupWizard() {
       case 2:
         return <BusinessTypeStep formData={formData} updateFormData={updateFormData} />;
       case 3:
-        return <CompanyNameStep formData={formData} updateFormData={updateFormData} />;
-      case 4:
-        return <CompanyAddressStep formData={formData} updateFormData={updateFormData} />;
+        return <CompanyInfoStep formData={formData} updateFormData={updateFormData} />;
       default:
         return null;
     }
@@ -43,7 +40,7 @@ export function EmployerSignupWizard() {
       {/* Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-10 bg-white">
         <div className="mx-auto max-w-[420px]">
-          <ProgressBar currentStep={step} totalSteps={4} />
+          <ProgressBar currentStep={step} totalSteps={3} />
         </div>
       </div>
 

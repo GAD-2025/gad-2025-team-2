@@ -80,6 +80,10 @@ class Job(SQLModel, table=True):
     applications: int = Field(default=0)
     postedAt: Optional[str] = Field(default_factory=lambda: datetime.utcnow().isoformat())
     location: Optional[str] = None
+    shop_name: Optional[str] = None
+    shop_address: Optional[str] = None
+    shop_address_detail: Optional[str] = None
+    shop_phone: Optional[str] = None
 
 
 class Application(SQLModel, table=True):
@@ -194,6 +198,24 @@ class EmployerProfile(SQLModel, table=True):
     company_name: str
     address: str
     address_detail: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Store(SQLModel, table=True):
+    __tablename__ = "stores"
+    
+    id: str = Field(primary_key=True)
+    user_id: str  # references signup_users.id
+    is_main: bool = Field(default=False)  # 대표가게 여부
+    store_name: str
+    address: str
+    address_detail: Optional[str] = None
+    phone: str
+    industry: str  # 업종
+    business_license: Optional[str] = None  # 사업자등록증 파일명 또는 URL
+    management_role: str  # '본사 관리자' | '지점 관리자'
+    store_type: str  # '직영점' | '가맹점' | '개인·독립 매장'
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

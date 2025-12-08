@@ -181,6 +181,35 @@ class EmployerProfileResponse(BaseModel):
     updated_at: str
 
 
+class StoreCreate(BaseModel):
+    user_id: str
+    store_name: str
+    address: str
+    address_detail: Optional[str] = None
+    phone: str
+    industry: str
+    business_license: Optional[str] = None
+    management_role: str  # '본사 관리자' | '지점 관리자'
+    store_type: str  # '직영점' | '가맹점' | '개인·독립 매장'
+    is_main: bool = False
+
+
+class StoreResponse(BaseModel):
+    id: str
+    user_id: str
+    is_main: bool
+    store_name: str
+    address: str
+    address_detail: Optional[str] = None
+    phone: str
+    industry: str
+    business_license: Optional[str] = None
+    management_role: str
+    store_type: str
+    created_at: str
+    updated_at: str
+
+
 class JobCreateRequest(BaseModel):
     employer_profile_id: str
     title: str
@@ -196,6 +225,11 @@ class JobCreateRequest(BaseModel):
     benefits: Optional[str] = None
     employer_message: Optional[str] = None
     status: Optional[str] = "active"  # 'active', 'paused', 'closed'
+    shop_name: Optional[str] = None
+    shop_address: Optional[str] = None
+    shop_address_detail: Optional[str] = None
+    shop_phone: Optional[str] = None
+    location: Optional[str] = None
 
 
 class JobResponse(BaseModel):
