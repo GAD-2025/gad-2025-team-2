@@ -134,16 +134,12 @@ async def list_applications(
                 job_dict = job.dict()
                 # Get employer info
                 employer = session.exec(select(Employer).where(Employer.id == job.employerId)).first()
-                if employer:
-                    job_dict['employer'] = {
-                        'shopName': employer.shopName,
-                        'industry': employer.industry,
-                    }
+                employer_dict = employer.dict() if employer else {}
                 
                 app_dict['job'] = {
                     'id': job_dict['id'],
                     'title': job_dict['title'],
-                    'shopName': job_dict.get('shop_name') or job_dict['employer'].get('shopName', ''),
+                    'shopName': job_dict.get('shop_name') or employer_dict.get('shopName', ''),
                     'wage': job_dict['wage'],
                     'location': job_dict.get('location') or job_dict.get('shop_address', ''),
                     'category': job_dict['category'],
