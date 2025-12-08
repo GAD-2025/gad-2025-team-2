@@ -27,6 +27,7 @@ export const JobList = () => {
   const location = useLocation();
   const navFrom = (location.state as any)?.from || '';
   const navPreset = (location.state as any)?.preset || (location.state as any)?.sort || '';
+  const sortPreset = sortParam || navPreset || '';
   // Also hide when a sort preset is active (e.g., ?sort=popular)
   const hideNewJobs = Boolean(sortParam) || Boolean(navPreset) || fromParam === 'quick' || navFrom === 'quick';
   const isDefaultJobs = !sortParam && !navPreset && fromParam !== 'quick' && navFrom !== 'quick';
@@ -54,8 +55,39 @@ export const JobList = () => {
       try {
         setLoading(true);
         // Fetch jobs from API
-        const response = await jobsAPI.list({ limit: 50, visaType: appliedFilters.visas || undefined });
-        const activeJobs = (response.data || []).filter((job: any) => job.status === 'active');
+        const response = await jobsAPI.list({
+          limit: 50,
+          visaType: appliedFilters.visas || undefined,
+          sort: sortPreset || undefined,
+        });
+        let activeJobs = (response.data || []).filter((job: any) => job.status === 'active');
+
+        // Fallback 클라이언트 필터링 (백엔드에서 정렬/필터가 안 먹을 때 대비)
+        activeJobs = activeJobs.filter((job: any) => {
+          const applicationsCount = job.applicationsCount ?? job.applications ?? 0;
+          const isTrusted =
+            job.isTrusted ||
+            Boolean(job?.employer?.business_license) ||
+            Boolean(job?.employer?.is_verified);
+
+          if (sortPreset === 'high-wage') return job.wage >= 11000;
+          if (sortPreset === 'popular') return applicationsCount > 0;
+          if (sortPreset === 'trusted') return isTrusted;
+          // 단기 알바는 기존 기준 없음 -> 서버 기준 사용, 없으면 전체 유지
+          return true;
+        });
+
+        // Sorting fallback
+        if (sortPreset === 'high-wage') {
+          activeJobs.sort((a: any, b: any) => (b.wage ?? 0) - (a.wage ?? 0));
+        } else if (sortPreset === 'popular') {
+          activeJobs.sort(
+            (a: any, b: any) =>
+              (b.applicationsCount ?? b.applications ?? 0) -
+              (a.applicationsCount ?? a.applications ?? 0)
+          );
+        }
+
         setJobs(activeJobs);
         console.log(`Loaded ${activeJobs.length} active jobs from API`);
       } catch (error) {
@@ -68,7 +100,7 @@ export const JobList = () => {
     };
 
     fetchJobs();
-  }, [appliedFilters]);
+  }, [appliedFilters, sortPreset]);
 
   const handleFilterApply = (filters: FilterState) => {
     setAppliedFilters(filters);

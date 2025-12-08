@@ -50,6 +50,9 @@ async def create_or_update_employer_profile(
         existing.company_name = payload.company_name
         existing.address = payload.address
         existing.address_detail = payload.address_detail
+        existing.business_license = payload.business_license
+        if payload.is_verified is not None:
+            existing.is_verified = payload.is_verified
         existing.updated_at = datetime.utcnow()
         session.add(existing)
         session.commit()
@@ -63,6 +66,8 @@ async def create_or_update_employer_profile(
             company_name=payload.company_name,
             address=payload.address,
             address_detail=payload.address_detail,
+            business_license=payload.business_license,
+            is_verified=payload.is_verified or False,
         )
         session.add(profile)
         session.commit()
@@ -75,6 +80,8 @@ async def create_or_update_employer_profile(
         company_name=profile.company_name,
         address=profile.address,
         address_detail=profile.address_detail,
+        business_license=profile.business_license,
+        is_verified=profile.is_verified,
         created_at=profile.created_at.isoformat(),
         updated_at=profile.updated_at.isoformat(),
     )

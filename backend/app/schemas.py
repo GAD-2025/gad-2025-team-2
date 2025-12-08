@@ -168,6 +168,8 @@ class EmployerProfileCreate(BaseModel):
     company_name: str
     address: str
     address_detail: Optional[str] = None
+    business_license: Optional[str] = None
+    is_verified: Optional[bool] = None
 
 
 class EmployerProfileResponse(BaseModel):
@@ -177,6 +179,8 @@ class EmployerProfileResponse(BaseModel):
     company_name: str
     address: str
     address_detail: Optional[str] = None
+    business_license: Optional[str] = None
+    is_verified: bool = False
     created_at: str
     updated_at: str
 

@@ -26,10 +26,15 @@ export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
         ${isFeatured ? 'min-w-[320px] w-[320px] border-2 border-mint-600 p-4 flex flex-col' : 'border border-border p-4'}
       `}
     >
-      {/* Title */}
-      <h3 className="text-[16px] font-bold text-text-900 mb-2 line-clamp-1">
-        {job.title}
-      </h3>
+      {/* Title + Trusted badge */}
+      <div className="flex items-center gap-2 mb-2">
+        {job.isTrusted && (
+          <span className="px-[8px] py-[4px] rounded-[10px] bg-sky-100 text-sky-700 text-[11px] font-semibold">
+            안심 기업
+          </span>
+        )}
+        <h3 className="text-[16px] font-bold text-text-900 line-clamp-1">{job.title}</h3>
+      </div>
 
       {/* Company info */}
       <div className="flex items-center gap-1.5 mb-1">

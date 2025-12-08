@@ -340,6 +340,8 @@ async def signup_employer(request: EmployerSignupPayload, session: Session = Dep
         company_name=request.company_name,
         address=request.address,
         address_detail=request.address_detail,
+        # 가입 완료 시 기본으로 안심(신뢰) 배지 부여
+        is_verified=True,
     )
     
     session.add(employer_profile)

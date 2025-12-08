@@ -198,6 +198,8 @@ class EmployerProfile(SQLModel, table=True):
     company_name: str
     address: str
     address_detail: Optional[str] = None
+    business_license: Optional[str] = None  # 사업자등록증 파일명 또는 URL
+    is_verified: bool = Field(default=False)  # 인증 여부
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

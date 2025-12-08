@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
+from sqlalchemy import func
 from typing import Optional, List
 import json
 import uuid
 
 from app.db import get_session
-from app.models import Job, Employer, EmployerProfile, SignupUser
+from app.models import Job, Employer, EmployerProfile, SignupUser, Application
 from app.schemas import JobCreateRequest, JobResponse
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -18,13 +19,33 @@ async def list_jobs(
     industry: Optional[str] = None,
     languageLevel: Optional[str] = None,
     visaType: Optional[str] = None,
+    sort: Optional[str] = Query(
+        default=None,
+        description="Preset filter: high-wage, popular, trusted, short-term",
+    ),
     limit: int = Query(default=20, le=100),
     offset: int = 0,
     session: Session = Depends(get_session),
 ):
     """List jobs with filters"""
-    statement = select(Job).offset(offset).limit(limit)
-    jobs = session.exec(statement).all()
+    statement = select(Job)
+    if query:
+        statement = statement.where(Job.title.like(f"%{query}%"))
+    if location:
+        statement = statement.where(Job.location.like(f"%{location}%"))
+    if industry:
+        statement = statement.where(Job.category.like(f"%{industry}%"))
+    if languageLevel:
+        statement = statement.where(Job.requiredLanguage.like(f"%{languageLevel}%"))
+
+    jobs = session.exec(statement.offset(offset).limit(limit)).all()
+
+    # Preload application counts for popularity sorting/filtering
+    app_counts = dict(
+        session.exec(
+            select(Application.jobId, func.count(Application.applicationId)).group_by(Application.jobId)
+        ).all()
+    )
     
     # Get employer info for each job
     result = []
@@ -50,11 +71,45 @@ async def list_jobs(
                 if visaType not in str(required_visas):
                     continue
 
+        # Derive trust flag from employer profile (사업자등록증/인증 여부)
+        is_trusted = False
+        employer_profile = None
+        if employer and employer.businessNo:
+            employer_profile = session.exec(
+                select(EmployerProfile).where(EmployerProfile.id == employer.businessNo)
+            ).first()
+        if employer_profile:
+            if getattr(employer_profile, "business_license", None):
+                is_trusted = True
+            if getattr(employer_profile, "is_verified", False):
+                is_trusted = True
+
         job_dict = job.dict()
         job_dict["employer"] = employer.dict() if employer else {}
         job_dict["requiredVisa"] = required_visas
+        job_dict["applicationsCount"] = app_counts.get(job.id, 0)
+        job_dict["isTrusted"] = is_trusted
+
+        # Quick-menu preset filters
+        if sort == "high-wage" and job.wage < 11000:
+            continue
+        if sort == "popular" and app_counts.get(job.id, 0) <= 0:
+            continue
+        if sort == "trusted" and not is_trusted:
+            continue
         result.append(job_dict)
     
+    # Sorting for presets
+    if sort == "high-wage":
+        result.sort(key=lambda x: x.get("wage", 0), reverse=True)
+    elif sort == "popular":
+        result.sort(key=lambda x: x.get("applicationsCount", 0), reverse=True)
+    elif sort == "trusted":
+        result.sort(key=lambda x: x.get("postedAt") or x.get("createdAt") or "", reverse=True)
+    else:
+        # Default: latest first if postedAt exists
+        result.sort(key=lambda x: x.get("postedAt") or x.get("createdAt") or "", reverse=True)
+
     return result
 
 
@@ -70,10 +125,25 @@ async def get_job(job_id: str, session: Session = Depends(get_session)):
     # Get employer
     employer_stmt = select(Employer).where(Employer.id == job.employerId)
     employer = session.exec(employer_stmt).first()
+    employer_profile = None
+    is_trusted = False
+    if employer and employer.businessNo:
+        employer_profile = session.exec(
+            select(EmployerProfile).where(EmployerProfile.id == employer.businessNo)
+        ).first()
+    if employer_profile:
+        if getattr(employer_profile, "business_license", None):
+            is_trusted = True
+        if getattr(employer_profile, "is_verified", False):
+            is_trusted = True
     
     job_dict = job.dict()
     job_dict["employer"] = employer.dict() if employer else {}
     job_dict["requiredVisa"] = json.loads(job.requiredVisa)
+    job_dict["applicationsCount"] = session.exec(
+        select(func.count(Application.applicationId)).where(Application.jobId == job.id)
+    ).one()[0]
+    job_dict["isTrusted"] = is_trusted
     
     return job_dict
 

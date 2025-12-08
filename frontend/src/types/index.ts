@@ -87,6 +87,8 @@ export interface Job {
   status?: 'active' | 'paused' | 'closed';
   views?: number;
   applications?: number;
+  applicationsCount?: number;
+  isTrusted?: boolean;
 }
 
 export interface Message {

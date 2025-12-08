@@ -31,6 +31,7 @@ export const jobsAPI = {
     industry?: string;
     languageLevel?: string;
     visaType?: string;
+    sort?: string;
     limit?: number;
     offset?: number;
   }) => apiClient.get<Job[]>('/jobs', { params }),

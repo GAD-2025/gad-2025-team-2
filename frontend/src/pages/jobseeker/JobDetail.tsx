@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
@@ -105,6 +105,11 @@ export const JobDetail = () => {
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-2">
             <h1 className="text-[22px] font-bold text-text-900">{job.title}</h1>
+            {job.isTrusted && (
+              <span className="ml-auto px-[10px] py-[6px] rounded-[12px] bg-sky-100 text-sky-700 text-[12px] font-semibold">
+                안심 기업
+              </span>
+            )}
             {job.employer.rating && (
               <div className="flex items-center gap-1">
                 <span className="text-yellow-500">⭐</span>
