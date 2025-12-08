@@ -6,7 +6,15 @@ from datetime import datetime
 import json
 
 from app.db import get_session
-from app.models import Application, Job, JobSeeker, Employer, SignupUser, JobSeekerProfile
+from app.models import (
+    Application,
+    Job,
+    JobSeeker,
+    Employer,
+    SignupUser,
+    JobSeekerProfile,
+    EmployerProfile,
+)
 from app.schemas import ApplicationCreate, ApplicationUpdate
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -102,7 +110,6 @@ async def list_applications(
     """List applications with filters and JOINed data"""
     # If userId is provided for employer, find employerId
     if userId and not employerId and not seekerId:
-        from app.models import EmployerProfile, Employer, Job
         # Get employer profile
         profile_stmt = select(EmployerProfile).where(EmployerProfile.user_id == userId)
         profile = session.exec(profile_stmt).first()
