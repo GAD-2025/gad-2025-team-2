@@ -141,50 +141,65 @@ async def get_store(user_id: str, store_id: str, session: Session = Depends(get_
 @router.post("/stores", response_model=StoreResponse, status_code=201)
 async def create_store(payload: StoreCreate, session: Session = Depends(get_session)):
     """Create a new store"""
-    user = session.exec(select(SignupUser).where(SignupUser.id == payload.user_id)).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
-    if user.role != "employer":
-        raise HTTPException(status_code=400, detail="고용주가 아닌 사용자입니다.")
+    print(f"Creating store for user_id: {payload.user_id}")
+    print(f"Store data: name={payload.store_name}, address={payload.address}, phone={payload.phone}, industry={payload.industry}")
     
-    # If this is set as main store, unset other main stores
-    if payload.is_main:
-        statement = select(Store).where(Store.user_id == payload.user_id, Store.is_main == True)
-        existing_main = session.exec(statement).all()
-        for main_store in existing_main:
-            main_store.is_main = False
-            session.add(main_store)
-    
-    store = Store(
-        id=f"store-{uuid.uuid4().hex[:8]}",
-        user_id=payload.user_id,
-        is_main=payload.is_main,
-        store_name=payload.store_name,
-        address=payload.address,
-        address_detail=payload.address_detail,
-        phone=payload.phone,
-        industry=payload.industry,
-        business_license=payload.business_license,
-        management_role=payload.management_role,
-        store_type=payload.store_type,
-    )
-    
-    session.add(store)
-    session.commit()
-    session.refresh(store)
-    
-    return StoreResponse(
-        id=store.id,
-        user_id=store.user_id,
-        is_main=store.is_main,
-        store_name=store.store_name,
-        address=store.address,
-        address_detail=store.address_detail,
-        phone=store.phone,
-        industry=store.industry,
-        business_license=store.business_license,
-        management_role=store.management_role,
-        store_type=store.store_type,
-        created_at=store.created_at.isoformat(),
-        updated_at=store.updated_at.isoformat(),
-    )
+    try:
+        user = session.exec(select(SignupUser).where(SignupUser.id == payload.user_id)).first()
+        if not user:
+            print(f"User not found: {payload.user_id}")
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        if user.role != "employer":
+            print(f"User is not an employer: {user.role}")
+            raise HTTPException(status_code=400, detail="고용주가 아닌 사용자입니다.")
+        
+        # If this is set as main store, unset other main stores
+        if payload.is_main:
+            statement = select(Store).where(Store.user_id == payload.user_id, Store.is_main == True)
+            existing_main = session.exec(statement).all()
+            for main_store in existing_main:
+                main_store.is_main = False
+                session.add(main_store)
+        
+        store = Store(
+            id=f"store-{uuid.uuid4().hex[:8]}",
+            user_id=payload.user_id,
+            is_main=payload.is_main,
+            store_name=payload.store_name,
+            address=payload.address,
+            address_detail=payload.address_detail,
+            phone=payload.phone,
+            industry=payload.industry,
+            business_license=payload.business_license,
+            management_role=payload.management_role,
+            store_type=payload.store_type,
+        )
+        
+        session.add(store)
+        session.commit()
+        session.refresh(store)
+        
+        print(f"Store created successfully: {store.id}, is_main: {store.is_main}")
+        
+        return StoreResponse(
+            id=store.id,
+            user_id=store.user_id,
+            is_main=store.is_main,
+            store_name=store.store_name,
+            address=store.address,
+            address_detail=store.address_detail,
+            phone=store.phone,
+            industry=store.industry,
+            business_license=store.business_license,
+            management_role=store.management_role,
+            store_type=store.store_type,
+            created_at=store.created_at.isoformat(),
+            updated_at=store.updated_at.isoformat(),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_detail = f"Store creation failed: {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=f"매장 등록 중 오류가 발생했습니다: {str(e)}")

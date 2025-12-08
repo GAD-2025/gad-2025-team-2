@@ -284,6 +284,12 @@ export const JobCreate = () => {
       toast.error('시급을 입력해주세요');
       return;
     }
+    // 최저시급 검증 (10320원)
+    const wageAmount = parseFloat(formData.wage);
+    if (wageAmount < 10320) {
+      toast.error('시급은 최저시급(10,320원) 이상이어야 합니다');
+      return;
+    }
     if (!formData.deadline) {
       toast.error('마감일을 선택해주세요');
       return;
@@ -394,7 +400,7 @@ export const JobCreate = () => {
                   >
                     {store.is_main && (
                       <span className="inline-block px-2 py-1 mb-2 bg-mint-100 text-mint-700 text-[11px] font-semibold rounded-[6px]">
-                        대표가게
+                        기본매장
                       </span>
                     )}
                     <h4 className="text-[15px] font-semibold text-text-900 mb-1">{store.store_name}</h4>
@@ -421,7 +427,7 @@ export const JobCreate = () => {
               <div className="p-4 bg-mint-50 rounded-[12px] border border-mint-200">
                 {selectedStore.is_main && (
                   <span className="inline-block px-2 py-1 mb-2 bg-mint-600 text-white text-[11px] font-semibold rounded-[6px]">
-                    대표가게
+                    기본매장
                   </span>
                 )}
                 <h4 className="text-[15px] font-semibold text-text-900 mb-2">{selectedStore.store_name}</h4>

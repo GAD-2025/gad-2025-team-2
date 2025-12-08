@@ -45,8 +45,19 @@ export const MyPage = () => {
         // 고용주인 경우 매장 목록 가져오기
         if (userData.role === 'employer') {
           try {
+            console.log(`Fetching stores for employer user_id: ${userId}`);
             const storesData = await getStores(userId);
-            console.log('Loaded stores:', storesData);
+            console.log(`Loaded ${storesData.length} stores:`, storesData);
+            if (storesData.length > 0) {
+              const mainStore = storesData.find(s => s.is_main);
+              if (mainStore) {
+                console.log('기본매장 발견:', mainStore);
+              } else {
+                console.warn('기본매장이 없습니다. 모든 매장:', storesData);
+              }
+            } else {
+              console.warn('등록된 매장이 없습니다. 온보딩 시 기본매장이 생성되었는지 확인하세요.');
+            }
             setStores(storesData);
           } catch (error) {
             console.error('Failed to load stores:', error);

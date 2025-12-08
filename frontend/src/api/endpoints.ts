@@ -228,17 +228,30 @@ export async function getStore(userId: string, storeId: string): Promise<StoreDa
 }
 
 export async function createStore(payload: StoreCreatePayload): Promise<StoreData> {
-  const response = await fetch(`${API_BASE_URL}/employer/stores`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to create store');
+  try {
+    console.log('Creating store with payload:', payload);
+    const response = await fetch(`${API_BASE_URL}/employer/stores`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ detail: '매장 등록에 실패했습니다' }));
+      const errorMessage = errorData.detail || errorData.message || `매장 등록 실패 (${response.status})`;
+      console.error('Store creation failed:', response.status, errorMessage, errorData);
+      throw new Error(errorMessage);
+    }
+    
+    const result = await response.json();
+    console.log('Store created successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error in createStore:', error);
+    throw error;
   }
-  return response.json();
 }
 
 export default {
