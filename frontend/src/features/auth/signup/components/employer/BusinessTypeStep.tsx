@@ -21,8 +21,8 @@ export function BusinessTypeStep({ formData, updateFormData }: BusinessTypeStepP
   const hasBusinessLicense = businessLicense !== null;
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[420px] flex-col bg-white px-6 pt-20 pb-32">
-      <h1 className="mb-6 text-[26px] font-bold text-gray-900">
+    <div className="mx-auto flex h-full w-full max-w-[420px] flex-col bg-white px-6 pt-4 pb-32">
+      <h1 className="mb-3 text-[26px] font-bold text-gray-900">
         사업자 등록증을 등록해 주세요
       </h1>
 

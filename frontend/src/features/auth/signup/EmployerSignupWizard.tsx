@@ -4,7 +4,7 @@ import { NotificationPermissionModal } from './components/employer/NotificationP
 import { EmployerTermsModal } from './components/employer/EmployerTermsModal';
 import { BusinessTypeStep } from './components/employer/BusinessTypeStep';
 import { CompanyInfoStep } from './components/employer/CompanyInfoStep';
-import { ProgressBar } from './components/ProgressBar';
+import OnboardingHeader from '@/features/onboarding/jobSeeker/components/OnboardingHeader';
 
 export function EmployerSignupWizard() {
   const {
@@ -13,7 +13,6 @@ export function EmployerSignupWizard() {
     updateFormData,
     goNext,
     goPrev,
-    skipToNext,
     canProceed,
     showNotificationModal,
     showTermsModal,
@@ -36,31 +35,14 @@ export function EmployerSignupWizard() {
   };
 
   return (
-    <div className="relative flex h-screen flex-col bg-gray-50">
-      {/* Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 z-10 bg-white">
-        <div className="mx-auto max-w-[420px]">
-          <ProgressBar currentStep={step} totalSteps={3} />
-        </div>
-      </div>
-
-      {/* Back Button */}
-      <div className="fixed top-6 left-0 right-0 z-20">
-        <div className="mx-auto max-w-[420px] px-4">
-          <button
-            onClick={goPrev}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-white">
+      <OnboardingHeader title="고용주 가입" currentStep={step} totalSteps={3} onBack={goPrev} />
 
       {/* Step Content */}
       <div className="flex-1 overflow-y-auto">
-        {renderStep()}
+        <div className="mx-auto max-w-[420px] px-4">
+          {renderStep()}
+        </div>
       </div>
 
       {/* Footer */}

@@ -17,6 +17,11 @@ def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
 
+def get_engine():
+    """Return the SQLAlchemy engine used by the application."""
+    return engine
+
+
 def get_session() -> Generator[Session, None, None]:
     """Dependency to get database session"""
     with Session(engine) as session:

@@ -36,7 +36,20 @@ async def lifespan(app: FastAPI):
     # Seed data
     from app.seed import seed_nationalities
     seed_nationalities()
-    
+    # Ensure DB schema columns are present according to models (non-destructive)
+    try:
+        # import here to avoid circular import at module load time
+        from scripts.ensure_schema import ensure_columns as ensure_cols
+        from app.db import get_engine
+
+        engine = get_engine()
+        created, skipped, errors = ensure_cols(engine)
+        if errors:
+            # Log but continue; global exception handler will surface errors for requests
+            print("Schema ensure reported errors:", errors)
+    except Exception as exc:
+        print("Failed to run schema ensure on startup:", exc)
+
     if TRANSLATION_AVAILABLE:
         initialize_translation_service()
     yield

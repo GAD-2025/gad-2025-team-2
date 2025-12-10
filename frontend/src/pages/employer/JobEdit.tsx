@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
+import InfoPopover from '@/components/InfoPopover';
 import { jobsAPI } from '@/api/endpoints';
 
 interface JobFormData {
@@ -319,8 +320,46 @@ export const JobEdit = () => {
             </div>
 
             <div>
-              <label className="block text-[14px] font-medium text-text-900 mb-2">
-                근무 가능 비자 (복수 선택)
+              <label className="flex items-center text-[14px] font-medium text-text-900 mb-2">
+                <span>근무 가능 비자 (복수 선택)</span>
+                <InfoPopover content={(
+                  <div>
+                    <p className="font-bold mb-2">근무 가능 비자 안내</p>
+                    <div className="text-[13px] text-text-700">
+                      <p className="font-semibold">E-9 — 비전문취업</p>
+                      <ul className="list-inside list-disc pl-3 mb-2">
+                        <li>제조, 건설, 농축산업 등 가능</li>
+                        <li>일부 서비스업 가능</li>
+                        <li>사무직 불가</li>
+                      </ul>
+
+                      <p className="font-semibold">H-2 — 방문취업</p>
+                      <ul className="list-inside list-disc pl-3 mb-2">
+                        <li>대부분의 서비스업 근무 가능</li>
+                        <li>음식점, 카페, 편의점 등 가능</li>
+                        <li>사무직 일부 가능</li>
+                      </ul>
+
+                      <p className="font-semibold">F-4 — 재외동포</p>
+                      <ul className="list-inside list-disc pl-3 mb-2">
+                        <li>근로 제한 없음</li>
+                        <li>내국인과 동일하게 근무 가능</li>
+                      </ul>
+
+                      <p className="font-semibold">F-5 — 영주권</p>
+                      <p className="mb-2">· 근로 제한 없음</p>
+
+                      <p className="font-semibold">F-6 — 결혼이민</p>
+                      <p className="mb-2">· 근로 제한 없음</p>
+
+                      <p className="font-semibold">D-10 — 구직비자</p>
+                      <ul className="list-inside list-disc pl-3">
+                        <li>근로 불가</li>
+                        <li>인턴/연수만 가능</li>
+                      </ul>
+                    </div>
+                  </div>
+                )} />
               </label>
               <div className="flex flex-wrap gap-2">
                 {visaOptions.map(visa => (
