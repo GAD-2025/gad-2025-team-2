@@ -16,6 +16,7 @@ from app.routers import (
     meta,
     job_seeker,
     employer,
+    posts,
 )
 from app.ws import websocket_endpoint
 
@@ -117,6 +118,7 @@ app.include_router(conversations.router)
 app.include_router(messages.router)
 app.include_router(translate.router)
 app.include_router(learning.router)
+app.include_router(posts.router)
 
 
 # WebSocket endpoint
