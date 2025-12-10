@@ -74,11 +74,36 @@ CREATE TABLE IF NOT EXISTS employer_profiles (
     company_name VARCHAR(200) NOT NULL COMMENT '회사/상호명',
     address VARCHAR(500) NOT NULL COMMENT '주소',
     address_detail VARCHAR(500) NULL COMMENT '상세 주소',
+    business_license VARCHAR(255) NULL COMMENT '사업자등록증 파일명 또는 URL',
+    is_verified BOOLEAN DEFAULT FALSE COMMENT '인증 여부',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성시각',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정시각',
     FOREIGN KEY (user_id) REFERENCES signup_users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='고용주 프로필 테이블';
+
+-- =============================================
+-- 4-1. 매장(가게) 테이블 (고용주 매장 관리)
+-- =============================================
+CREATE TABLE IF NOT EXISTS stores (
+    id VARCHAR(50) PRIMARY KEY COMMENT '매장ID',
+    user_id VARCHAR(50) NOT NULL COMMENT 'signup_users.id 참조 (고용주)',
+    is_main BOOLEAN DEFAULT FALSE COMMENT '대표가게 여부 (기본매장)',
+    store_name VARCHAR(200) NOT NULL COMMENT '매장명',
+    address VARCHAR(500) NOT NULL COMMENT '주소',
+    address_detail VARCHAR(500) NULL COMMENT '상세 주소',
+    phone VARCHAR(20) NOT NULL COMMENT '전화번호',
+    industry VARCHAR(100) NOT NULL COMMENT '업종',
+    business_license VARCHAR(255) NULL COMMENT '사업자등록증 파일명 또는 URL',
+    management_role VARCHAR(50) NOT NULL COMMENT '관리 역할: 본사 관리자, 지점 관리자',
+    store_type VARCHAR(50) NOT NULL COMMENT '매장 유형: 직영점, 가맹점, 개인·독립 매장',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성시각',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정시각',
+    FOREIGN KEY (user_id) REFERENCES signup_users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_is_main (is_main),
+    INDEX idx_user_main (user_id, is_main)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='매장(가게) 테이블';
 
 -- =============================================
 -- 5. 구직자 테이블 (레거시 호환용)

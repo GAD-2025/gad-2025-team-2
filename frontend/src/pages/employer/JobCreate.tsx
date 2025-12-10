@@ -11,6 +11,7 @@ interface JobFormData {
   shopAddressDetail: string;
   shopPhone: string;
   businessLicense: File | null;
+  wageType: 'hourly' | 'weekly' | 'monthly';
   wage: string;
   workDays: string[];
   workHours: string;
@@ -80,7 +81,8 @@ export const JobCreate = () => {
     shopAddressDetail: '',
     shopPhone: '',
     businessLicense: null,
-    wage: '',
+    wageType: 'hourly',
+    wage: '10320',
     workDays: [],
     workHours: '',
     workStartTime: '09:00',
@@ -281,14 +283,17 @@ export const JobCreate = () => {
       return;
     }
     if (!formData.wage || parseFloat(formData.wage) <= 0) {
-      toast.error('시급을 입력해주세요');
+      const wageTypeLabel = formData.wageType === 'hourly' ? '시급' : formData.wageType === 'weekly' ? '주급' : '월급';
+      toast.error(`${wageTypeLabel}을 입력해주세요`);
       return;
     }
-    // 최저시급 검증 (10320원)
-    const wageAmount = parseFloat(formData.wage);
-    if (wageAmount < 10320) {
-      toast.error('시급은 최저시급(10,320원) 이상이어야 합니다');
-      return;
+    // 최저시급 검증 (시급인 경우만)
+    if (formData.wageType === 'hourly') {
+      const wageAmount = parseFloat(formData.wage);
+      if (wageAmount < 10320) {
+        toast.error('시급은 최저시급(10,320원) 이상이어야 합니다');
+        return;
+      }
     }
     if (!formData.deadline) {
       toast.error('마감일을 선택해주세요');
@@ -312,6 +317,12 @@ export const JobCreate = () => {
         ? '협의'
         : `${formData.workStartTime} ~ ${formData.workEndTime}`;
 
+      // 매장 정보가 없으면 에러
+      if (!selectedStore) {
+        toast.error('매장을 선택해주세요');
+        return;
+      }
+
       const jobData = {
         employer_profile_id: employerProfileId,
         title: formData.title,
@@ -323,6 +334,7 @@ export const JobCreate = () => {
         description: formData.employerMessage || '자세한 내용은 문의 바랍니다.',
         category: finalIndustry,
         wage: parseInt(formData.wage),
+        wage_type: formData.wageType, // 시급/주급/월급 타입 추가
         work_days: workDaysStr,
         work_hours: workHoursStr,
         deadline: new Date(formData.deadline).toISOString(),
@@ -471,14 +483,58 @@ export const JobCreate = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-[14px] font-medium text-text-900 mb-2">
-                시급 <span className="text-red-500">*</span>
+                급여 <span className="text-red-500">*</span>
               </label>
+              
+              {/* 급여 타입 선택 버튼 */}
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleChange('wageType', 'hourly');
+                    if (formData.wageType !== 'hourly' && (!formData.wage || parseFloat(formData.wage) < 10320)) {
+                      handleChange('wage', '10320');
+                    }
+                  }}
+                  className={`flex-1 px-4 py-2 rounded-[12px] text-[14px] font-medium transition-colors ${
+                    formData.wageType === 'hourly'
+                      ? 'bg-mint-600 text-white border-2 border-mint-600'
+                      : 'bg-white text-text-700 border-2 border-gray-300 hover:border-mint-400'
+                  }`}
+                >
+                  시급
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChange('wageType', 'weekly')}
+                  className={`flex-1 px-4 py-2 rounded-[12px] text-[14px] font-medium transition-colors ${
+                    formData.wageType === 'weekly'
+                      ? 'bg-mint-600 text-white border-2 border-mint-600'
+                      : 'bg-white text-text-700 border-2 border-gray-300 hover:border-mint-400'
+                  }`}
+                >
+                  주급
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChange('wageType', 'monthly')}
+                  className={`flex-1 px-4 py-2 rounded-[12px] text-[14px] font-medium transition-colors ${
+                    formData.wageType === 'monthly'
+                      ? 'bg-mint-600 text-white border-2 border-mint-600'
+                      : 'bg-white text-text-700 border-2 border-gray-300 hover:border-mint-400'
+                  }`}
+                >
+                  월급
+                </button>
+              </div>
+
+              {/* 급여 입력 필드 */}
               <div className="relative">
                 <input
                   type="number"
                   value={formData.wage}
                   onChange={(e) => handleChange('wage', e.target.value)}
-                  placeholder="10000"
+                  placeholder={formData.wageType === 'hourly' ? '10320' : formData.wageType === 'weekly' ? '500000' : '2000000'}
                   className="w-full h-[48px] pl-4 pr-12 bg-background rounded-[12px] border border-line-200
                            text-[14px] text-text-900 placeholder:text-text-500
                            focus:outline-none focus:ring-2 focus:ring-mint-600"
@@ -487,8 +543,10 @@ export const JobCreate = () => {
                   원
                 </span>
               </div>
-              {formData.wage && parseFloat(formData.wage) < 10320 && (
-                <p className="mt-1 text-[12px] text-red-500">최저시급 이하입니다</p>
+              
+              {/* 최저시급 경고 (시급인 경우만) */}
+              {formData.wageType === 'hourly' && formData.wage && parseFloat(formData.wage) < 10320 && (
+                <p className="mt-1 text-[12px] text-red-500">최저시급(10,320원) 이상이어야 합니다</p>
               )}
             </div>
 

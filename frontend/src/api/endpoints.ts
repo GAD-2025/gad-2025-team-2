@@ -230,8 +230,12 @@ export async function getStore(userId: string, storeId: string): Promise<StoreDa
 
 export async function createStore(payload: StoreCreatePayload): Promise<StoreData> {
   try {
+    const url = `${API_BASE_URL}/employer/stores`;
     console.log('Creating store with payload:', payload);
-    const response = await fetch(`${API_BASE_URL}/employer/stores`, {
+    console.log('API URL:', url);
+    console.log('API_BASE_URL:', API_BASE_URL);
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -239,10 +243,33 @@ export async function createStore(payload: StoreCreatePayload): Promise<StoreDat
       body: JSON.stringify(payload),
     });
     
+    console.log('Response status:', response.status, response.statusText);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: '매장 등록에 실패했습니다' }));
+      let errorData;
+      try {
+        const text = await response.text();
+        console.error('Response body (text):', text);
+        errorData = JSON.parse(text);
+      } catch (e) {
+        errorData = { detail: `매장 등록에 실패했습니다 (${response.status} ${response.statusText})` };
+      }
+      
       const errorMessage = errorData.detail || errorData.message || `매장 등록 실패 (${response.status})`;
-      console.error('Store creation failed:', response.status, errorMessage, errorData);
+      console.error('Store creation failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorMessage,
+        errorData,
+        url,
+      });
+      
+      // 404 에러인 경우 특별한 메시지 제공
+      if (response.status === 404) {
+        throw new Error('매장 등록 API 엔드포인트를 찾을 수 없습니다. 서버 관리자에게 문의하세요.');
+      }
+      
       throw new Error(errorMessage);
     }
     
@@ -251,7 +278,10 @@ export async function createStore(payload: StoreCreatePayload): Promise<StoreDat
     return result;
   } catch (error) {
     console.error('Error in createStore:', error);
-    throw error;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('매장 등록 중 알 수 없는 오류가 발생했습니다.');
   }
 }
 
