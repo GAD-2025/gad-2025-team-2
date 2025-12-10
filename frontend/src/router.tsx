@@ -28,6 +28,8 @@ import { MyPage } from './pages/mypage/MyPage';
 import { LearningHome } from './pages/learning/LearningHome';
 import { LevelTest } from './pages/learning/LevelTest';
 import { LessonQuiz } from './pages/learning/LessonQuiz';
+import { LessonContentPage } from './pages/learning/LessonContentPage';
+import { LessonTopicQuiz } from './pages/learning/LessonTopicQuiz';
 import { LessonDetail } from './pages/learning/LessonDetail';
 import { Network } from './pages/network/Network';
 import { ProfileEdit } from './pages/profile/ProfileEdit';
@@ -142,6 +144,14 @@ export const router = createBrowserRouter([
       {
         path: 'learning/lesson/:id/quiz',
         element: <LessonQuiz />,
+      },
+      {
+        path: 'learning/lesson/:lessonId/topic/:topicId',
+        element: <LessonContentPage />,
+      },
+      {
+        path: 'learning/lesson/:lessonId/topic/:topicId/quiz',
+        element: <LessonTopicQuiz />,
       },
       {
         path: 'network',

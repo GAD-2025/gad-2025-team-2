@@ -1,40 +1,53 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-interface Lesson {
-  id: string;
-  title: string;
-  level: string;
-}
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LESSONS_DATA } from '@/data/lessons';
+import type { Lesson } from '@/data/lessons';
 
 interface LessonWithProgress extends Lesson {
   completed: boolean;
   progress: number;
 }
 
-const LESSONS_DATA: Lesson[] = [
-  { id: '1', title: '한국어 기본 문법', level: 'Lv.1 기초' },
-  { id: '2', title: '한국어 어휘 확장', level: 'Lv.2 초급' },
-  { id: '3', title: '일상 대화 연습', level: 'Lv.3 중급' },
-  { id: '4', title: '비즈니스 한국어', level: 'Lv.4 상급' },
-  { id: '5', title: '고급 문법', level: 'Lv.4 상급' },
-];
-
 export const LearningHome = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedLevel, setSelectedLevel] = useState('all');
+  const [lessonsWithProgress, setLessonsWithProgress] = useState<LessonWithProgress[]>([]);
   
   const userLevel = localStorage.getItem('userLevel');
 
-  // Calculate lessons with progress on every render to ensure data is always fresh
-  const lessonsWithProgress = LESSONS_DATA.map(lesson => {
-    const progress = parseInt(localStorage.getItem(`lesson-progress-${lesson.id}`) || '0', 10);
-    return {
-      ...lesson,
-      progress,
-      completed: progress === 100,
+  useEffect(() => {
+    const calculateProgress = () => {
+      const newLessonsWithProgress = LESSONS_DATA.map(lesson => {
+        const progressKey = `lesson-progress-${lesson.id}`;
+        let completedTopicsCount = 0;
+        
+        try {
+          const savedProgress = localStorage.getItem(progressKey);
+          if (savedProgress) {
+            const progressData = JSON.parse(savedProgress);
+            if (progressData && progressData.completedTopics) {
+              completedTopicsCount = new Set(progressData.completedTopics).size;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse progress data for lesson " + lesson.id, e);
+        }
+
+        const totalTopics = lesson.topics.length;
+        const progress = totalTopics > 0 ? Math.round((completedTopicsCount / totalTopics) * 100) : 0;
+        
+        return {
+          ...lesson,
+          progress,
+          completed: progress === 100,
+        };
+      });
+      setLessonsWithProgress(newLessonsWithProgress);
     };
-  });
+
+    calculateProgress();
+  }, [location]);
 
   const totalProgress = lessonsWithProgress.reduce((sum, lesson) => sum + lesson.progress, 0);
   const currentProgress = lessonsWithProgress.length > 0 ? Math.round(totalProgress / lessonsWithProgress.length) : 0;
