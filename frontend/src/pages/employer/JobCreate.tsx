@@ -409,28 +409,29 @@ export const JobCreate = () => {
                     key={store.id}
                     type="button"
                     onClick={() => handleStoreSelect(store)}
-                    className="w-full p-4 bg-background rounded-[12px] border-2 border-line-200 hover:border-mint-600 transition-all text-left"
+                    className="relative w-full bg-white rounded-[12px] border border-line-200 p-4 hover:border-mint-600 transition-all text-left"
                   >
+                    {/* 기본 매장 태그 - 오른쪽 상단 */}
                     {store.is_main && (
-                      <span className="inline-block px-2 py-1 mb-2 bg-mint-100 text-mint-700 text-[11px] font-semibold rounded-[6px]">
-                        기본매장
+                      <span className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-full">
+                        기본가게
                       </span>
                     )}
-                    <h4 className="text-[15px] font-semibold text-text-900 mb-1">{store.store_name}</h4>
-                    <p className="text-[13px] text-text-700 mb-1">{store.address}</p>
-                    <p className="text-[13px] text-text-500">{store.industry}</p>
+                    {/* 가게 이름 - 위에 표시 */}
+                    <h4 className="text-[16px] font-bold text-text-900 mb-2 pr-20">
+                      {store.store_name}
+                    </h4>
+                    {/* 가게 위치 - 아래에 표시 */}
+                    <p className="text-[13px] text-text-700">
+                      {store.address}
+                      {store.address_detail && ` ${store.address_detail}`}
+                    </p>
                   </button>
                 ))
               ) : (
                 <div className="text-center py-8">
                   <p className="text-[14px] text-text-500 mb-4">등록된 매장이 없습니다</p>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/employer/store-add')}
-                    className="px-4 py-2 bg-mint-600 text-white rounded-[12px] text-[14px] font-semibold"
-                  >
-                    매장 추가하기
-                  </button>
+                  <p className="text-[12px] text-text-400">마이페이지에서 매장을 먼저 등록해주세요</p>
                 </div>
               )}
             </div>

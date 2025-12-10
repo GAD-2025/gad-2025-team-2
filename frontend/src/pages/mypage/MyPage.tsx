@@ -225,18 +225,23 @@ export const MyPage = () => {
                   {stores.map((store) => (
                     <div
                       key={store.id}
-                      className="p-4 bg-background rounded-[12px] border border-line-200"
+                      className="relative bg-white rounded-[12px] border border-line-200 p-4"
                     >
+                      {/* 기본 매장 태그 - 오른쪽 상단 */}
                       {store.is_main && (
-                        <span className="inline-block px-2 py-1 mb-2 bg-mint-100 text-mint-700 text-[11px] font-semibold rounded-[6px]">
-                          기본매장
+                        <span className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-full">
+                          기본가게
                         </span>
                       )}
-                      <h3 className="text-[15px] font-semibold text-text-900 mb-1">
+                      {/* 가게 이름 - 위에 표시 */}
+                      <h3 className="text-[16px] font-bold text-text-900 mb-2 pr-20">
                         {store.store_name}
                       </h3>
-                      <p className="text-[13px] text-text-700 mb-1">{store.address}</p>
-                      <p className="text-[13px] text-text-500">{store.industry}</p>
+                      {/* 가게 위치 - 아래에 표시 */}
+                      <p className="text-[13px] text-text-700">
+                        {store.address}
+                        {store.address_detail && ` ${store.address_detail}`}
+                      </p>
                     </div>
                   ))}
                 </>
