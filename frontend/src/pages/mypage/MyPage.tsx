@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuthStore, type UserMode } from "@/store/useAuth";
+import { useAuthStore } from "@/store/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { TrustFlipCard } from "@/components/TrustFlipCard";
@@ -9,7 +9,7 @@ import type { Profile, Verifications, Resume } from "@/types/profile";
 import { getSignupUser, getJobSeekerProfile, getStores, type SignupUserData, type JobSeekerProfileData, type StoreData } from "@/api/endpoints";
 
 export const MyPage = () => {
-  const { userMode, setUserMode, user, clearAuth } = useAuthStore();
+  const { userMode, user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showVerifications, setShowVerifications] = useState(false);
   const [showResume, setShowResume] = useState(false);
@@ -156,16 +156,6 @@ export const MyPage = () => {
       </div>
     );
   }
-
-  const handleModeChange = (mode: UserMode) => {
-    setUserMode(mode);
-    // 모드 변경 후 해당 홈으로 이동
-    if (mode === "jobseeker") {
-      navigate("/jobseeker/home");
-    } else {
-      navigate("/employer/home");
-    }
-  };
 
   const handleVerifyClick = (type: string) => {
     alert(`${type} 인증 페이지 (구현 예정)`);

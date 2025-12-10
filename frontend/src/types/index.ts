@@ -119,6 +119,7 @@ export interface LearningProgress {
 export interface User {
   id: string;
   email: string;
+  phone?: string | null;
   role: 'jobseeker' | 'employer';
   profile: JobSeeker | Employer;
 }

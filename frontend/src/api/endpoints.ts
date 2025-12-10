@@ -91,6 +91,7 @@ export interface SignupUserData {
   id: string;
   role: string;
   name: string;
+  email: string | null;
   phone: string | null;  // Optional for employers
   birthdate: string | null;  // Optional for employers
   gender: string | null;  // Optional for employers
