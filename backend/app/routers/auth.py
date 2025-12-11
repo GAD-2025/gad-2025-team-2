@@ -202,22 +202,9 @@ async def signup_new(request: SignupPayload, session: Session = Depends(get_sess
                 detail="필수 약관에 동의해주세요."
             )
         
-        # Validate nationality exists (only for job_seeker)
+        # 국적 코드 검증을 느슨하게: DB에 없어도 통과시키고 기본값 보정만 수행
         if request.role == "job_seeker":
-            if not request.nationality_code:
-                raise HTTPException(
-                    status_code=400,
-                    detail="구직자는 국적 코드가 필요합니다."
-                )
-            nationality = session.get(Nationality, request.nationality_code)
-            if not nationality:
-                # 사용 가능한 국적 코드 목록 가져오기
-                all_nationalities = session.exec(select(Nationality)).all()
-                available_codes = [n.code for n in all_nationalities]
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"유효하지 않은 국적 코드입니다: {request.nationality_code}. 사용 가능한 코드: {', '.join(available_codes[:10])}"
-                )
+            request.nationality_code = request.nationality_code or "UNK"
         else:
             # 고용주는 국적 코드가 없을 수 있음
             request.nationality_code = request.nationality_code or "KR"  # 기본값 설정
