@@ -128,6 +128,10 @@ class JobSeekerProfileCreate(BaseModel):
 class JobSeekerProfileResponse(BaseModel):
     id: str
     user_id: str
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    nationality_code: Optional[str] = None
+    birthdate: Optional[str] = None
     basic_info_file_name: Optional[str] = None
     preferred_regions: List[str] = []
     preferred_jobs: List[str] = []

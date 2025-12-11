@@ -3,14 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import { Tag } from '@/components/Tag';
-import { Badge } from '@/components/Badge';
 import { BottomCTA, CTAButton } from '@/components/BottomCTA';
-import type { JobSeeker } from '@/types';
+import { getJobSeekerProfile, type JobSeekerProfileData } from '@/api/endpoints';
 
 export const ApplicantDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [applicant, setApplicant] = useState<JobSeeker | null>(null);
+  const [applicant, setApplicant] = useState<JobSeekerProfileData | null>(null);
   const [hiring, setHiring] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -20,14 +19,7 @@ export const ApplicantDetail = () => {
       
       try {
         setLoading(true);
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const response = await fetch(`${API_BASE_URL}/jobseekers/${id}`);
-        
-        if (!response.ok) {
-          throw new Error('지원자 정보를 불러올 수 없습니다');
-        }
-        
-        const data = await response.json();
+        const data = await getJobSeekerProfile(id);
         setApplicant(data);
       } catch (error) {
         console.error('지원자 정보 로딩 실패:', error);
@@ -86,17 +78,44 @@ export const ApplicantDetail = () => {
 
   if (!applicant) return null;
 
-  // Parse experience and preferences
-  const experience = typeof applicant.experience === 'string' 
-    ? JSON.parse(applicant.experience) 
-    : applicant.experience || [];
-  
-  const preferences = typeof applicant.preferences === 'string'
-    ? JSON.parse(applicant.preferences)
-    : applicant.preferences || {};
+  const skills = applicant.experience_skills ? [applicant.experience_skills] : [];
+  const introduction = applicant.experience_introduction || '자기소개가 없습니다.';
+  const birth = applicant.birthdate ? new Date(applicant.birthdate) : null;
+  const age = birth ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365.25))) : null;
+  const flagEmoji = (codeOrName?: string | null) => {
+    if (!codeOrName) return '🌏';
+    const nameMap: Record<string, string> = {
+      '우즈베키스탄': 'UZ',
+      '필리핀': 'PH',
+      '베트남': 'VN',
+      '태국': 'TH',
+      '몽골': 'MN',
+      '중국': 'CN',
+      '한국': 'KR',
+    };
+    const code = (codeOrName.length === 2 ? codeOrName : nameMap[codeOrName]) || codeOrName;
+    const upper = code.toUpperCase();
+    if (upper.length === 2) {
+      const cp = (c: string) => c.codePointAt(0)! - 0x41 + 0x1F1E6;
+      return String.fromCodePoint(cp(upper[0]), cp(upper[1]));
+    }
+    return '🌏';
+  };
 
-  const skills = preferences.skills || [];
-  const introduction = preferences.introduction || '자기소개가 없습니다.';
+  // Parse skills if JSON string
+  const parsedSkills = (() => {
+    if (!applicant.experience_skills) return [];
+    try {
+      const parsed = JSON.parse(applicant.experience_skills);
+      if (Array.isArray(parsed)) return parsed;
+      if (typeof parsed === 'object') {
+        return Object.values(parsed).flatMap((v) => (Array.isArray(v) ? v : [String(v)]));
+      }
+    } catch (_e) {
+      /* ignore */
+    }
+    return [applicant.experience_skills];
+  })();
 
   return (
     <div className="min-h-screen bg-white pb-24">
@@ -110,24 +129,24 @@ export const ApplicantDetail = () => {
               👤
             </div>
             <div>
-              <h1 className="text-[20px] font-bold text-text-primary">{applicant.name}, 28세</h1>
+            <h1 className="text-[20px] font-bold text-text-primary">{applicant.name}{age ? `, ${age}세` : ''}</h1>
               <div className="flex items-center gap-1 text-[14px] text-text-secondary">
-                <span>🇺🇿</span>
-                <span>{applicant.nationality}</span>
+              <span>{flagEmoji(applicant.nationality_code)}</span>
+              <span>{applicant.nationality_code || '국적 미상'}</span>
               </div>
             </div>
           </div>
 
           <div className="space-y-2 mb-3">
             <p className="text-[14px] text-text-primary">
-              언어 능력: {applicant.languageLevel} (일상 소통 가능)
+            언어 능력: {parsedSkills.length ? parsedSkills.join(', ') : '미입력'}
             </p>
             <p className="text-[14px] text-text-primary">
-              비자: {applicant.visaType}
+            비자: {(applicant as any).visa_type ?? (applicant as any).visaType ?? '미입력'}
             </p>
-            {experience.length > 0 && (
+            {applicant.experience_career && (
               <p className="text-[14px] text-primary-mint font-medium">
-                경력: {experience[0].role} {experience[0].years}년 근무
+                경력: {applicant.experience_career}
               </p>
             )}
           </div>
@@ -156,21 +175,29 @@ export const ApplicantDetail = () => {
         </div>
 
         {/* Language Skills */}
-        <div className="mb-5">
-          <h2 className="text-[17px] font-bold text-text-primary mb-3">언어능력</h2>
-          <div className="space-y-2">
-            <LanguageRow language="한국어" level="L1-2" />
-            <LanguageRow language="영어" level="IELTS 9.0" />
-            <LanguageRow language="스페인어" level="DELE A1" />
+        {parsedSkills.length > 0 && (
+          <div className="mb-5">
+            <h2 className="text-[17px] font-bold text-text-primary mb-3">언어/스킬</h2>
+            <div className="flex flex-wrap gap-2">
+              {parsedSkills.map((skill, idx) => (
+                <Tag key={idx} variant="mint" size="sm">
+                  {skill}
+                </Tag>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Work Availability */}
         <div className="mb-5">
           <h2 className="text-[17px] font-bold text-text-primary mb-3">근무 가능 시간</h2>
-          <p className="text-[14px] text-text-primary">
-            주말 가능, 평일 오후 시간대 모두 가능
-          </p>
+          <div className="space-y-1 text-[14px] text-text-primary">
+            <p>요일: {applicant.work_days_of_week?.length ? applicant.work_days_of_week.join(', ') : '미입력'}</p>
+            <p>시간: {applicant.work_start_time && applicant.work_end_time ? `${applicant.work_start_time} ~ ${applicant.work_end_time}` : '미입력'}</p>
+            {applicant.work_available_dates?.length ? (
+              <p>가능 날짜: {applicant.work_available_dates.slice(0, 3).join(', ')}{applicant.work_available_dates.length > 3 ? ' 외' : ''}</p>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -198,15 +225,4 @@ export const ApplicantDetail = () => {
     </div>
   );
 };
-
-const LanguageRow = ({ language, level }: { language: string; level: string }) => {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
-      <span className="text-[14px] text-text-primary">{language}</span>
-      <Badge variant="mint">{level}</Badge>
-    </div>
-  );
-};
-
-
 

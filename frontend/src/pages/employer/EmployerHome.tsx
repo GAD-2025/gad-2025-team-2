@@ -44,13 +44,18 @@ export const EmployerHome = () => {
         // Convert API response to JobSeeker type
         const formattedApplicants: JobSeeker[] = jobSeekers.map((seeker) => {
           const s: any = seeker;
+          const birth = s.birthdate ? new Date(s.birthdate) : null;
+          const age = birth ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365.25))) : null;
           return {
             id: s.id,
+            userId: s.user_id,
             name: s.name,
             nationality: s.nationality || '국적 미상',
+            nationalityCode: s.nationality,
+            birthdate: s.birthdate,
             phone: s.phone || '',
-            languageLevel: s.language_level || 'Lv.2 중급', // Default value
-            visaType: s.visa_type || (appliedFilters.visas || 'E-9'),
+            languageLevel: s.language_level || '언어 능력 미입력',
+            visaType: s.visa_type || (appliedFilters.visas || '미입력'),
             availability: s.availability || '즉시',
             location: s.location ? { lat: s.location.lat, lng: s.location.lng } : undefined,
             experience: [],
@@ -61,6 +66,8 @@ export const EmployerHome = () => {
               radiusKm: 5,
               preferDays: s.work_days_of_week || [],
             },
+            // store derived age inside experience tags if needed later
+            age,
           } as JobSeeker;
         });
 

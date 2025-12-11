@@ -23,14 +23,18 @@ export interface Preferences {
 }
 
 export interface JobSeeker {
-  id: string;
+  id: string; // profile id
+  userId?: string; // signup_user id
   name: string;
   nationality: string;
+  nationalityCode?: string;
+  birthdate?: string | null;
   phone: string;
   languageLevel: string;
   visaType: string;
   availability: string;
   location?: GeoPoint;
+  age?: number | null;
   experience: Experience[];
   preferences: Preferences;
 }

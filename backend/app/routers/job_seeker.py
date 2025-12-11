@@ -163,8 +163,9 @@ async def list_job_seeker_profiles(
             "visa_type": profile.visa_type,
             "user_id": profile.user_id,
             "name": user.name if user else "Unknown",
+            "phone": user.phone if user else None,
             "nationality": user.nationality_code if user else "Unknown",
-            "birthdate": user.birthdate if user else None,
+            "birthdate": user.birthdate.isoformat() if getattr(user, "birthdate", None) else None,
             "preferred_regions": json.loads(profile.preferred_regions) if profile.preferred_regions else [],
             "preferred_jobs": json.loads(profile.preferred_jobs) if profile.preferred_jobs else [],
             "work_available_dates": json.loads(profile.work_available_dates) if profile.work_available_dates else [],
@@ -185,15 +186,24 @@ async def get_job_seeker_profile(
     user_id: str, session: Session = Depends(get_session)
 ):
     """Get job seeker profile by user_id"""
+    from app.models import SignupUser
+
     statement = select(JobSeekerProfile).where(JobSeekerProfile.user_id == user_id)
     profile = session.exec(statement).first()
 
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
+    user_stmt = select(SignupUser).where(SignupUser.id == profile.user_id)
+    user = session.exec(user_stmt).first()
+
     return JobSeekerProfileResponse(
         id=profile.id,
         user_id=profile.user_id,
+        name=user.name if user else None,
+        phone=user.phone if user else None,
+        nationality_code=user.nationality_code if user else None,
+        birthdate=user.birthdate.isoformat() if getattr(user, "birthdate", None) else None,
         basic_info_file_name=profile.basic_info_file_name,
         preferred_regions=json.loads(profile.preferred_regions) if profile.preferred_regions else [],
         preferred_jobs=json.loads(profile.preferred_jobs) if profile.preferred_jobs else [],

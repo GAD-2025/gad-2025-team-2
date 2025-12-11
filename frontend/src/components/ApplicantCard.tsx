@@ -13,23 +13,31 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   const experience = applicant.experience?.[0];
+  const ageLabel = applicant.age ? `${applicant.age}세` : '';
 
-  // Get country flag emoji
-  const getCountryFlag = (nationality: string) => {
-    const flags: { [key: string]: string } = {
-      '우즈베키스탄': '🇺🇿',
-      '필리핀': '🇵🇭',
-      '베트남': '🇻🇳',
-      '태국': '🇹🇭',
-      '몽골': '🇲🇳',
-      '중국': '🇨🇳',
+  const flagEmoji = (codeOrName?: string) => {
+    if (!codeOrName) return '🌏';
+    const nameMap: Record<string, string> = {
+      '우즈베키스탄': 'UZ',
+      '필리핀': 'PH',
+      '베트남': 'VN',
+      '태국': 'TH',
+      '몽골': 'MN',
+      '중국': 'CN',
+      '한국': 'KR',
     };
-    return flags[nationality] || '🌏';
+    const code = (codeOrName.length === 2 ? codeOrName : nameMap[codeOrName]) || codeOrName;
+    const upper = code.toUpperCase();
+    if (upper.length === 2) {
+      const cp = (c: string) => c.codePointAt(0)! - 0x41 + 0x1F1E6;
+      return String.fromCodePoint(cp(upper[0]), cp(upper[1]));
+    }
+    return '🌏';
   };
 
   return (
     <div
-      onClick={() => navigate(`/applicant/${applicant.id}`)}
+      onClick={() => navigate(`/applicant/${applicant.userId || applicant.id}`)}
       className={`
         bg-white rounded-card cursor-pointer snap-start relative
         transition-all duration-120 hover:shadow-card active:scale-[0.98]
@@ -65,11 +73,11 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-[16px] font-semibold text-text-900 mb-1">
-            {applicant.name} 28세
+            {applicant.name} {ageLabel}
           </h3>
           <div className="flex items-center gap-1 text-[13px] text-text-700">
-            <span>{getCountryFlag(applicant.nationality || '우즈베키스탄')}</span>
-            <span>{applicant.nationality || '우즈베키스탄'}</span>
+            <span>{flagEmoji(applicant.nationalityCode || applicant.nationality)}</span>
+            <span>{applicant.nationality || applicant.nationalityCode || '국적 미상'}</span>
           </div>
         </div>
       </div>
@@ -77,10 +85,10 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       {/* Info */}
       <div className="space-y-[2px] mb-3 text-[13px]">
         <p className="text-text-900">
-          <span className="text-text-700">언어 능력:</span> {applicant.languageLevel} (일상 소통 가능)
+          <span className="text-text-700">언어 능력:</span> {applicant.languageLevel || '미입력'}
         </p>
         <p className="text-text-900">
-          <span className="text-text-700">비자:</span> {applicant.visaType}
+          <span className="text-text-700">비자:</span> {applicant.visaType || '미입력'}
         </p>
         {experience && (
           <p className="text-mint-600 font-medium">
@@ -93,20 +101,21 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       {isFeatured ? (
         <div className="flex flex-col gap-3 mt-auto">
           <div className="flex gap-2 flex-wrap">
-            <span className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[12px] text-[12px] font-medium">
-              영어 가능
-            </span>
-            <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
-              용산구 거주
-            </span>
-            <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
-              주말 근무 가능
-            </span>
+            {applicant.preferences.preferDays?.map((day) => (
+              <span key={day} className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
+                {day} 근무 가능
+              </span>
+            ))}
+            {applicant.preferences.area && (
+              <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
+                {applicant.preferences.area} 거주
+              </span>
+            )}
           </div>
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/applicant/${applicant.id}`);
+              navigate(`/applicant/${applicant.userId || applicant.id}`);
             }}
             className="w-full h-[44px] bg-mint-600 text-white rounded-[12px] 
                      text-[15px] font-semibold hover:bg-mint-700 transition-colors"
@@ -118,18 +127,22 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
         <>
           {/* Tags */}
           <div className="flex gap-2 mb-3 flex-wrap">
-            <span className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[12px] text-[12px] font-medium">
-              영어 가능
-            </span>
-            <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
-              용산구 거주
-            </span>
+            {applicant.preferences.preferDays?.map((day) => (
+              <span key={day} className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[12px] text-[12px] font-medium">
+                {day} 근무 가능
+              </span>
+            ))}
+            {applicant.preferences.area && (
+              <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
+                {applicant.preferences.area} 거주
+              </span>
+            )}
           </div>
           {/* CTA */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/applicant/${applicant.id}`);
+              navigate(`/applicant/${applicant.userId || applicant.id}`);
             }}
             className="w-full h-[44px] bg-mint-600 text-white rounded-[12px] 
                      text-[15px] font-semibold hover:bg-mint-700 transition-colors"

@@ -103,6 +103,10 @@ export interface SignupUserData {
 export interface JobSeekerProfileData {
   id: string;
   user_id: string;
+  name?: string | null;
+  phone?: string | null;
+  nationality_code?: string | null;
+  birthdate?: string | null;
   basic_info_file_name: string | null;
   preferred_regions: string[];
   preferred_jobs: string[];
@@ -139,6 +143,7 @@ export interface JobSeekerListItem {
   id: string;
   user_id: string;
   name: string;
+  phone?: string | null;
   nationality: string;
   birthdate: string | null;
   preferred_regions: string[];
