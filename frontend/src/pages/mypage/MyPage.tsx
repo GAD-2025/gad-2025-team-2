@@ -285,7 +285,7 @@ export const MyPage = () => {
             <span className="text-[15px] font-semibold text-text-900">
               {showResume ? "프로필 상세 접기" : "프로필 상세 보기"}
             </span>
-          </div>1
+          </div>
           <svg
             className={`w-5 h-5 text-text-700 transition-transform ${
               showResume ? "rotate-180" : ""
