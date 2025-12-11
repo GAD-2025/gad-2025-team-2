@@ -67,10 +67,19 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    # Allow common dev origins (vite default 5173) and enable a regex to match LAN IPs
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://127.0.0.1:5173"],
-    # This regex allows any host on port 5173 (useful when developing from another device on LAN)
-    allow_origin_regex=r"^http://.*:5173$",
+    # Allow common dev origins (vite defaults) and LAN IPs over http/https
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "https://localhost:5173",
+        "https://localhost:5174",
+        "https://127.0.0.1:5173",
+        "https://route.nois.club:5173",  # permit tunneled dev if needed
+    ],
+    # Allow any host on port 5173 over http or https (e.g., LAN IP)
+    allow_origin_regex=r"^https?://.*:5173$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
