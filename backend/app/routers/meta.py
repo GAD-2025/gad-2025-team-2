@@ -17,3 +17,4 @@ async def get_nationalities(session: Session = Depends(get_session)):
 
 
 
+

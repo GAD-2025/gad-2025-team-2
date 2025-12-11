@@ -1,0 +1,49 @@
+========================================
+SSH 키 등록 (한 번만!)
+========================================
+
+Cursor 터미널에서 입력이 안 되면,
+Windows PowerShell을 직접 열어서 실행하세요.
+
+1. Windows 키 → "PowerShell" 입력 → "Windows PowerShell" 클릭
+
+2. 다음 명령어 실행:
+
+cd "C:\Users\peach\Downloads\gad-2025-team-2-main\gad-2025-team-2-main"
+
+type $HOME\.ssh\workfair_deploy.pub
+
+(위 명령어 결과를 복사하세요)
+
+3. SSH 접속:
+
+ssh root@route.nois.club
+
+비밀번호: team2pass
+
+4. 서버에서:
+
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJHUiPxWaRAjHWzXL6/TxVsIpuUiivf/KbKEzHeKi9En workfair-deploy' >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+echo '✅ SSH 키 등록 완료!'
+exit
+
+5. 확인:
+
+ssh root@route.nois.club "echo '✅ 성공!'"
+
+비밀번호를 요청하지 않으면 성공!
+
+========================================
+이후 사용:
+========================================
+
+Cursor 터미널에서:
+.\최종_배포_스크립트.ps1
+
+비밀번호 없이 자동 배포!
+
+========================================
+

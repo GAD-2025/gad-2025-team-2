@@ -277,3 +277,4 @@ ON DUPLICATE KEY UPDATE name=VALUES(name), phone_code=VALUES(phone_code);
 --    - employers 테이블에 고용주 정보 자동 생성
 --    - jobs 테이블에 공고 정보 저장
 -- =============================================
+

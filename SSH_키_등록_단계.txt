@@ -1,0 +1,25 @@
+========================================
+SSH 키 등록 단계 (현재 단계)
+========================================
+
+✅ 1단계 완료: 공개 키 확인
+   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJHUiPxWaRAjHWzXL6/TxVsIpuUiivf/KbKEzHeKi9En workfair-deploy
+
+➡️ 2단계: SSH 접속
+   ssh root@route.nois.club
+   비밀번호: team2pass
+
+➡️ 3단계: 서버에서 키 등록
+   mkdir -p ~/.ssh
+   chmod 700 ~/.ssh
+   echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJHUiPxWaRAjHWzXL6/TxVsIpuUiivf/KbKEzHeKi9En workfair-deploy' >> ~/.ssh/authorized_keys
+   chmod 600 ~/.ssh/authorized_keys
+   echo '✅ SSH 키 등록 완료!'
+   exit
+
+➡️ 4단계: 확인
+   ssh root@route.nois.club "echo '✅ 성공!'"
+   (비밀번호를 요청하지 않으면 성공!)
+
+========================================
+
