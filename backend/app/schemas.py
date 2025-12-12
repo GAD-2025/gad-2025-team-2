@@ -225,6 +225,7 @@ class JobCreateRequest(BaseModel):
     description: str
     category: str
     wage: int
+    wage_type: Optional[str] = "hourly"  # 'hourly', 'weekly', 'monthly'
     work_days: str  # e.g., "월,화,수" or "MON,TUE,WED"
     work_hours: str  # e.g., "09:00-18:00"
     deadline: str  # ISO8601
@@ -248,6 +249,7 @@ class JobResponse(BaseModel):
     description: str
     category: str
     wage: int
+    wage_type: Optional[str] = "hourly"  # 'hourly', 'weekly', 'monthly'
     work_days: str
     work_hours: str
     deadline: str
@@ -261,7 +263,7 @@ class JobResponse(BaseModel):
 
 class PostRead(BaseModel):
     id: str
+    user_id: str
     title: str
-    content: str
-    author: str
+    body: str
     created_at: datetime

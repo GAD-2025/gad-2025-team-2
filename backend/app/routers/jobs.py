@@ -89,6 +89,7 @@ async def list_jobs(
         job_dict["requiredVisa"] = required_visas
         job_dict["applicationsCount"] = app_counts.get(job.id, 0)
         job_dict["isTrusted"] = is_trusted
+        job_dict["wage_type"] = getattr(job, 'wage_type', 'hourly') or 'hourly'
 
         # Quick-menu preset filters
         if sort == "high-wage" and job.wage < 11000:
@@ -149,6 +150,7 @@ async def get_job(job_id: str, session: Session = Depends(get_session)):
     ).first()
     job_dict["applicationsCount"] = count_row or 0
     job_dict["isTrusted"] = is_trusted
+    job_dict["wage_type"] = getattr(job, 'wage_type', 'hourly') or 'hourly'
     
     return job_dict
 
@@ -300,6 +302,7 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         description=request.description,
         category=request.category,
         wage=request.wage,
+        wage_type=getattr(request, 'wage_type', 'hourly') or 'hourly',
         workDays=request.work_days,
         workHours=request.work_hours,
         deadline=request.deadline,
@@ -331,6 +334,7 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         description=job.description,
         category=job.category,
         wage=job.wage,
+        wage_type=getattr(job, 'wage_type', 'hourly') or 'hourly',
         work_days=job.workDays,
         work_hours=job.workHours,
         deadline=job.deadline,

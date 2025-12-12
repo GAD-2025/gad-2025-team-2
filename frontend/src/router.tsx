@@ -42,6 +42,7 @@ import { EmployerHelp } from './pages/employer/Help';
 import { JobSeekerHelp } from './pages/jobseeker/Help';
 import { CommunityDetail } from './pages/network/CommunityDetail';
 import { ComingSoon } from './pages/employer/ComingSoon';
+import { PostsPage } from './pages/PostsPage';
 
 export const router = createBrowserRouter([
   {
@@ -219,6 +220,10 @@ export const router = createBrowserRouter([
       {
         path: 'mypage',
         element: <MyPage />,
+      },
+      {
+        path: 'posts',
+        element: <PostsPage />,
       },
     ],
   },

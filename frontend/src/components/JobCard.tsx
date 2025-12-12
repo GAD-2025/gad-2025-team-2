@@ -57,7 +57,7 @@ export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
       {/* Wage */}
       <div className="mb-3">
         <span className="text-[15px] font-bold text-mint-600">
-          시급 {job.wage.toLocaleString()}원
+          {job.wage_type === 'hourly' ? '시급' : job.wage_type === 'weekly' ? '주급' : '월급'} {job.wage.toLocaleString()}원
         </span>
       </div>
 

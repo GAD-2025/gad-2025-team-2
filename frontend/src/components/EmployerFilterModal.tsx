@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface EmployerFilterModalProps {
   isOpen: boolean;
@@ -25,6 +25,26 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
       visas: null,
     }
   );
+
+  // 브라우저 뒤로가기 이벤트 처리
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // 모달이 열릴 때 history에 상태 추가
+    window.history.pushState({ modalOpen: true }, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 모달이 열려있을 때 뒤로가기를 누르면 모달만 닫기
+      onClose();
+      // 현재 페이지에 머물기 위해 다시 pushState
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

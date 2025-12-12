@@ -77,6 +77,7 @@ export interface Job {
   description: string;
   category?: string;
   wage: number;
+  wage_type?: 'hourly' | 'weekly' | 'monthly';
   workDays: string | string[];
   workHours: string;
   deadline: string;

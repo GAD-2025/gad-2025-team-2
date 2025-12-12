@@ -67,6 +67,7 @@ class Job(SQLModel, table=True):
     description: str
     category: str
     wage: int
+    wage_type: str = Field(default="hourly")  # 'hourly', 'weekly', 'monthly'
     workDays: str
     workHours: str
     deadline: str  # ISO8601
@@ -226,7 +227,7 @@ class Post(SQLModel, table=True):
     __tablename__ = "posts"
     
     id: str = Field(primary_key=True)
+    user_id: str  # 작성자 ID (signup_users.id 또는 users.id)
     title: str
-    content: str
-    author: str
+    body: str  # 본문 내용
     created_at: datetime = Field(default_factory=datetime.utcnow)

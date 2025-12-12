@@ -144,10 +144,14 @@ export const JobDetail = () => {
         <div className="mb-6">
           <h2 className="text-[18px] font-bold text-text-900 mb-4">근무 조건</h2>
           <div className="space-y-0 bg-white rounded-[16px] p-4 shadow-card">
-            <InfoRow label="급여" value={`시급 ${job.wage.toLocaleString()}원`} highlight />
+            <InfoRow 
+              label="급여" 
+              value={`${job.wage_type === 'hourly' ? '시급' : job.wage_type === 'weekly' ? '주급' : '월급'} ${job.wage.toLocaleString()}원`} 
+              highlight 
+            />
             <InfoRow label="근무기간" value={Array.isArray(job.workDays) ? `주 ${job.workDays.length}일, 6시간` : job.workDays} />
             <InfoRow label="근무요일 / 시간" value={job.workHours || "시간, 요일 협의"} />
-            <InfoRow label="업직종" value={job.title} />
+            <InfoRow label="업직종" value={job.category || job.title} />
             <InfoRow label="언어요구사항">
               <span className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[16px] text-[13px] font-medium border border-mint-600">
                 {job.requiredLanguage}
