@@ -10,6 +10,7 @@ const INITIAL_COMPANY_INFO: EmployerCompanyInfo = {
   detailAddress: '',
   hasNoDetailAddress: false,
   businessLicense: null,
+  industry: '',
 };
 
 const INITIAL_STATE: EmployerSignupState = {
@@ -125,6 +126,13 @@ export function useEmployerSignup() {
     }));
   };
 
+  const setIndustry = (industry: string) => {
+    setState((prev) => ({
+      ...prev,
+      companyInfo: { ...prev.companyInfo, industry },
+    }));
+  };
+
   const handleSubmitCompanyInfo = async () => {
     setIsSubmitting(true);
     setError(null);
@@ -142,6 +150,12 @@ export function useEmployerSignup() {
       return;
     }
 
+    if (!state.companyInfo.industry || !state.companyInfo.industry.trim()) {
+      setError('업직종을 선택해주세요.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       // 먼저 고용주 계정 생성 (비밀번호는 임시로 이메일 사용)
       // TODO: 실제 비밀번호 입력 단계 추가 필요
@@ -154,6 +168,7 @@ export function useEmployerSignup() {
         company_name: state.companyInfo.companyName,
         address: state.companyInfo.baseAddress,
         address_detail: state.companyInfo.hasNoDetailAddress ? undefined : state.companyInfo.detailAddress || undefined,
+        industry: state.companyInfo.industry,
       });
 
       console.log('고용주 회원가입 성공:', signupResponse);
@@ -196,6 +211,7 @@ export function useEmployerSignup() {
     setBaseAddress,
     setDetailAddress,
     toggleNoDetailAddress,
+    setIndustry,
     handleSubmitCompanyInfo,
   };
 }

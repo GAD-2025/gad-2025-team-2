@@ -14,6 +14,10 @@ interface JobFormData {
   businessLicense: File | null;
   wageType: 'hourly' | 'weekly' | 'monthly';
   wage: string;
+  wageCalculationType: 'auto' | 'manual'; // 자동계산 또는 직접입력
+  hourlyWage: string; // 자동계산용 시급
+  daysPerWeek: number; // 자동계산용 주일수 (1~7)
+  workHoursPerDay: number; // 자동계산용 근무시간 (1~24)
   workDays: string[];
   workHours: string;
   workStartTime: string;
@@ -84,6 +88,10 @@ export const JobCreate = () => {
     businessLicense: null,
     wageType: 'hourly',
     wage: '10320',
+    wageCalculationType: 'manual',
+    hourlyWage: '10320',
+    daysPerWeek: 5,
+    workHoursPerDay: 8,
     workDays: [],
     workHours: '',
     workStartTime: '09:00',
@@ -180,8 +188,29 @@ export const JobCreate = () => {
   const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
   const timeOptions = generateTimeOptions();
 
-  const handleChange = (field: keyof JobFormData, value: string | string[] | boolean | File | null) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (field: keyof JobFormData, value: string | string[] | boolean | File | null | number) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // 자동계산 모드이고 주급/월급인 경우 자동으로 계산
+      if (updated.wageCalculationType === 'auto' && (updated.wageType === 'weekly' || updated.wageType === 'monthly')) {
+        if (field === 'hourlyWage' || field === 'daysPerWeek' || field === 'workHoursPerDay') {
+          const hourlyWage = parseFloat(updated.hourlyWage) || 0;
+          const daysPerWeek = updated.daysPerWeek || 0;
+          const workHoursPerDay = updated.workHoursPerDay || 0;
+          
+          if (updated.wageType === 'weekly') {
+            // 주급 = 시급 × 주일수 × 근무시간
+            updated.wage = Math.round(hourlyWage * daysPerWeek * workHoursPerDay).toString();
+          } else if (updated.wageType === 'monthly') {
+            // 월급 = 시급 × 주일수 × 근무시간 × 4주
+            updated.wage = Math.round(hourlyWage * daysPerWeek * workHoursPerDay * 4).toString();
+          }
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const handleStoreSelect = async (store: StoreData) => {
@@ -453,8 +482,11 @@ export const JobCreate = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedStore(null)}
-                  className="mt-3 text-[12px] text-mint-600 hover:text-mint-700"
+                  className="mt-3 w-full px-4 py-2.5 bg-white border-2 border-mint-600 text-mint-600 rounded-[12px] text-[14px] font-medium hover:bg-mint-50 transition-colors flex items-center justify-center gap-2"
                 >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
                   다른 매장 선택하기
                 </button>
               </div>
@@ -494,6 +526,7 @@ export const JobCreate = () => {
                   type="button"
                   onClick={() => {
                     handleChange('wageType', 'hourly');
+                    handleChange('wageCalculationType', 'manual');
                     if (formData.wageType !== 'hourly' && (!formData.wage || parseFloat(formData.wage) < 10320)) {
                       handleChange('wage', '10320');
                     }
@@ -508,7 +541,17 @@ export const JobCreate = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleChange('wageType', 'weekly')}
+                  onClick={() => {
+                    setFormData(prev => {
+                      const updated = { ...prev, wageType: 'weekly', wageCalculationType: 'auto' };
+                      // 자동계산 초기값으로 계산
+                      const hourlyWage = parseFloat(updated.hourlyWage) || 0;
+                      const daysPerWeek = updated.daysPerWeek || 0;
+                      const workHoursPerDay = updated.workHoursPerDay || 0;
+                      updated.wage = Math.round(hourlyWage * daysPerWeek * workHoursPerDay).toString();
+                      return updated;
+                    });
+                  }}
                   className={`flex-1 px-4 py-2 rounded-[12px] text-[14px] font-medium transition-colors ${
                     formData.wageType === 'weekly'
                       ? 'bg-mint-600 text-white border-2 border-mint-600'
@@ -519,7 +562,17 @@ export const JobCreate = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleChange('wageType', 'monthly')}
+                  onClick={() => {
+                    setFormData(prev => {
+                      const updated = { ...prev, wageType: 'monthly', wageCalculationType: 'auto' };
+                      // 자동계산 초기값으로 계산 (4주 기준)
+                      const hourlyWage = parseFloat(updated.hourlyWage) || 0;
+                      const daysPerWeek = updated.daysPerWeek || 0;
+                      const workHoursPerDay = updated.workHoursPerDay || 0;
+                      updated.wage = Math.round(hourlyWage * daysPerWeek * workHoursPerDay * 4).toString();
+                      return updated;
+                    });
+                  }}
                   className={`flex-1 px-4 py-2 rounded-[12px] text-[14px] font-medium transition-colors ${
                     formData.wageType === 'monthly'
                       ? 'bg-mint-600 text-white border-2 border-mint-600'
@@ -530,21 +583,159 @@ export const JobCreate = () => {
                 </button>
               </div>
 
-              {/* 급여 입력 필드 */}
-              <div className="relative">
-                <input
-                  type="number"
-                  value={formData.wage}
-                  onChange={(e) => handleChange('wage', e.target.value)}
-                  placeholder={formData.wageType === 'hourly' ? '10320' : formData.wageType === 'weekly' ? '500000' : '2000000'}
-                  className="w-full h-[48px] pl-4 pr-12 bg-background rounded-[12px] border border-line-200
-                           text-[14px] text-text-900 placeholder:text-text-500
-                           focus:outline-none focus:ring-2 focus:ring-mint-600"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-text-700">
-                  원
-                </span>
-              </div>
+              {/* 주급/월급인 경우 자동계산/직접입력 선택 */}
+              {(formData.wageType === 'weekly' || formData.wageType === 'monthly') && (
+                <div className="mb-3">
+                  <label className="block text-[13px] font-medium text-text-700 mb-2">
+                    계산 방식
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleChange('wageCalculationType', 'auto')}
+                      className={`flex-1 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                        formData.wageCalculationType === 'auto'
+                          ? 'bg-blue-50 text-blue-600 border-2 border-blue-400 shadow-sm'
+                          : 'bg-gray-50 text-gray-600 border-2 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="flex items-center justify-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        자동계산
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('wageCalculationType', 'manual')}
+                      className={`flex-1 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                        formData.wageCalculationType === 'manual'
+                          ? 'bg-blue-50 text-blue-600 border-2 border-blue-400 shadow-sm'
+                          : 'bg-gray-50 text-gray-600 border-2 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="flex items-center justify-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        직접 입력
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 자동계산 모드 (주급/월급) */}
+              {(formData.wageType === 'weekly' || formData.wageType === 'monthly') && formData.wageCalculationType === 'auto' && (
+                <div className="space-y-3 mb-3">
+                  {/* 시급 입력 */}
+                  <div>
+                    <label className="block text-[13px] font-medium text-text-700 mb-1.5">
+                      시급
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={formData.hourlyWage}
+                        onChange={(e) => handleChange('hourlyWage', e.target.value)}
+                        placeholder="10320"
+                        className="w-full h-[44px] pl-4 pr-12 bg-background rounded-[12px] border border-line-200
+                                 text-[14px] text-text-900 placeholder:text-text-500
+                                 focus:outline-none focus:ring-2 focus:ring-mint-600"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-text-700">
+                        원
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 주일수 드롭다운 */}
+                  <div>
+                    <label className="block text-[13px] font-medium text-text-700 mb-1.5">
+                      주
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={formData.daysPerWeek}
+                        onChange={(e) => handleChange('daysPerWeek', parseInt(e.target.value))}
+                        className="w-full h-[44px] pl-4 pr-10 bg-background rounded-[12px] border border-line-200
+                                 text-[14px] text-text-900
+                                 focus:outline-none focus:ring-2 focus:ring-mint-600 appearance-none cursor-pointer"
+                      >
+                        {Array.from({ length: 7 }, (_, i) => i + 1).map((day) => (
+                          <option key={day} value={day}>
+                            {day}일
+                          </option>
+                        ))}
+                      </select>
+                      <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* 근무시간 드롭다운 */}
+                  <div>
+                    <label className="block text-[13px] font-medium text-text-700 mb-1.5">
+                      근무시간
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={formData.workHoursPerDay}
+                        onChange={(e) => handleChange('workHoursPerDay', parseInt(e.target.value))}
+                        className="w-full h-[44px] pl-4 pr-10 bg-background rounded-[12px] border border-line-200
+                                 text-[14px] text-text-900
+                                 focus:outline-none focus:ring-2 focus:ring-mint-600 appearance-none cursor-pointer"
+                      >
+                        {Array.from({ length: 24 }, (_, i) => i + 1).map((hour) => (
+                          <option key={hour} value={hour}>
+                            {hour}시간
+                          </option>
+                        ))}
+                      </select>
+                      <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* 최종 급여 표시 */}
+                  <div className="bg-mint-50 border border-mint-200 rounded-[12px] p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] font-medium text-text-700">
+                        최종 {formData.wageType === 'weekly' ? '주급' : '월급'}
+                      </span>
+                      <span className="text-[16px] font-semibold text-mint-600">
+                        {parseInt(formData.wage || '0').toLocaleString()}원
+                      </span>
+                    </div>
+                    {formData.wageType === 'monthly' && (
+                      <p className="mt-1.5 text-[11px] text-text-500">
+                        4주 기준 급여입니다
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 직접 입력 모드 또는 시급 */}
+              {(formData.wageType === 'hourly' || formData.wageCalculationType === 'manual') && (
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.wage}
+                    onChange={(e) => handleChange('wage', e.target.value)}
+                    placeholder={formData.wageType === 'hourly' ? '10320' : formData.wageType === 'weekly' ? '500000' : '2000000'}
+                    className="w-full h-[48px] pl-4 pr-12 bg-background rounded-[12px] border border-line-200
+                             text-[14px] text-text-900 placeholder:text-text-500
+                             focus:outline-none focus:ring-2 focus:ring-mint-600"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-text-700">
+                    원
+                  </span>
+                </div>
+              )}
               
               {/* 최저시급 경고 (시급인 경우만) */}
               {formData.wageType === 'hourly' && formData.wage && parseFloat(formData.wage) < 10320 && (

@@ -342,6 +342,8 @@ async def signup_employer(request: EmployerSignupPayload, session: Session = Dep
         store_id = f"store-{uuid.uuid4().hex[:8]}"
         # address_detail이 빈 문자열이면 None으로 변환
         address_detail = request.address_detail if request.address_detail and request.address_detail.strip() else None
+        # industry가 있으면 사용, 없으면 기본값 "기타"
+        industry = request.industry if request.industry and request.industry.strip() else "기타"
         main_store = Store(
             id=store_id,
             user_id=user_id,
@@ -350,7 +352,7 @@ async def signup_employer(request: EmployerSignupPayload, session: Session = Dep
             address=request.address.strip(),
             address_detail=address_detail,
             phone="",  # 회원가입 시 전화번호는 없을 수 있음
-            industry="기타",  # 기본값, 나중에 수정 가능
+            industry=industry,
             business_license=None,
             management_role="본사 관리자",  # 기본값
             store_type="직영점",  # 기본값

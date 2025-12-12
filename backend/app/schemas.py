@@ -157,6 +157,7 @@ class EmployerSignupPayload(BaseModel):
     company_name: str
     address: str
     address_detail: Optional[str] = None
+    industry: Optional[str] = None  # 업직종
 
 
 class EmployerSignupResponse(BaseModel):

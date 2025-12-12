@@ -1,6 +1,24 @@
 import { useState } from 'react';
 import { EmployerSignupData } from '../../hooks/useEmployerSignupWizard';
 
+const INDUSTRY_OPTIONS = [
+  '외식업',
+  '매장관리',
+  '서비스',
+  '사무직',
+  '고객상담',
+  '영업',
+  '생산',
+  'IT',
+  '디자인',
+  '미디어',
+  '배달',
+  '운전',
+  '병원',
+  '교육',
+  '기타',
+];
+
 interface CompanyInfoStepProps {
   formData: EmployerSignupData;
   updateFormData: (updates: Partial<EmployerSignupData>) => void;
@@ -14,6 +32,7 @@ declare global {
 
 export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepProps) {
   const [showAddressSearch, setShowAddressSearch] = useState(false);
+  const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
 
   const handleAddressSearch = () => {
     setShowAddressSearch(true);
@@ -144,6 +163,47 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
             </div>
           </div>
         )}
+
+        {/* 업직종 선택 */}
+        <div>
+          <label className="mb-2 flex items-center text-[15px] font-medium text-gray-700">
+            업직종 <span className="ml-1 text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowIndustryDropdown(!showIndustryDropdown)}
+              className="w-full h-[48px] px-4 bg-white rounded-xl border border-gray-300
+                       text-[17px] text-left text-gray-900 placeholder:text-gray-500
+                       focus:outline-none focus:ring-1 focus:ring-primary-mint focus:border-primary-mint
+                       flex items-center justify-between transition"
+            >
+              <span className={formData.industry ? 'text-gray-900' : 'text-gray-500'}>
+                {formData.industry || '업직종을 선택하세요'}
+              </span>
+              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showIndustryDropdown && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                {INDUSTRY_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      updateFormData({ industry: option });
+                      setShowIndustryDropdown(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-[15px] text-gray-900 hover:bg-mint-50 transition-colors"
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ export interface EmployerSignupPayload {
   company_name?: string;
   address?: string;
   address_detail?: string;
+  industry?: string;
 }
 
 export interface EmployerSignupResponse {
@@ -40,6 +41,7 @@ export async function signupEmployer(
         company_name: payload.company_name || '',
         address: payload.address || '',
         address_detail: payload.address_detail && payload.address_detail.trim() ? payload.address_detail : undefined,
+        industry: payload.industry || '',
       }),
     });
 
