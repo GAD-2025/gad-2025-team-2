@@ -74,11 +74,6 @@ export function CompanyAddressStep({ formData, updateFormData }: CompanyAddressS
               </svg>
             </button>
           </div>
-          {formData.address && (
-            <p className="mt-1.5 text-[13px] text-gray-600">
-              터치하여 검색해 주세요!
-            </p>
-          )}
         </div>
 
         {/* 상세주소 입력 */}

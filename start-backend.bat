@@ -1,14 +1,28 @@
 @echo off
 echo ========================================
-echo WorkFair 백엔드 시작 중...
+echo WorkFair 백엔드 서버 시작
 echo ========================================
-cd gad-2025-team-2-main\backend
-call venv\Scripts\activate.bat
 echo.
-echo 서버를 시작합니다...
-python -m uvicorn app.main:app --reload
+
+cd /d "%~dp0backend"
+
+REM 가상환경 활성화
+if exist "venv\Scripts\activate.bat" (
+    call venv\Scripts\activate.bat
+) else (
+    echo 가상환경이 없습니다. 생성 중...
+    py -m venv venv
+    call venv\Scripts\activate.bat
+    echo 의존성 설치 중...
+    pip install -r requirements.txt
+)
+
+echo.
+echo 백엔드 서버 시작 중...
+echo 서버 주소: http://localhost:8000
+echo API 문서: http://localhost:8000/docs
+echo.
+
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
 pause
-
-
-
-

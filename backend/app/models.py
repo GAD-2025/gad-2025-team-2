@@ -1,3 +1,4 @@
+from __future__ import annotations
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import datetime, date
@@ -9,18 +10,18 @@ class GeoPoint(SQLModel):
     lng: float
 
 
-class Experience(SQLModel):
+class Experience(SQLModel, table=False):
     role: str
     years: int
-    tags: List[str] = []
+    tags: List[str] = Field(default_factory=list)
 
 
-class Preferences(SQLModel):
-    industries: List[str] = []
-    wageRange: dict = {"min": 0, "max": 100000}
+class Preferences(SQLModel, table=False):
+    industries: List[str] = Field(default_factory=list)
+    wageRange: dict = Field(default_factory=lambda: {"min": 0, "max": 100000})
     area: str = ""
     radiusKm: int = 10
-    preferDays: List[str] = []
+    preferDays: List[str] = Field(default_factory=list)
 
 
 class JobSeeker(SQLModel, table=True):
