@@ -358,47 +358,16 @@ export const MyPage = () => {
             </svg>
           </button>
 
-          <button
-            onClick={() => navigate("/my-applications")}
-            className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-mint-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-mint-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
-              </div>
-              <span className="text-[15px] font-medium text-text-900">
-                지원 내역
-              </span>
-            </div>
-            <svg
-              className="w-5 h-5 text-text-700"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
+          
 
           <button
-            onClick={() => navigate("/messages")}
+            onClick={() => {
+              if (isEmployer) {
+                navigate("/employer/coming-soon", { state: { message: "새로운 메시지 기능을 준비 중입니다.", iconType: "message" } });
+              } else {
+                navigate("/messages");
+              }
+            }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"
           >
             <div className="flex items-center gap-3">
@@ -436,7 +405,14 @@ export const MyPage = () => {
             </svg>
           </button>
 
-          <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200">
+          <button
+            onClick={() => {
+              if (isEmployer) {
+                navigate("/employer/coming-soon", { state: { message: "더욱 개인화된 알림 경험을 제공하기 위해\n알림 설정 페이지를 준비하고 있습니다.", iconType: "bell" } });
+              }
+            }}
+            className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"
+          >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-mint-100 rounded-full flex items-center justify-center">
                 <svg
@@ -471,7 +447,15 @@ export const MyPage = () => {
               />
             </svg>
           </button>
-          <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200">
+          <button
+            onClick={() => {
+              if (isEmployer) {
+                navigate("/employer/coming-soon", { state: { message: "사용자에게 더 편리한 언어 설정 기능을 제공하기 위해\n페이지를 준비하고 있습니다.", iconType: "language" } });
+              }
+              // You can add an else condition for other user roles or a generic coming soon page
+            }}
+            className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"
+          >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-mint-100 rounded-full flex items-center justify-center">
                 <svg
@@ -506,7 +490,15 @@ export const MyPage = () => {
               />
             </svg>
           </button>
-          <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <button
+            onClick={() => {
+              if (isEmployer) {
+                navigate("/employer/help");
+              }
+              // You can add an else condition for other user roles if needed
+            }}
+            className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-mint-100 rounded-full flex items-center justify-center">
                 <svg

@@ -38,7 +38,9 @@ import { SharedSchedule } from './pages/employer/SharedSchedule';
 import { MySchedule } from './pages/jobseeker/MySchedule';
 import { ResumeEdit } from './pages/jobseeker/ResumeEdit';
 import { NotFound } from './pages/NotFound';
+import { EmployerHelp } from './pages/employer/Help';
 import { CommunityDetail } from './pages/network/CommunityDetail';
+import { ComingSoon } from './pages/employer/ComingSoon';
 
 export const router = createBrowserRouter([
   {
@@ -92,6 +94,14 @@ export const router = createBrowserRouter([
       {
         path: 'employer/home',
         element: <EmployerHome />,
+      },
+      {
+        path: 'employer/help',
+        element: <EmployerHelp />,
+      },
+      {
+        path: 'employer/coming-soon',
+        element: <ComingSoon />,
       },
       {
         path: 'employer/store-add',
