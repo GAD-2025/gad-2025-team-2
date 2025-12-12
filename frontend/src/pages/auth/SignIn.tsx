@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { authAPI } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
 
 type UserRole = 'job_seeker' | 'employer';
 
 export function SignIn() {
   const navigate = useNavigate();
+  const { setUserMode } = useAuthStore();
   const [role, setRole] = useState<UserRole>('job_seeker');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -49,7 +51,7 @@ export function SignIn() {
       const response = await authAPI.signIn(loginData);
       const data = (response as any)?.data ?? response;
       
-      console.log('✅ 로그인 성공:', data);
+      console.log('[LOGIN] 로그인 성공:', data);
       
       // Store user info - use actual role from API response
       const resolvedUserId =
@@ -63,7 +65,22 @@ export function SignIn() {
         console.warn('로그인 응답에 user_id/id 필드가 없습니다. MyPage 로딩에 영향을 줄 수 있습니다.', data);
       }
 
-      localStorage.setItem('user_role', data?.role);
+      // Get actual role from API response
+      const actualRole = data?.role || 'job_seeker';
+      localStorage.setItem('user_role', actualRole);
+      
+      // Set user mode in auth store for navigation
+      if (actualRole === 'employer') {
+        setUserMode('employer');
+      } else {
+        setUserMode('jobseeker');
+      }
+      
+      // Store token
+      if (data?.token) {
+        localStorage.setItem('token', data.token);
+      }
+
       const resolvedName = data?.name || data?.user?.name;
       if (resolvedName) {
         localStorage.setItem('user_name', resolvedName);
@@ -74,15 +91,15 @@ export function SignIn() {
       }
 
       // Check if selected role matches actual role
-      if (response.role !== role) {
-        const roleName = response.role === 'employer' ? '고용주' : '구직자';
+      if (actualRole !== role) {
+        const roleName = actualRole === 'employer' ? '고용주' : '구직자';
         toast.warning(`${roleName} 계정으로 로그인되었습니다.`);
       } else {
         toast.success('로그인 성공!');
       }
       
       // Redirect based on actual role from API response
-      if (response.role === 'employer') {
+      if (actualRole === 'employer') {
         navigate('/employer/home');
       } else {
         navigate('/jobseeker/home');

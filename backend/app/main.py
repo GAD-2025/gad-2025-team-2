@@ -64,42 +64,77 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS - 개발 환경용 설정 (모든 origin 허용)
+# CORS - 개발 환경용 설정 (미들웨어 순서 중요: CORS는 가장 먼저)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 개발 환경에서는 모든 origin 허용
-    allow_credentials=False,  # allow_origins=["*"]일 때는 False여야 함
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
     expose_headers=["*"],
+    max_age=3600,
 )
 
 # Global exception handler to ensure CORS headers are always present on errors
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """HTTPException 처리 시 CORS 헤더 추가"""
+    origin = request.headers.get("origin", "*")
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ]
+    
+    # 요청 origin이 허용된 목록에 있으면 사용, 없으면 *
+    cors_origin = origin if origin in allowed_origins else "*"
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers={
+            "Access-Control-Allow-Origin": cors_origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    """모든 예외 처리 시 CORS 헤더 추가"""
     import traceback
-    # HTTPException은 FastAPI가 이미 처리하므로 제외 (re-raise)
-    if isinstance(exc, HTTPException):
-        # HTTPException에 CORS 헤더 추가 (요청 Origin을 그대로 echo)
-        origin = request.headers.get("origin", "http://localhost:5173")
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": exc.detail},
-            headers={
-                "Access-Control-Allow-Origin": origin,
-                "Access-Control-Allow-Credentials": "true",
-            }
-        )
-    
     error_detail = f"Internal server error: {str(exc)}\n{traceback.format_exc()}"
-    print(error_detail)  # 로그 출력
-    origin = request.headers.get("origin", "http://localhost:5173")
+    # Windows cp949 인코딩 문제 방지를 위해 안전하게 출력
+    try:
+        print(f"[ERROR] {str(exc)}")
+    except:
+        print("[ERROR] Internal server error (인코딩 오류)")
+    
+    origin = request.headers.get("origin", "*")
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ]
+    
+    cors_origin = origin if origin in allowed_origins else "*"
+    
     return JSONResponse(
         status_code=500,
         content={"detail": f"Internal server error: {str(exc)}"},
         headers={
-            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Origin": cors_origin,
             "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
         }
     )
 
@@ -132,4 +167,9 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+# OPTIONS 요청을 명시적으로 처리 (CORS preflight)
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    return {"message": "OK"}
 

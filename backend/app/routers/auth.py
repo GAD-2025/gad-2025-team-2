@@ -65,16 +65,16 @@ async def signin(request: SignInRequest, session: Session = Depends(get_session)
 
 
 @router.post("/signin/new")
-async def signin_new(request: NewSignInRequest, session: Session = Depends(get_session)):
+async def signin_new(request: NewSignInRequest, session: Session = Depends(get_session), origin: str = None):
     """New signin endpoint for identifier (email or phone) + password + role"""
-    from fastapi import Response
+    from fastapi import Request
     from fastapi.responses import JSONResponse
     
     try:
         # 전화번호에서 하이픈(-) 제거
         identifier = request.identifier.replace('-', '')
         
-        print(f"🔐 로그인 시도: role={request.role}, identifier={identifier}")
+        print(f"[LOGIN] 로그인 시도: role={request.role}, identifier={identifier}")
         
         # Find user by identifier (email or phone) - try both
         user = None
@@ -89,29 +89,29 @@ async def signin_new(request: NewSignInRequest, session: Session = Depends(get_s
             user = session.exec(statement).first()
         
         if not user:
-            print(f"❌ 사용자를 찾을 수 없음: {request.identifier}")
+            print(f"[ERROR] 사용자를 찾을 수 없음: {request.identifier}")
             raise HTTPException(status_code=401, detail="계정을 찾을 수 없습니다")
         
-        print(f"✅ 사용자 발견: id={user.id}, name={user.name}, role={user.role}, has_password={user.password is not None}")
+        print(f"[SUCCESS] 사용자 발견: id={user.id}, name={user.name}, role={user.role}, has_password={user.password is not None}")
         
         # Check if selected role matches actual role
         if request.role != user.role:
-            print(f"⚠️ 선택한 role({request.role})과 실제 role({user.role})이 다릅니다. 실제 role로 로그인합니다.")
+            print(f"[WARNING] 선택한 role({request.role})과 실제 role({user.role})이 다릅니다. 실제 role로 로그인합니다.")
         
         # Verify password
         if not user.password:
-            print(f"❌ 비밀번호가 설정되지 않음")
+            print(f"[ERROR] 비밀번호가 설정되지 않음")
             raise HTTPException(status_code=401, detail="비밀번호가 설정되지 않았습니다. 관리자에게 문의하세요.")
         
         input_hash = hash_password(request.password)
-        print(f"🔑 입력 비밀번호 해시: {input_hash}")
-        print(f"🔑 저장된 비밀번호 해시: {user.password}")
+        print(f"[DEBUG] 입력 비밀번호 해시: {input_hash}")
+        print(f"[DEBUG] 저장된 비밀번호 해시: {user.password}")
         
         if not verify_password(request.password, user.password):
-            print(f"❌ 비밀번호 불일치")
+            print(f"[ERROR] 비밀번호 불일치")
             raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다")
         
-        print(f"✅ 로그인 성공: {user.id} (role: {user.role})")
+        print(f"[SUCCESS] 로그인 성공: {user.id} (role: {user.role})")
         
         # Create token
         token = create_access_token({"sub": user.id, "role": user.role})
@@ -123,11 +123,17 @@ async def signin_new(request: NewSignInRequest, session: Session = Depends(get_s
             "name": user.name,
         }
     except HTTPException:
+        # HTTPException은 global exception handler에서 CORS 헤더 추가
         raise
     except Exception as e:
         import traceback
         error_detail = f"Signin failed: {str(e)}\n{traceback.format_exc()}"
-        print(error_detail)
+        # Windows cp949 인코딩 문제 방지를 위해 에러 메시지만 출력
+        try:
+            print(f"[ERROR] 로그인 실패: {str(e)}")
+        except:
+            print("[ERROR] 로그인 실패 (인코딩 오류)")
+        # 일반 Exception도 HTTPException으로 변환하여 global handler에서 처리
         raise HTTPException(status_code=500, detail=f"로그인 중 오류가 발생했습니다: {str(e)}")
 
 

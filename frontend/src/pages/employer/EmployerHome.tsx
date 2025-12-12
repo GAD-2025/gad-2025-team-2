@@ -9,9 +9,11 @@ import { EmployerQuickMenu } from '@/components/EmployerQuickMenu';
 import { GuideCard } from '@/components/GuideCard';
 import { listJobSeekers } from '@/api/endpoints';
 import type { JobSeeker } from '@/types';
+import { useAuthStore } from '@/store/useAuth';
 
 export const EmployerHome = () => {
   const navigate = useNavigate();
+  const { setUserMode } = useAuthStore();
   const [applicants, setApplicants] = useState<JobSeeker[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -24,6 +26,11 @@ export const EmployerHome = () => {
   });
 
   const location = useLocation();
+
+  // Set user mode to employer when entering this page
+  useEffect(() => {
+    setUserMode('employer');
+  }, [setUserMode]);
 
   // If navigation provided filters (e.g., from ApplicantFilter), merge them into appliedFilters on mount
   useEffect(() => {

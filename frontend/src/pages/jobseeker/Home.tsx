@@ -12,9 +12,11 @@ import { JobCardSkeleton } from "@/components/Skeleton";
 import { SafetyNoticeModal } from "@/components/SafetyNoticeModal";
 import { jobsAPI, learningAPI } from "@/api/endpoints";
 import type { Job, LearningProgress } from "@/types";
+import { useAuthStore } from "@/store/useAuth";
 
 export const JobSeekerHome = () => {
   const navigate = useNavigate();
+  const { setUserMode } = useAuthStore();
   const [searchParams] = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,11 @@ export const JobSeekerHome = () => {
     experience: ["주말"],
     visas: null,
   });
+
+  // Set user mode to jobseeker when entering this page
+  useEffect(() => {
+    setUserMode('jobseeker');
+  }, [setUserMode]);
 
   useEffect(() => {
     const fetchData = async () => {

@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/useAuth';
 
 export function AutoRedirect() {
   const navigate = useNavigate();
+  const { setUserMode } = useAuthStore();
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
       const userId = localStorage.getItem('signup_user_id');
+      const savedRole = localStorage.getItem('user_role');
       
       // 가입하지 않은 경우 -> 회원가입 페이지
       if (!userId) {
@@ -26,21 +29,31 @@ export function AutoRedirect() {
         }
 
         const userData = await response.json();
+        const userRole = userData.role || savedRole || 'job_seeker';
         
-        if (userData.role === 'employer') {
+        // Set user mode based on role
+        if (userRole === 'employer') {
+          setUserMode('employer');
           navigate('/employer/home', { replace: true });
         } else {
+          setUserMode('jobseeker');
           navigate('/jobseeker/home', { replace: true });
         }
       } catch (error) {
         console.error('Failed to check user status:', error);
-        // 에러 시 회원가입으로
-        navigate('/signup', { replace: true });
+        // 에러 시 저장된 role로 리다이렉트
+        if (savedRole === 'employer') {
+          setUserMode('employer');
+          navigate('/employer/home', { replace: true });
+        } else {
+          setUserMode('jobseeker');
+          navigate('/jobseeker/home', { replace: true });
+        }
       }
     };
 
     checkAuthAndRedirect();
-  }, [navigate]);
+  }, [navigate, setUserMode]);
 
   // 로딩 중 표시
   return (
