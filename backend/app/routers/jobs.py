@@ -19,6 +19,8 @@ async def list_jobs(
     industry: Optional[str] = None,
     languageLevel: Optional[str] = None,
     visaType: Optional[str] = None,
+    store_id: Optional[str] = Query(default=None, description="매장 ID로 필터링"),
+    user_id: Optional[str] = Query(default=None, description="고용주 user_id로 필터링 (해당 고용주의 모든 매장 공고)"),
     sort: Optional[str] = Query(
         default=None,
         description="Preset filter: high-wage, popular, trusted, short-term",
@@ -28,6 +30,8 @@ async def list_jobs(
     session: Session = Depends(get_session),
 ):
     """List jobs with filters"""
+    from app.models import Store
+    
     statement = select(Job)
     if query:
         statement = statement.where(Job.title.like(f"%{query}%"))
@@ -37,6 +41,18 @@ async def list_jobs(
         statement = statement.where(Job.category.like(f"%{industry}%"))
     if languageLevel:
         statement = statement.where(Job.requiredLanguage.like(f"%{languageLevel}%"))
+    if store_id:
+        statement = statement.where(Job.store_id == store_id)
+    if user_id and user_id.strip():
+        # 고용주의 모든 매장 ID 가져오기
+        stores_stmt = select(Store).where(Store.user_id == user_id)
+        stores = session.exec(stores_stmt).all()
+        store_ids = [store.id for store in stores]
+        if store_ids:
+            statement = statement.where(Job.store_id.in_(store_ids))
+        else:
+            # 매장이 없으면 빈 결과 반환 (에러가 아닌 정상적인 빈 결과)
+            statement = statement.where(Job.id == "nonexistent")
 
     jobs = session.exec(statement.offset(offset).limit(limit)).all()
 
@@ -52,9 +68,9 @@ async def list_jobs(
     for job in jobs:
         employer_stmt = select(Employer).where(Employer.id == job.employerId)
         employer = session.exec(employer_stmt).first()
-        # Basic active filter
-        if hasattr(job, 'status') and job.status != 'active':
-            continue
+        # Status filter는 공고 관리 페이지에서 필요하므로 제거
+        # if hasattr(job, 'status') and job.status != 'active':
+        #     continue
 
         # Filter by visaType if provided
         try:
@@ -90,6 +106,11 @@ async def list_jobs(
         job_dict["applicationsCount"] = app_counts.get(job.id, 0)
         job_dict["isTrusted"] = is_trusted
         job_dict["wage_type"] = getattr(job, 'wage_type', 'hourly') or 'hourly'
+        job_dict["store_id"] = getattr(job, 'store_id', None)
+        job_dict["shop_name"] = getattr(job, 'shop_name', None)
+        job_dict["shop_address"] = getattr(job, 'shop_address', None)
+        job_dict["shop_address_detail"] = getattr(job, 'shop_address_detail', None)
+        job_dict["shop_phone"] = getattr(job, 'shop_phone', None)
 
         # Quick-menu preset filters
         if sort == "high-wage" and job.wage < 11000:
@@ -151,6 +172,11 @@ async def get_job(job_id: str, session: Session = Depends(get_session)):
     job_dict["applicationsCount"] = count_row or 0
     job_dict["isTrusted"] = is_trusted
     job_dict["wage_type"] = getattr(job, 'wage_type', 'hourly') or 'hourly'
+    job_dict["store_id"] = getattr(job, 'store_id', None)
+    job_dict["shop_name"] = getattr(job, 'shop_name', None)
+    job_dict["shop_address"] = getattr(job, 'shop_address', None)
+    job_dict["shop_address_detail"] = getattr(job, 'shop_address_detail', None)
+    job_dict["shop_phone"] = getattr(job, 'shop_phone', None)
     
     return job_dict
 
@@ -231,8 +257,6 @@ async def update_job(
         job.requiredVisa = json.dumps(job_data['required_visa'])
     if 'benefits' in job_data:
         job.benefits = job_data['benefits']
-    if 'employer_message' in job_data:
-        job.employerMessage = job_data['employer_message']
     
     session.add(job)
     session.commit()
@@ -282,7 +306,15 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
     current_time = datetime.utcnow().isoformat()
     
     # Determine status from request or default to 'active'
-    job_status = getattr(request, 'status', 'active') or 'active'
+    job_status = request.status if request.status else 'active'
+    
+    # 디버깅: 받은 매장 정보 확인
+    print(f"[DEBUG] create_job - 받은 매장 정보:")
+    print(f"  shop_name: {request.shop_name}")
+    print(f"  shop_address: {request.shop_address}")
+    print(f"  shop_address_detail: {request.shop_address_detail}")
+    print(f"  shop_phone: {request.shop_phone}")
+    print(f"  store_id: {request.store_id}")
     
     # Use location from request if provided, otherwise extract from address
     location = request.location or None
@@ -302,7 +334,7 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         description=request.description,
         category=request.category,
         wage=request.wage,
-        wage_type=getattr(request, 'wage_type', 'hourly') or 'hourly',
+        wage_type=request.wage_type if request.wage_type else 'hourly',
         workDays=request.work_days,
         workHours=request.work_hours,
         deadline=request.deadline,
@@ -317,11 +349,20 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         views=0,
         applications=0,
         location=location,
-        shop_name=getattr(request, 'shop_name', None),
-        shop_address=getattr(request, 'shop_address', None),
-        shop_address_detail=getattr(request, 'shop_address_detail', None),
-        shop_phone=getattr(request, 'shop_phone', None),
+        shop_name=request.shop_name,
+        shop_address=request.shop_address,
+        shop_address_detail=request.shop_address_detail,
+        shop_phone=request.shop_phone,
+        store_id=request.store_id,
     )
+    
+    # 디버깅: 저장할 Job 객체 확인
+    print(f"[DEBUG] create_job - 저장할 Job 객체:")
+    print(f"  shop_name: {job.shop_name}")
+    print(f"  shop_address: {job.shop_address}")
+    print(f"  shop_address_detail: {job.shop_address_detail}")
+    print(f"  shop_phone: {job.shop_phone}")
+    print(f"  store_id: {job.store_id}")
     
     session.add(job)
     session.commit()
@@ -342,8 +383,12 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         required_language=job.requiredLanguage,
         required_visa=request.required_visa,
         benefits=job.benefits,
-        employer_message=job.employerMessage,
         created_at=job.createdAt,
         employer=employer.dict(),
+        shop_name=getattr(job, 'shop_name', None),
+        shop_address=getattr(job, 'shop_address', None),
+        shop_address_detail=getattr(job, 'shop_address_detail', None),
+        shop_phone=getattr(job, 'shop_phone', None),
+        store_id=getattr(job, 'store_id', None),
     )
 

@@ -64,24 +64,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# CORS - 개발 환경용 설정 (모든 origin 허용)
 app.add_middleware(
     CORSMiddleware,
-    # Allow common dev origins (vite defaults) and LAN IPs over http/https
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "https://localhost:5173",
-        "https://localhost:5174",
-        "https://127.0.0.1:5173",
-        "https://route.nois.club:5173",  # permit tunneled dev if needed
-    ],
-    # Allow any host on port 5173 over http or https (e.g., LAN IP)
-    allow_origin_regex=r"^https?://.*:5173$",
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=["*"],  # 개발 환경에서는 모든 origin 허용
+    allow_credentials=False,  # allow_origins=["*"]일 때는 False여야 함
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
 )

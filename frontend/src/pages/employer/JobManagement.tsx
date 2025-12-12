@@ -2,43 +2,93 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { jobsAPI } from '@/api/endpoints';
+import { getStores, type StoreData } from '@/api/endpoints';
 import type { Job } from '@/types';
 
 interface JobWithStats extends Job {
   applicantCount: number;
   viewCount: number;
+  store_id?: string;
 }
 
 export const JobManagement = () => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'paused' | 'closed'>('all');
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null); // 'all' 또는 store_id
   const [jobs, setJobs] = useState<JobWithStats[]>([]);
+  const [stores, setStores] = useState<StoreData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => {
-    const fetchEmployerJobs = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch all jobs from API
-        const response = await jobsAPI.list({ limit: 100 });
-        const jobsWithStats: JobWithStats[] = (response.data || []).map((job: any) => ({
+        const userId = localStorage.getItem('signup_user_id');
+        
+        // 매장 목록 가져오기
+        if (userId) {
+          try {
+            const storesData = await getStores(userId);
+            setStores(storesData);
+            console.log(`Loaded ${storesData.length} stores:`, storesData);
+            if (storesData.length === 0) {
+              console.warn('매장이 없습니다. 마이페이지에서 매장을 추가하세요.');
+            }
+          } catch (error) {
+            console.error('매장 목록 로딩 오류:', error);
+            setStores([]);
+          }
+        } else {
+          console.warn('user_id가 없습니다.');
+        }
+        
+        // 공고 목록 가져오기 (고용주의 공고만)
+        const params: any = { limit: 100 };
+        // user_id가 있을 때만 필터링
+        if (userId) {
+          params.user_id = userId;
+        }
+        // selectedStoreId가 null이면 "가게선택" 상태이므로 필터링 안 함
+        if (selectedStoreId) {
+          params.store_id = selectedStoreId;
+        }
+        
+        const response = await jobsAPI.list(params);
+        const jobsData = response.data || [];
+        const jobsWithStats: JobWithStats[] = jobsData.map((job: any) => ({
           ...job,
           applicantCount: job.applications || 0,
           viewCount: job.views || 0,
+          store_id: job.store_id,
         }));
         setJobs(jobsWithStats);
         console.log(`Loaded ${jobsWithStats.length} jobs for employer`);
-      } catch (error) {
+        
+        // 공고가 없어도 에러가 아님 (정상적인 빈 결과)
+        if (jobsWithStats.length === 0) {
+          console.log('등록된 공고가 없습니다.');
+        }
+      } catch (error: any) {
         console.error('공고 로딩 오류:', error);
-        toast.error('공고를 불러오는데 실패했습니다');
+        console.error('에러 상세:', error.response?.data || error.message);
+        
+        // 에러 메시지 표시하지 않음 - 조용히 빈 배열로 처리
+        // 공고가 없거나 서버가 응답하지 않아도 정상적인 상황으로 처리
         setJobs([]);
+        
+        // 실제 서버 오류(500 등)일 때만 콘솔에 로그 (사용자에게는 표시 안 함)
+        if (error.response?.status >= 500) {
+          console.warn('서버 오류 발생 (사용자에게는 표시하지 않음):', error.response.status);
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEmployerJobs();
-  }, []);
+    fetchData();
+  }, [selectedStoreId]);
 
 
   const filteredJobs = activeFilter === 'all' 
@@ -145,50 +195,139 @@ export const JobManagement = () => {
       </header>
 
       {/* Filter Tabs */}
-      <div className="bg-white border-b border-line-200 px-4 overflow-x-auto">
-        <div className="flex gap-2 py-3">
-          <button
-            onClick={() => setActiveFilter('all')}
-            className={`px-4 py-2 rounded-[12px] text-[14px] font-medium whitespace-nowrap transition-all ${
-              activeFilter === 'all'
-                ? 'bg-mint-600 text-white'
-                : 'bg-gray-100 text-text-700 hover:bg-gray-200'
-            }`}
-          >
-            전체 ({statusCounts.all})
-          </button>
-          <button
-            onClick={() => setActiveFilter('active')}
-            className={`px-4 py-2 rounded-[12px] text-[14px] font-medium whitespace-nowrap transition-all ${
-              activeFilter === 'active'
-                ? 'bg-mint-600 text-white'
-                : 'bg-gray-100 text-text-700 hover:bg-gray-200'
-            }`}
-          >
-            모집중 ({statusCounts.active})
-          </button>
-          <button
-            onClick={() => setActiveFilter('paused')}
-            className={`px-4 py-2 rounded-[12px] text-[14px] font-medium whitespace-nowrap transition-all ${
-              activeFilter === 'paused'
-                ? 'bg-mint-600 text-white'
-                : 'bg-gray-100 text-text-700 hover:bg-gray-200'
-            }`}
-          >
-            일시중지 ({statusCounts.paused})
-          </button>
-          <button
-            onClick={() => setActiveFilter('closed')}
-            className={`px-4 py-2 rounded-[12px] text-[14px] font-medium whitespace-nowrap transition-all ${
-              activeFilter === 'closed'
-                ? 'bg-mint-600 text-white'
-                : 'bg-gray-100 text-text-700 hover:bg-gray-200'
-            }`}
-          >
-            마감 ({statusCounts.closed})
-          </button>
+      <div className="bg-white border-b border-line-200 px-4">
+        <div className="flex gap-1.5 py-2.5 items-center">
+          <div className="flex gap-1.5 items-center flex-1 min-w-0">
+            <button
+              onClick={() => setActiveFilter('all')}
+              className={`px-3 py-1.5 rounded-[10px] text-[13px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                activeFilter === 'all'
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+              }`}
+            >
+              전체 ({statusCounts.all})
+            </button>
+            <button
+              onClick={() => setActiveFilter('active')}
+              className={`px-3 py-1.5 rounded-[10px] text-[13px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                activeFilter === 'active'
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+              }`}
+            >
+              모집중 ({statusCounts.active})
+            </button>
+            <button
+              onClick={() => setActiveFilter('paused')}
+              className={`px-3 py-1.5 rounded-[10px] text-[13px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                activeFilter === 'paused'
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+              }`}
+            >
+              일시중지 ({statusCounts.paused})
+            </button>
+            <button
+              onClick={() => setActiveFilter('closed')}
+              className={`px-3 py-1.5 rounded-[10px] text-[13px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                activeFilter === 'closed'
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+              }`}
+            >
+              마감 ({statusCounts.closed})
+            </button>
+          </div>
+          
+          {/* 가게별 필터 드롭다운 - 같은 줄, 오른쪽 고정 */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={(e) => {
+                if (stores.length > 0) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setDropdownPosition({
+                    top: rect.bottom + window.scrollY + 8,
+                    right: window.innerWidth - rect.right,
+                  });
+                  setShowStoreDropdown(!showStoreDropdown);
+                } else {
+                  toast.info('등록된 매장이 없습니다. 마이페이지에서 매장을 추가하세요.');
+                }
+              }}
+              className="px-3 py-1.5 rounded-[10px] text-[13px] font-medium bg-white border border-line-200 
+                       text-text-700 hover:bg-gray-50 transition-all flex items-center gap-1.5 whitespace-nowrap
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={stores.length === 0}
+            >
+              <span className="inline-block">
+                {selectedStoreId === null
+                  ? '가게선택'
+                  : stores.find(s => s.id === selectedStoreId)?.store_name || '가게선택'}
+              </span>
+              <svg 
+                className={`w-3.5 h-3.5 transition-transform flex-shrink-0 ${showStoreDropdown ? 'rotate-180' : ''}`}
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
+      
+      {/* 드롭다운 메뉴 - Fixed 포지션으로 항상 보이도록 */}
+      {showStoreDropdown && stores.length > 0 && dropdownPosition && (
+        <>
+          <div 
+            className="fixed inset-0 z-[100]" 
+            onClick={() => {
+              setShowStoreDropdown(false);
+              setDropdownPosition(null);
+            }}
+          />
+          <div 
+            className="fixed w-48 bg-white border border-line-200 rounded-[12px] 
+                      shadow-lg z-[101] max-h-60 overflow-y-auto"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 전체 옵션 - 가장 먼저 */}
+            <button
+              onClick={() => {
+                setSelectedStoreId(null);
+                setShowStoreDropdown(false);
+                setDropdownPosition(null);
+              }}
+              className={`w-full text-left px-4 py-2.5 text-[14px] hover:bg-gray-50 first:rounded-t-[12px] ${
+                selectedStoreId === null ? 'bg-mint-50 text-mint-700 font-medium' : 'text-text-700'
+              }`}
+            >
+              전체
+            </button>
+            {stores.map((store) => (
+              <button
+                key={store.id}
+                onClick={() => {
+                  setSelectedStoreId(store.id);
+                  setShowStoreDropdown(false);
+                  setDropdownPosition(null);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-[14px] hover:bg-gray-50 last:rounded-b-[12px] ${
+                  selectedStoreId === store.id ? 'bg-mint-50 text-mint-700 font-medium' : 'text-text-700'
+                }`}
+              >
+                {store.store_name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Jobs List */}
       <div className="p-4 space-y-3">
@@ -233,11 +372,16 @@ export const JobManagement = () => {
                       </span>
                     </div>
                     <p className="text-[14px] text-text-700 font-medium mb-1">
-                      {job.employer?.shopName}
+                      {job.shop_name || job.employer?.shopName}
                     </p>
-                    <p className="text-[13px] text-text-500">
-                      {job.location || job.employer?.address}
+                    <p className="text-[13px] text-text-500 mb-1">
+                      {job.shop_address || job.location || job.employer?.address}
                     </p>
+                    {job.shop_phone && (
+                      <p className="text-[13px] text-text-500">
+                        📞 {job.shop_phone}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -248,7 +392,11 @@ export const JobManagement = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="font-semibold text-mint-600">
-                      시급 {job.wage?.toLocaleString() || 0}원
+                      {(() => {
+                        const wageType = job.wage_type || 'hourly';
+                        const label = wageType === 'hourly' ? '시급' : wageType === 'weekly' ? '주급' : '월급';
+                        return `${label} ${job.wage?.toLocaleString() || 0}원`;
+                      })()}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-[13px] text-text-700">

@@ -157,6 +157,7 @@ class EmployerSignupPayload(BaseModel):
     company_name: str
     address: str
     address_detail: Optional[str] = None
+    phone: Optional[str] = None  # 전화번호
     industry: Optional[str] = None  # 업직종
 
 
@@ -233,12 +234,12 @@ class JobCreateRequest(BaseModel):
     required_language: str  # e.g., "TOPIK 1급"
     required_visa: List[str] = []
     benefits: Optional[str] = None
-    employer_message: Optional[str] = None
     status: Optional[str] = "active"  # 'active', 'paused', 'closed'
     shop_name: Optional[str] = None
     shop_address: Optional[str] = None
     shop_address_detail: Optional[str] = None
     shop_phone: Optional[str] = None
+    store_id: Optional[str] = None  # 매장 ID
     location: Optional[str] = None
 
 
@@ -257,9 +258,13 @@ class JobResponse(BaseModel):
     required_language: str
     required_visa: List[str]
     benefits: Optional[str] = None
-    employer_message: Optional[str] = None
     created_at: str
     employer: dict = {}
+    shop_name: Optional[str] = None
+    shop_address: Optional[str] = None
+    shop_address_detail: Optional[str] = None
+    shop_phone: Optional[str] = None
+    store_id: Optional[str] = None
 
 class PostRead(BaseModel):
     id: str

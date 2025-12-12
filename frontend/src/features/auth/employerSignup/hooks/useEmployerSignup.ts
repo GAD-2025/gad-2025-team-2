@@ -10,6 +10,7 @@ const INITIAL_COMPANY_INFO: EmployerCompanyInfo = {
   detailAddress: '',
   hasNoDetailAddress: false,
   businessLicense: null,
+  phone: '',
   industry: '',
 };
 
@@ -126,6 +127,13 @@ export function useEmployerSignup() {
     }));
   };
 
+  const setPhone = (phone: string) => {
+    setState((prev) => ({
+      ...prev,
+      companyInfo: { ...prev.companyInfo, phone },
+    }));
+  };
+
   const setIndustry = (industry: string) => {
     setState((prev) => ({
       ...prev,
@@ -150,6 +158,12 @@ export function useEmployerSignup() {
       return;
     }
 
+    if (!state.companyInfo.phone || !state.companyInfo.phone.trim()) {
+      setError('전화번호를 입력해주세요.');
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!state.companyInfo.industry || !state.companyInfo.industry.trim()) {
       setError('업직종을 선택해주세요.');
       setIsSubmitting(false);
@@ -168,6 +182,7 @@ export function useEmployerSignup() {
         company_name: state.companyInfo.companyName,
         address: state.companyInfo.baseAddress,
         address_detail: state.companyInfo.hasNoDetailAddress ? undefined : state.companyInfo.detailAddress || undefined,
+        phone: state.companyInfo.phone,
         industry: state.companyInfo.industry,
       });
 
@@ -211,6 +226,7 @@ export function useEmployerSignup() {
     setBaseAddress,
     setDetailAddress,
     toggleNoDetailAddress,
+    setPhone,
     setIndustry,
     handleSubmitCompanyInfo,
   };

@@ -15,6 +15,7 @@ import { JobCreate } from './pages/employer/JobCreate';
 import { JobEdit } from './pages/employer/JobEdit';
 import { Recruitment } from './pages/employer/Recruitment';
 import { StoreAdd } from './pages/employer/StoreAdd';
+import { StoreEdit } from './pages/employer/StoreEdit';
 import { JobManagement } from './pages/employer/JobManagement';
 import { JobDetailForEmployer } from './pages/employer/JobDetailForEmployer';
 import { MessageList } from './pages/messages/List';
@@ -112,6 +113,10 @@ export const router = createBrowserRouter([
       {
         path: 'employer/store-add',
         element: <StoreAdd />,
+      },
+      {
+        path: 'employer/store-edit/:storeId',
+        element: <StoreEdit />,
       },
       {
         path: 'applicant/:id',

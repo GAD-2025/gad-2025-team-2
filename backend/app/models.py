@@ -75,7 +75,6 @@ class Job(SQLModel, table=True):
     requiredLanguage: str
     requiredVisa: str = Field(default="[]")  # JSON string
     benefits: Optional[str] = None
-    employerMessage: Optional[str] = None
     createdAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     status: str = Field(default="active")  # active, paused, closed
     views: int = Field(default=0)
@@ -86,6 +85,7 @@ class Job(SQLModel, table=True):
     shop_address: Optional[str] = None
     shop_address_detail: Optional[str] = None
     shop_phone: Optional[str] = None
+    store_id: Optional[str] = None  # 매장 ID (stores.id 참조)
 
 
 class Application(SQLModel, table=True):

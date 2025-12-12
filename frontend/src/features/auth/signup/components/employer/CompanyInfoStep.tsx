@@ -164,6 +164,34 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
           </div>
         )}
 
+        {/* 가게 전화번호 입력 */}
+        <div>
+          <label className="mb-2 flex items-center text-[15px] font-medium text-gray-700">
+            가게 전화번호 <span className="ml-1 text-red-500">*</span>
+          </label>
+          <input
+            type="tel"
+            value={formData.phone || ''}
+            onChange={(e) => {
+              // 숫자만 허용하고 하이픈 자동 추가
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              let formatted = value;
+              if (value.length > 3 && value.length <= 7) {
+                formatted = `${value.slice(0, 3)}-${value.slice(3)}`;
+              } else if (value.length > 7) {
+                formatted = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`;
+              }
+              updateFormData({ phone: formatted });
+            }}
+            placeholder="010-1234-5678"
+            maxLength={13}
+            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3.5 text-[17px] text-gray-900 placeholder-gray-400 focus:border-primary-mint focus:outline-none focus:ring-1 focus:ring-primary-mint"
+          />
+          <p className="mt-1.5 text-[13px] text-gray-500">
+            가게 연락 가능한 전화번호를 입력해주세요
+          </p>
+        </div>
+
         {/* 업직종 선택 */}
         <div>
           <label className="mb-2 flex items-center text-[15px] font-medium text-gray-700">

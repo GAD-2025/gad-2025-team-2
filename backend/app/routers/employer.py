@@ -145,6 +145,90 @@ async def get_store(user_id: str, store_id: str, session: Session = Depends(get_
     )
 
 
+@router.patch("/stores/{user_id}/{store_id}/set-main", response_model=StoreResponse)
+async def set_main_store(user_id: str, store_id: str, session: Session = Depends(get_session)):
+    """Set a store as the main store (기본가게로 설정)"""
+    # 해당 매장이 존재하고 해당 사용자의 매장인지 확인
+    statement = select(Store).where(Store.id == store_id, Store.user_id == user_id)
+    store = session.exec(statement).first()
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="매장을 찾을 수 없습니다.")
+    
+    # 다른 모든 매장의 is_main을 False로 설정
+    statement = select(Store).where(Store.user_id == user_id, Store.is_main == True)
+    existing_main_stores = session.exec(statement).all()
+    for main_store in existing_main_stores:
+        main_store.is_main = False
+        session.add(main_store)
+    
+    # 선택한 매장을 기본가게로 설정
+    store.is_main = True
+    store.updated_at = datetime.utcnow()
+    session.add(store)
+    session.commit()
+    session.refresh(store)
+    
+    return StoreResponse(
+        id=store.id,
+        user_id=store.user_id,
+        is_main=store.is_main,
+        store_name=store.store_name,
+        address=store.address,
+        address_detail=store.address_detail,
+        phone=store.phone,
+        industry=store.industry,
+        business_license=store.business_license,
+        management_role=store.management_role,
+        store_type=store.store_type,
+        created_at=store.created_at.isoformat(),
+        updated_at=store.updated_at.isoformat(),
+    )
+
+
+@router.patch("/stores/{user_id}/{store_id}", response_model=StoreResponse)
+async def update_store(user_id: str, store_id: str, payload: StoreCreate, session: Session = Depends(get_session)):
+    """Update a store"""
+    # 해당 매장이 존재하고 해당 사용자의 매장인지 확인
+    statement = select(Store).where(Store.id == store_id, Store.user_id == user_id)
+    store = session.exec(statement).first()
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="매장을 찾을 수 없습니다.")
+    
+    # 매장 정보 업데이트
+    store.store_name = payload.store_name
+    store.address = payload.address
+    store.address_detail = payload.address_detail
+    store.phone = payload.phone
+    store.industry = payload.industry
+    store.business_license = payload.business_license
+    store.management_role = payload.management_role
+    store.store_type = payload.store_type
+    # is_main은 별도 API로만 변경 가능하므로 여기서는 업데이트하지 않음
+    store.updated_at = datetime.utcnow()
+    
+    session.add(store)
+    session.commit()
+    session.refresh(store)
+    
+    return StoreResponse(
+        id=store.id,
+        user_id=store.user_id,
+        is_main=store.is_main,
+        store_name=store.store_name,
+        address=store.address,
+        address_detail=store.address_detail,
+        phone=store.phone,
+        industry=store.industry,
+        business_license=store.business_license,
+        management_role=store.management_role,
+        store_type=store.store_type,
+        created_at=store.created_at.isoformat(),
+        updated_at=store.updated_at.isoformat(),
+    )
+
+
 @router.post("/stores", response_model=StoreResponse, status_code=201)
 async def create_store(payload: StoreCreate, session: Session = Depends(get_session)):
     """Create a new store"""

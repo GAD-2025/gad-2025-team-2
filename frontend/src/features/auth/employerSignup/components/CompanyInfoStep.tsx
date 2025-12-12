@@ -29,10 +29,12 @@ interface CompanyInfoStepProps {
   baseAddress: string;
   detailAddress: string;
   hasNoDetailAddress: boolean;
+  phone: string;
   industry: string;
   onChangeCompanyName: (name: string) => void;
   onChangeBaseAddress: (address: string) => void;
   onChangeDetailAddress: (address: string) => void;
+  onChangePhone: (phone: string) => void;
   onChangeIndustry: (industry: string) => void;
   onToggleNoDetailAddress: () => void;
   onSubmit: () => void;
@@ -48,10 +50,12 @@ export function CompanyInfoStep({
   baseAddress,
   detailAddress,
   hasNoDetailAddress,
+  phone,
   industry,
   onChangeCompanyName,
   onChangeBaseAddress,
   onChangeDetailAddress,
+  onChangePhone,
   onChangeIndustry,
   onToggleNoDetailAddress,
   onSubmit,
@@ -64,6 +68,7 @@ export function CompanyInfoStep({
   const canProceed =
     companyName.trim().length > 0 &&
     baseAddress.trim() !== '' &&
+    phone.trim() !== '' &&
     industry.trim() !== '' &&
     (hasNoDetailAddress || detailAddress.trim() !== '');
 
@@ -222,6 +227,35 @@ export function CompanyInfoStep({
           >
             상세주소 없음
           </label>
+        </div>
+
+        {/* 전화번호 입력 */}
+        <div>
+          <label htmlFor="phone" className="mb-2 block text-sm font-medium text-gray-900">
+            가게 전화번호 <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            value={phone || ''}
+            onChange={(e) => {
+              // 숫자만 허용하고 하이픈 자동 추가
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              let formatted = value;
+              if (value.length > 3 && value.length <= 7) {
+                formatted = `${value.slice(0, 3)}-${value.slice(3)}`;
+              } else if (value.length > 7) {
+                formatted = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`;
+              }
+              onChangePhone(formatted);
+            }}
+            placeholder="010-1234-5678"
+            maxLength={13}
+            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-base transition focus:border-emerald-500 focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            가게 연락 가능한 전화번호를 입력해주세요
+          </p>
         </div>
 
         {/* 업직종 선택 */}

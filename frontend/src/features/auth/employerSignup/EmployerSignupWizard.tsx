@@ -32,6 +32,7 @@ export default function EmployerSignupWizard() {
     setBaseAddress,
     setDetailAddress,
     toggleNoDetailAddress,
+    setPhone,
     setIndustry,
     handleSubmitCompanyInfo,
   } = useEmployerSignup();
@@ -113,10 +114,12 @@ export default function EmployerSignupWizard() {
           baseAddress={state.companyInfo.baseAddress}
           detailAddress={state.companyInfo.detailAddress}
           hasNoDetailAddress={state.companyInfo.hasNoDetailAddress}
+          phone={state.companyInfo.phone || ''}
           industry={state.companyInfo.industry || ''}
           onChangeCompanyName={setCompanyName}
           onChangeBaseAddress={setBaseAddress}
           onChangeDetailAddress={setDetailAddress}
+          onChangePhone={setPhone}
           onChangeIndustry={setIndustry}
           onToggleNoDetailAddress={toggleNoDetailAddress}
           onSubmit={handleSubmitCompanyInfo}

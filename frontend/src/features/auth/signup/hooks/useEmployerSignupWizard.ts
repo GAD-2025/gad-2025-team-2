@@ -12,6 +12,7 @@ export interface EmployerSignupData {
   address: string;
   addressDetail: string;
   noDetailAddress: boolean;
+  phone: string;
   industry: string;
 }
 
@@ -32,6 +33,7 @@ export function useEmployerSignupWizard() {
     address: '',
     addressDetail: '',
     noDetailAddress: false,
+    phone: '',
     industry: '',
   });
 
@@ -126,6 +128,7 @@ export function useEmployerSignupWizard() {
         company_name: formData.companyName,
         address: formData.address,
         address_detail: addressDetail,
+        phone: formData.phone || '',
         industry: formData.industry || '',
       };
       console.log('회원가입 데이터:', signupPayload);
@@ -158,7 +161,7 @@ export function useEmployerSignupWizard() {
         // 사업자 등록증이 등록되어야 함 (businessType이 'business'여야 함)
         return formData.businessType === 'business';
       case 3:
-        return formData.companyName.length > 0 && formData.address.length > 0 && formData.industry.length > 0 && (formData.addressDetail.length > 0 || formData.noDetailAddress);
+        return formData.companyName.length > 0 && formData.address.length > 0 && formData.phone.length > 0 && formData.industry.length > 0 && (formData.addressDetail.length > 0 || formData.noDetailAddress);
       default:
         return false;
     }

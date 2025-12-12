@@ -144,7 +144,6 @@ export const JobEdit = () => {
         required_language: formData.requiredLanguage,
         required_visa: formData.requiredVisa,
         benefits: formData.preferredSkills || null,
-        employer_message: formData.employerMessage || null,
       };
 
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -434,14 +433,14 @@ export const JobEdit = () => {
           </div>
         </div>
 
-        {/* Employer Message Section */}
+        {/* Job Description Section */}
         <div className="bg-white rounded-[16px] p-5 shadow-card">
-          <h3 className="text-[16px] font-bold text-text-900 mb-4">사장님의 한마디</h3>
+          <h3 className="text-[16px] font-bold text-text-900 mb-4">공고설명</h3>
           
           <textarea
             value={formData.employerMessage}
             onChange={(e) => handleChange('employerMessage', e.target.value)}
-            placeholder="지원자들에게 전하고 싶은 메시지를 작성해주세요"
+            placeholder="공고에 대한 상세 설명을 작성해주세요"
             rows={4}
             className="w-full px-4 py-3 bg-background rounded-[12px] border border-line-200
                      text-[14px] text-text-900 placeholder:text-text-500 resize-none

@@ -94,6 +94,11 @@ export interface Job {
   applications?: number;
   applicationsCount?: number;
   isTrusted?: boolean;
+  shop_name?: string;
+  shop_address?: string;
+  shop_address_detail?: string;
+  shop_phone?: string;
+  store_id?: string;
 }
 
 export interface Message {

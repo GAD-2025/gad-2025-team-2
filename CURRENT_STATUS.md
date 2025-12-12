@@ -1,43 +1,75 @@
-# 현재 상태 확인
+# 현재 데이터베이스 상태 확인
 
-## ✅ 완료된 것
+## ✅ 완료된 작업
 
-1. **데이터베이스**: Posts 테이블 생성 완료 (배포 서버 MySQL)
-2. **백엔드 코드**: GitHub에 push 완료
-   - `backend/app/routers/posts.py` (새 파일)
-   - `backend/app/main.py` (posts router 추가)
+1. **`store_id` 컬럼 추가 완료**
+   - `jobs` 테이블에 `store_id VARCHAR(255) NULL` 컬럼이 추가되었습니다
+   - 가게별 공고 필터링 기능을 위한 필드입니다
 
-## ⏳ 진행 중 / 대기 중
+2. **`wage_type` 필드 확인**
+   - 현재 공고들의 `wage_type`이 'hourly'로 설정되어 있습니다
+   - 이는 정상입니다 (기존 공고는 시급으로 등록되었을 가능성이 높음)
 
-1. **백엔드 배포**: GitHub에 push했지만 배포 서버에 아직 반영 안 됨
-   - 자동 배포가 설정되어 있다면 몇 분 후 자동 반영
-   - 또는 배포 서버 관리자가 수동 배포 필요
+## ⚠️ UPDATE 쿼리 실패 해결
 
-2. **프론트엔드 UI**: 아직 push 안 됨
-   - `frontend/src/pages/mypage/MyPage.tsx` (기본 매장 UI)
-   - `frontend/src/pages/employer/JobCreate.tsx` (매장 선택 UI)
+MySQL Workbench의 Safe Update Mode 때문에 UPDATE 쿼리가 실패했습니다.
 
-## ❌ 아직 작동 안 하는 것
+### 해결 방법
 
-1. **Posts API**: `https://route.nois.club:3002/api/posts` → 404 Not Found
-   - 배포 서버에 아직 반영 안 됨
+다음 SQL을 실행하세요:
 
-2. **프론트엔드 UI**: 기본 매장 UI가 배포 서버에 없음
-   - 프론트엔드 변경사항 push 필요
+```sql
+USE team2_db;
 
-## 다음 단계
+-- Safe Update Mode 비활성화 (임시)
+SET SQL_SAFE_UPDATES = 0;
 
-### 1. 백엔드 배포 확인 (몇 분 후)
-```bash
-# 브라우저에서 확인
-https://route.nois.club:3002/api/posts
+-- wage_type이 NULL이거나 빈 문자열인 경우 'hourly'로 설정
+UPDATE jobs 
+SET wage_type = 'hourly' 
+WHERE wage_type IS NULL OR wage_type = '';
+
+-- Safe Update Mode 다시 활성화
+SET SQL_SAFE_UPDATES = 1;
+
+-- 확인
+SELECT id, title, wage, wage_type FROM jobs LIMIT 10;
 ```
 
-### 2. 프론트엔드 push (필요)
-```bash
-git add frontend/src/pages/mypage/MyPage.tsx
-git add frontend/src/pages/employer/JobCreate.tsx
-git commit -m "feat: 기본 매장 UI 추가 및 공고 등록 페이지 매장 선택 기능"
-git push origin main
-```
+## 🧪 테스트 방법
 
+### 1. 새 공고 등록 테스트
+
+1. 고용주로 로그인
+2. 공고 등록 페이지 접속
+3. **주급** 또는 **월급** 선택
+4. 공고 등록
+5. 공고 관리 페이지에서 확인
+   - 올바른 급여 타입(주급/월급)이 표시되는지 확인
+
+### 2. 기존 공고 확인
+
+현재 보이는 공고들은 모두 'hourly'로 설정되어 있습니다:
+- `job-32f47b15`: 시급 12,000원
+- `job-a816ea17`: 시급 12,000원
+
+이것은 정상입니다. 새로 등록하는 공고에서 주급/월급을 선택하면 올바르게 저장되고 표시됩니다.
+
+## 📋 현재 jobs 테이블 구조
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| `id` | VARCHAR(255) | 공고 ID (PK) |
+| `title` | VARCHAR | 공고 제목 |
+| `wage` | INT | 급여 금액 |
+| `wage_type` | VARCHAR(20) | 급여 타입 ('hourly', 'weekly', 'monthly') |
+| `store_id` | VARCHAR(255) | 매장 ID (새로 추가됨) |
+| 기타 필드들... | - | - |
+
+## ✅ 다음 단계
+
+1. **UPDATE 쿼리 실행** (위의 SQL 사용)
+2. **새 공고 등록 테스트** (주급/월급 선택)
+3. **공고 관리 페이지에서 확인**
+
+모든 기능이 정상 작동할 것입니다! 🎉

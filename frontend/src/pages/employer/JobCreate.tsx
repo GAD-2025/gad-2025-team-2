@@ -152,9 +152,15 @@ export const JobCreate = () => {
         // 매장 목록 가져오기
         try {
           const storesData = await getStores(userId);
-          setStores(storesData);
+          // 기본가게가 가장 위로 오도록 정렬 (백엔드에서 이미 정렬되지만, 프론트엔드에서도 확인)
+          const sortedStores = [...storesData].sort((a, b) => {
+            if (a.is_main && !b.is_main) return -1;
+            if (!a.is_main && b.is_main) return 1;
+            return 0;
+          });
+          setStores(sortedStores);
           // 대표가게가 있으면 자동 선택
-          const mainStore = storesData.find(s => s.is_main);
+          const mainStore = sortedStores.find(s => s.is_main);
           if (mainStore) {
             setSelectedStore(mainStore);
             // 매장 정보를 폼에 자동 입력
@@ -360,6 +366,7 @@ export const JobCreate = () => {
         shop_address: selectedStore.address,
         shop_address_detail: selectedStore.address_detail || '',
         shop_phone: selectedStore.phone,
+        store_id: selectedStore.id, // 매장 ID 추가
         location: selectedStore.address, // location 필드에도 주소 설정
         description: formData.employerMessage || '자세한 내용은 문의 바랍니다.',
         category: finalIndustry,
@@ -372,8 +379,15 @@ export const JobCreate = () => {
         required_language: formData.requiredLanguage,
         required_visa: formData.requiredVisa,
         benefits: formData.preferredSkills || null,
-        employer_message: formData.employerMessage || null,
       };
+
+      // 디버깅: 선택한 매장 정보 확인
+      console.log('=== 공고 등록 데이터 ===');
+      console.log('선택한 매장:', selectedStore);
+      console.log('전송할 jobData:', jobData);
+      console.log('shop_name:', jobData.shop_name);
+      console.log('shop_address:', jobData.shop_address);
+      console.log('store_id:', jobData.store_id);
 
       if (isDraft) {
         // TODO: Implement draft save functionality
@@ -393,7 +407,9 @@ export const JobCreate = () => {
       });
 
       if (!response.ok) {
-        throw new Error('공고 등록에 실패했습니다');
+        const errorData = await response.json().catch(() => ({ detail: '알 수 없는 오류가 발생했습니다' }));
+        console.error('공고 등록 실패 응답:', errorData);
+        throw new Error(errorData.detail || '공고 등록에 실패했습니다');
       }
 
       const result = await response.json();
@@ -401,9 +417,10 @@ export const JobCreate = () => {
       
       toast.success('공고가 등록되었습니다');
       navigate('/job-management');
-    } catch (error) {
+    } catch (error: any) {
       console.error('공고 등록 실패:', error);
-      toast.error('공고 등록에 실패했습니다');
+      const errorMessage = error.message || '공고 등록에 실패했습니다';
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -967,14 +984,14 @@ export const JobCreate = () => {
           </div>
         </div>
 
-        {/* Employer Message Section */}
+        {/* Job Description Section */}
         <div className="bg-white rounded-[16px] p-5 shadow-card">
-          <h3 className="text-[16px] font-bold text-text-900 mb-4">사장님의 한마디</h3>
+          <h3 className="text-[16px] font-bold text-text-900 mb-4">공고설명</h3>
           
           <textarea
             value={formData.employerMessage}
             onChange={(e) => handleChange('employerMessage', e.target.value)}
-            placeholder="지원자들에게 전하고 싶은 메시지를 작성해주세요"
+            placeholder="공고에 대한 상세 설명을 작성해주세요"
             rows={4}
             className="w-full px-4 py-3 bg-background rounded-[12px] border border-line-200
                      text-[14px] text-text-900 placeholder:text-text-500 resize-none

@@ -41,7 +41,7 @@ export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
         <svg className="w-[14px] h-[14px] text-text-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
-        <span className="text-[13px] text-text-700">{job.employer.shopName}</span>
+        <span className="text-[13px] text-text-700">{job.shop_name || job.employer.shopName}</span>
       </div>
 
       <div className="flex items-center gap-1.5 mb-3">
@@ -50,14 +50,18 @@ export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
         <span className="text-[13px] text-text-700 line-clamp-1">
-          {job.location || job.employer.address.split(' ').slice(0, 2).join(' ')}
+          {job.shop_address || job.location || (job.employer.address ? job.employer.address.split(' ').slice(0, 2).join(' ') : '')}
         </span>
       </div>
 
       {/* Wage */}
       <div className="mb-3">
         <span className="text-[15px] font-bold text-mint-600">
-          {job.wage_type === 'hourly' ? '시급' : job.wage_type === 'weekly' ? '주급' : '월급'} {job.wage.toLocaleString()}원
+          {(() => {
+            const wageType = job.wage_type || 'hourly';
+            const label = wageType === 'hourly' ? '시급' : wageType === 'weekly' ? '주급' : '월급';
+            return `${label} ${job.wage.toLocaleString()}원`;
+          })()}
         </span>
       </div>
 

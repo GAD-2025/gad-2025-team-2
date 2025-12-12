@@ -31,6 +31,8 @@ export const jobsAPI = {
     industry?: string;
     languageLevel?: string;
     visaType?: string;
+    store_id?: string;
+    user_id?: string;
     sort?: string;
     limit?: number;
     offset?: number;
@@ -232,6 +234,37 @@ export async function getStore(userId: string, storeId: string): Promise<StoreDa
     throw new Error('Failed to fetch store');
   }
   return response.json();
+}
+
+export async function updateStore(userId: string, storeId: string, payload: StoreCreatePayload): Promise<StoreData> {
+  try {
+    const url = `${API_BASE_URL}/employer/stores/${userId}/${storeId}`;
+    console.log('Updating store with payload:', payload);
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { detail: '매장 수정에 실패했습니다' };
+      }
+      const errorMessage = errorData.detail || '매장 수정에 실패했습니다';
+      throw new Error(errorMessage);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Store update error:', error);
+    throw error;
+  }
 }
 
 export async function createStore(payload: StoreCreatePayload): Promise<StoreData> {

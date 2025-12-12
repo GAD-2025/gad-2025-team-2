@@ -206,15 +206,6 @@ export const JobDetailForEmployer = () => {
           </div>
         )}
 
-        {/* Employer Message */}
-        {job.employerMessage && (
-          <div className="bg-mint-50 rounded-[16px] p-5 border border-mint-200">
-            <h2 className="text-[16px] font-bold text-text-900 mb-2">사장님의 한마디</h2>
-            <p className="text-[14px] text-text-700 leading-relaxed whitespace-pre-wrap">
-              {job.employerMessage}
-            </p>
-          </div>
-        )}
 
         {/* Benefits */}
         {job.benefits && (

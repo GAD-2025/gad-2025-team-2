@@ -117,36 +117,26 @@ export const JobDetail = () => {
               </div>
             )}
           </div>
-          <p className="text-[14px] text-text-700 mb-2">{job.employer.industry}</p>
+          <p className="text-[14px] text-text-700 mb-2">{job.category || job.employer.industry}</p>
           <div className="flex items-center gap-1 text-text-700 text-[14px]">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>{job.employer.address}</span>
+            <span>{job.shop_address || job.location || job.employer.address}</span>
           </div>
         </div>
 
-        {job.employerMessage && (
-          <div className="bg-mint-100 rounded-[16px] p-4 mb-5">
-            <div className="flex items-start gap-2">
-              <span className="text-[18px] flex-shrink-0">💬</span>
-              <div className="flex-1">
-                <p className="text-[14px] font-bold text-text-900 mb-2">사장님의 한마디</p>
-                <p className="text-[14px] text-text-900 leading-relaxed">
-                  {job.employerMessage}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="mb-6">
           <h2 className="text-[18px] font-bold text-text-900 mb-4">근무 조건</h2>
           <div className="space-y-0 bg-white rounded-[16px] p-4 shadow-card">
             <InfoRow 
               label="급여" 
-              value={`${job.wage_type === 'hourly' ? '시급' : job.wage_type === 'weekly' ? '주급' : '월급'} ${job.wage.toLocaleString()}원`} 
+              value={`${(() => {
+                const wageType = job.wage_type || 'hourly';
+                return wageType === 'hourly' ? '시급' : wageType === 'weekly' ? '주급' : '월급';
+              })()} ${job.wage.toLocaleString()}원`} 
               highlight 
             />
             <InfoRow label="근무기간" value={Array.isArray(job.workDays) ? `주 ${job.workDays.length}일, 6시간` : job.workDays} />
@@ -200,8 +190,9 @@ export const JobDetail = () => {
           
           <button
             onClick={() => {
-              if (job.employer.phone) {
-                window.location.href = `tel:${job.employer.phone}`;
+              const phone = job.shop_phone || job.employer.phone;
+              if (phone) {
+                window.location.href = `tel:${phone}`;
               } else {
                 toast.info('전화번호 정보가 없습니다');
               }

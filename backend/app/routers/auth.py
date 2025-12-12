@@ -67,6 +67,9 @@ async def signin(request: SignInRequest, session: Session = Depends(get_session)
 @router.post("/signin/new")
 async def signin_new(request: NewSignInRequest, session: Session = Depends(get_session)):
     """New signin endpoint for identifier (email or phone) + password + role"""
+    from fastapi import Response
+    from fastapi.responses import JSONResponse
+    
     try:
         # 전화번호에서 하이픈(-) 제거
         identifier = request.identifier.replace('-', '')
@@ -344,6 +347,11 @@ async def signup_employer(request: EmployerSignupPayload, session: Session = Dep
         address_detail = request.address_detail if request.address_detail and request.address_detail.strip() else None
         # industry가 있으면 사용, 없으면 기본값 "기타"
         industry = request.industry if request.industry and request.industry.strip() else "기타"
+        # 전화번호 처리 (하이픈 제거)
+        phone = ""
+        if request.phone and request.phone.strip():
+            phone = request.phone.replace('-', '').strip()
+        
         main_store = Store(
             id=store_id,
             user_id=user_id,
@@ -351,7 +359,7 @@ async def signup_employer(request: EmployerSignupPayload, session: Session = Dep
             store_name=request.company_name.strip(),
             address=request.address.strip(),
             address_detail=address_detail,
-            phone="",  # 회원가입 시 전화번호는 없을 수 있음
+            phone=phone,
             industry=industry,
             business_license=None,
             management_role="본사 관리자",  # 기본값

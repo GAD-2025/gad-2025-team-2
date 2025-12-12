@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 2000, // 2초 타임아웃 - 빠르게 실패하고 Mock 데이터로 fallback
+  timeout: 10000, // 10초 타임아웃
   headers: {
     'Content-Type': 'application/json',
   },

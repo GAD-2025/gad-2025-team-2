@@ -17,6 +17,7 @@ export const MyPage = () => {
   const [signupUserData, setSignupUserData] = useState<SignupUserData | null>(null);
   const [profileData, setProfileData] = useState<JobSeekerProfileData | null>(null);
   const [stores, setStores] = useState<StoreData[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
 
   // Load user data from database
   useEffect(() => {
@@ -223,25 +224,87 @@ export const MyPage = () => {
               {stores.length > 0 ? (
                 <>
                   {stores.map((store) => (
-                    <div
-                      key={store.id}
-                      className="relative bg-white rounded-[12px] border border-line-200 p-4"
-                    >
-                      {/* 기본 매장 태그 - 오른쪽 상단 */}
-                      {store.is_main && (
-                        <span className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-full">
-                          기본가게
-                        </span>
+                    <div key={store.id}>
+                      <div
+                        onClick={() => {
+                          if (!store.is_main) {
+                            setSelectedStoreId(selectedStoreId === store.id ? null : store.id);
+                          }
+                        }}
+                        className={`relative bg-white rounded-[12px] border p-4 cursor-pointer transition-all ${
+                          selectedStoreId === store.id && !store.is_main
+                            ? 'border-mint-600 shadow-md'
+                            : 'border-line-200'
+                        }`}
+                      >
+                        {/* 기본 매장 태그 - 오른쪽 상단 */}
+                        {store.is_main && (
+                          <span className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-full">
+                            기본가게
+                          </span>
+                        )}
+                        {/* 가게 이름 - 위에 표시 */}
+                        <h3 className="text-[16px] font-bold text-text-900 mb-2 pr-20">
+                          {store.store_name}
+                        </h3>
+                        {/* 가게 위치 - 아래에 표시 */}
+                        <p className="text-[13px] text-text-700">
+                          {store.address}
+                          {store.address_detail && ` ${store.address_detail}`}
+                        </p>
+                      </div>
+                      
+                      {/* 선택된 매장에 대한 액션 버튼들 (기본가게가 아닌 경우만) */}
+                      {selectedStoreId === store.id && !store.is_main && (
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+                                const userId = localStorage.getItem('signup_user_id');
+                                if (!userId) {
+                                  toast.error('로그인 정보를 찾을 수 없습니다.');
+                                  return;
+                                }
+                                
+                                const response = await fetch(`${API_BASE_URL}/employer/stores/${userId}/${store.id}/set-main`, {
+                                  method: 'PATCH',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                });
+                                
+                                if (!response.ok) {
+                                  throw new Error('기본가게 설정에 실패했습니다');
+                                }
+                                
+                                toast.success('기본가게로 설정되었습니다');
+                                setSelectedStoreId(null);
+                                
+                                // 매장 목록 다시 불러오기
+                                const storesData = await getStores(userId);
+                                setStores(storesData);
+                              } catch (error: any) {
+                                console.error('기본가게 설정 실패:', error);
+                                toast.error(error.message || '기본가게 설정에 실패했습니다');
+                              }
+                            }}
+                            className="flex-1 px-4 py-2 bg-mint-600 text-white rounded-[8px] text-[13px] font-medium hover:bg-mint-700 transition-colors"
+                          >
+                            기본가게로 등록
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/employer/store-edit/${store.id}`);
+                            }}
+                            className="flex-1 px-4 py-2 bg-gray-100 text-text-900 rounded-[8px] text-[13px] font-medium hover:bg-gray-200 transition-colors"
+                          >
+                            가게 정보 수정
+                          </button>
+                        </div>
                       )}
-                      {/* 가게 이름 - 위에 표시 */}
-                      <h3 className="text-[16px] font-bold text-text-900 mb-2 pr-20">
-                        {store.store_name}
-                      </h3>
-                      {/* 가게 위치 - 아래에 표시 */}
-                      <p className="text-[13px] text-text-700">
-                        {store.address}
-                        {store.address_detail && ` ${store.address_detail}`}
-                      </p>
                     </div>
                   ))}
                 </>
