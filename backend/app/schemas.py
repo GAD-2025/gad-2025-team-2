@@ -257,3 +257,10 @@ class JobResponse(BaseModel):
     employer_message: Optional[str] = None
     created_at: str
     employer: dict = {}
+
+class PostRead(BaseModel):
+    id: str
+    title: str
+    content: str
+    author: str
+    created_at: datetime
