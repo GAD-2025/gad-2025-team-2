@@ -365,7 +365,7 @@ export const MyPage = () => {
               if (isEmployer) {
                 navigate("/employer/coming-soon", { state: { message: "새로운 메시지 기능을 준비 중입니다.", iconType: "message" } });
               } else {
-                navigate("/messages");
+                navigate("/employer/coming-soon", { state: { message: "새로운 메시지 기능을 준비 중입니다.", iconType: "message" } });
               }
             }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"
@@ -409,6 +409,8 @@ export const MyPage = () => {
             onClick={() => {
               if (isEmployer) {
                 navigate("/employer/coming-soon", { state: { message: "더욱 개인화된 알림 경험을 제공하기 위해\n알림 설정 페이지를 준비하고 있습니다.", iconType: "bell" } });
+              } else {
+                navigate("/employer/coming-soon", { state: { message: "더욱 개인화된 알림 경험을 제공하기 위해\n알림 설정 페이지를 준비하고 있습니다.", iconType: "bell" } });
               }
             }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"
@@ -451,8 +453,9 @@ export const MyPage = () => {
             onClick={() => {
               if (isEmployer) {
                 navigate("/employer/coming-soon", { state: { message: "사용자에게 더 편리한 언어 설정 기능을 제공하기 위해\n페이지를 준비하고 있습니다.", iconType: "language" } });
+              } else {
+                navigate("/employer/coming-soon", { state: { message: "사용자에게 더 편리한 언어 설정 기능을 제공하기 위해\n페이지를 준비하고 있습니다.", iconType: "language" } });
               }
-              // You can add an else condition for other user roles or a generic coming soon page
             }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"
           >
@@ -494,8 +497,9 @@ export const MyPage = () => {
             onClick={() => {
               if (isEmployer) {
                 navigate("/employer/help");
+              } else {
+                navigate("/jobseeker/help");
               }
-              // You can add an else condition for other user roles if needed
             }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >

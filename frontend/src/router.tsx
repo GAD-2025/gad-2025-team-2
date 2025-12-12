@@ -39,6 +39,7 @@ import { MySchedule } from './pages/jobseeker/MySchedule';
 import { ResumeEdit } from './pages/jobseeker/ResumeEdit';
 import { NotFound } from './pages/NotFound';
 import { EmployerHelp } from './pages/employer/Help';
+import { JobSeekerHelp } from './pages/jobseeker/Help';
 import { CommunityDetail } from './pages/network/CommunityDetail';
 import { ComingSoon } from './pages/employer/ComingSoon';
 
@@ -74,6 +75,10 @@ export const router = createBrowserRouter([
       {
         path: 'jobseeker/home',
         element: <JobSeekerHome />,
+      },
+      {
+        path: 'jobseeker/help',
+        element: <JobSeekerHelp />,
       },
       {
         path: 'job/:id',
