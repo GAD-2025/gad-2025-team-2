@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { LevelTestIntro } from './LevelTestIntro';
+import { LESSONS_DATA } from '@/data/lessons';
 
 interface Question {
   id: number;
@@ -149,6 +150,11 @@ export const LevelTest = () => {
 
     // Save the result to localStorage
     localStorage.setItem('userLevel', level);
+
+    // Reset all lesson progress
+    LESSONS_DATA.forEach(lesson => {
+      localStorage.removeItem(`lesson-progress-${lesson.id}`);
+    });
 
     return (
       <div className="min-h-screen bg-background flex flex-col">

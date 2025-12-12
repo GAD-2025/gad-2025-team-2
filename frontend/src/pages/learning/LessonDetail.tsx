@@ -157,11 +157,7 @@ export const LessonDetail = () => {
                   className="bg-white rounded-[16px] p-4 shadow-card flex items-center 
                            justify-between hover:shadow-soft transition-all cursor-pointer"
                   onClick={() => {
-                    if (lesson.id === '1' && (topic.id === '1' || topic.id === '2')) {
-                      navigate(`/learning/lesson/${lesson.id}/topic/${topic.id}`);
-                    } else {
-                      alert('준비 중입니다.');
-                    }
+                    navigate(`/learning/lesson/${lesson.id}/topic/${topic.id}`);
                   }}
                 >
                   <div className="flex items-center gap-3 flex-1">

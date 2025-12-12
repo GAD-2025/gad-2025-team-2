@@ -63,21 +63,6 @@ export const LESSONS_DATA: Lesson[] = [
     topics: [
       { id: '1', title: '1강. 비즈니스 인사와 소개' },
       { id: '2', title: '2강. 이메일 작성 기초' },
-      { id: '3', title: '3강. 전화 응대 표현' },
-      { id: '4', 'title': '4강. 회의 진행 표현' },
-      { id: '5', 'title': '5강. 보고서 작성 연습' },
     ]
-  },
-  {
-    id: '5',
-    title: '고급 문법',
-    level: 'Lv.4 상급',
-    description: '복잡한 문장 구조와 고급 문법을 학습합니다.',
-    objectives: ['뉴스 기사 읽기', '논리적으로 글쓰기'],
-    duration: '약 4주',
-    topics: [
-      { id: '1', title: '1강. 피동 표현' },
-      { id: '2', title: '2강. 사동 표현' },
-    ],
   },
 ];
