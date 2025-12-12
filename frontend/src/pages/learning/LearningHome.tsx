@@ -62,24 +62,10 @@ export const LearningHome = () => {
     if (level === selectedLevel) {
       return 'bg-mint-600 text-white';
     }
-    switch (level) {
-      case 'Lv.1 기초': return 'bg-mint-100 text-mint-700 border border-mint-200 hover:bg-mint-200';
-      case 'Lv.2 초급': return 'bg-mint-200 text-mint-800 border border-mint-300 hover:bg-mint-300';
-      case 'Lv.3 중급': return 'bg-mint-300 text-mint-900 border border-mint-400 hover:bg-mint-400';
-      case 'Lv.4 상급': return 'bg-mint-500 text-white border border-mint-600 hover:bg-mint-600';
-      default: return 'bg-white text-text-700 border border-line-200 hover:border-mint-600';
-    }
+    return 'bg-mint-100 text-mint-700';
   };
 
-  const getLevelTagStyle = (level: string) => {
-    switch (level) {
-      case 'Lv.1 기초': return 'bg-mint-100 text-mint-700';
-      case 'Lv.2 초급': return 'bg-mint-200 text-mint-800';
-      case 'Lv.3 중급': return 'bg-mint-300 text-mint-900';
-      case 'Lv.4 상급': return 'bg-mint-500 text-white';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -157,7 +143,7 @@ export const LearningHome = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-[10px] py-[4px] rounded-[8px] text-[12px] font-medium ${getLevelTagStyle(lesson.level)}`}>
+                        <span className={`px-[10px] py-[4px] rounded-[8px] text-[12px] font-medium bg-mint-100 text-mint-700`}>
                           {lesson.level}
                         </span>
                       </div>
@@ -185,7 +171,7 @@ export const LearningHome = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-[10px] py-[4px] rounded-[8px] text-[12px] font-medium ${getLevelTagStyle(lesson.level)}`}>
+                      <span className={`px-[10px] py-[4px] rounded-[8px] text-[12px] font-medium bg-mint-100 text-mint-700`}>
                         {lesson.level}
                       </span>
                       {lesson.completed && (
