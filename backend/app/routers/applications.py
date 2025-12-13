@@ -16,6 +16,7 @@ from app.models import (
     JobSeekerProfile,
     EmployerProfile,
 )
+from app.models import Store  # 매장 정보로 공고 소유주 조회
 from app.schemas import ApplicationCreate, ApplicationUpdate
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -181,37 +182,33 @@ async def list_applications(
     print(f"  seekerId: {seekerId}")
     print(f"  jobId: {jobId}")
     
-    # If userId is provided for employer, find employerId
-    if userId and not employerId and not seekerId:
+    # If userId(가입 고용주 ID)로 조회하면 소유 공고(매장/사업자 모두) 기준으로 필터링
+    # employerId가 이미 넘어오면 그대로 사용
+    owned_job_ids: list[str] = []
+    if userId and not seekerId:
         try:
-            print(f"[DEBUG] list_applications - userId로 employerId 찾기 시작: {userId}")
+            # 1) 매장 기반: user_id가 소유한 store 목록 → 해당 store_id의 공고
+            store_ids = [s.id for s in session.exec(select(Store).where(Store.user_id == userId)).all()]
+            if store_ids:
+                job_ids_by_store = [j.id for j in session.exec(select(Job).where(Job.store_id.in_(store_ids))).all()]
+                owned_job_ids.extend(job_ids_by_store)
+                print(f"[DEBUG] list_applications - store 기반 공고 수: {len(job_ids_by_store)}")
             
-            # Get employer profile
-            profile_stmt = select(EmployerProfile).where(EmployerProfile.user_id == userId)
-            profile = session.exec(profile_stmt).first()
-            print(f"[DEBUG] list_applications - employer profile 조회 결과: {profile.id if profile else 'NOT FOUND'}")
+            # 2) 사업자 기반: employer_profiles.user_id == userId → employer.businessNo == profile.id → 그 employerId의 공고
+            profile = session.exec(select(EmployerProfile).where(EmployerProfile.user_id == userId)).first()
+            if profile:
+                employer = session.exec(select(Employer).where(Employer.businessNo == profile.id)).first()
+                if employer:
+                    employerId = employer.id  # 아래 employerId 필터 재사용
+                    job_ids_by_employer = [j.id for j in session.exec(select(Job).where(Job.employerId == employer.id)).all()]
+                    owned_job_ids.extend(job_ids_by_employer)
+                    print(f"[DEBUG] list_applications - employer 기반 공고 수: {len(job_ids_by_employer)}")
             
-            if not profile:
-                print(f"[ERROR] list_applications - employer_profile을 찾을 수 없음: userId={userId}")
-                print(f"[ERROR] list_applications - employer_profiles 테이블 확인 필요")
-                return []
-            
-            # Find employer by businessNo matching profile.id
-            employer_stmt = select(Employer).where(Employer.businessNo == profile.id)
-            employer = session.exec(employer_stmt).first()
-            print(f"[DEBUG] list_applications - employer 조회 결과: {employer.id if employer else 'NOT FOUND'}")
-            print(f"[DEBUG] list_applications - profile.id (businessNo): {profile.id}")
-            
-            if not employer:
-                print(f"[ERROR] list_applications - employer를 찾을 수 없음: businessNo={profile.id}")
-                print(f"[ERROR] list_applications - employers 테이블에 businessNo={profile.id}인 레코드가 없음")
-                print(f"[ERROR] list_applications - 공고를 등록하면 자동으로 생성되어야 함")
-                return []
-            
-            employerId = employer.id
-            print(f"[DEBUG] list_applications - employerId 설정 완료: {employerId}")
+            # 중복 제거
+            owned_job_ids = list(dict.fromkeys(owned_job_ids))
+            print(f"[DEBUG] list_applications - 최종 owned_job_ids 수: {len(owned_job_ids)}")
         except Exception as e:
-            print(f"[ERROR] Failed to find employer for userId {userId}: {e}")
+            print(f"[ERROR] list_applications - userId 기반 공고 조회 실패: {e}")
             import traceback
             traceback.print_exc()
             return []
@@ -246,6 +243,10 @@ async def list_applications(
             import traceback
             traceback.print_exc()
             return []
+    # userId로 확보한 owned_job_ids가 있다면 추가 필터 적용
+    if userId and owned_job_ids:
+        conditions = [Application.jobId == jid for jid in owned_job_ids]
+        statement = statement.where(or_(*conditions))
     
     try:
         applications = session.exec(statement).all()
