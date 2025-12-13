@@ -239,8 +239,8 @@ async def list_applications(
                 return []
             
             # Use or_ to create IN clause equivalent (more compatible with SQLModel)
-            conditions = [Application.jobId == job_id for job_id in job_ids]
-            statement = statement.where(or_(*conditions))
+            if job_ids:
+                statement = statement.where(Application.jobId.in_(job_ids))
             print(f"[DEBUG] list_applications - 공고 필터 적용 완료: {len(job_ids)}개 공고")
         except Exception as e:
             print(f"[ERROR] Failed to filter by employerId {employerId}: {e}")

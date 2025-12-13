@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 interface Applicant {
-  id: string;
+  id: string; // seekerId
+  applicationId: string;
   name: string;
   age: number;
   nationality: string;
@@ -76,7 +77,8 @@ export const Recruitment = () => {
           } catch {}
 
           return {
-            id: app.applicationId,
+            id: app.seekerId, // seekerId로 상세 조회
+            applicationId: app.applicationId,
             name: seeker.name || '이름 없음',
             age: 28, // Default age, can be calculated from birthdate if available
             nationality: seeker.nationality || '국적 없음',
@@ -254,7 +256,7 @@ export const Recruitment = () => {
             const statusBadge = getStatusBadge(applicant.status);
             return (
               <div
-                key={applicant.id}
+                key={applicant.applicationId}
                 onClick={() => navigate(`/employer/applicant/${applicant.id}`)}
                 className="bg-white rounded-[16px] p-4 border border-line-200 
                          hover:border-mint-600/30 hover:shadow-soft transition-all cursor-pointer"
