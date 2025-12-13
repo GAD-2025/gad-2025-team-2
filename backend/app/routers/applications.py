@@ -182,8 +182,7 @@ async def list_applications(
     print(f"  seekerId: {seekerId}")
     print(f"  jobId: {jobId}")
     
-    # If userId(가입 고용주 ID)로 조회하면 소유 공고(매장/사업자 모두) 기준으로 필터링
-    # employerId가 이미 넘어오면 그대로 사용
+    # If userId(가입 고용주 ID)로 조회하면 소유 공고(매장/사업자/직접 employerId 모두) 기준으로 필터링
     owned_job_ids: list[str] = []
     if userId and not seekerId:
         try:
@@ -194,21 +193,20 @@ async def list_applications(
                 owned_job_ids.extend(job_ids_by_store)
                 print(f"[DEBUG] list_applications - store 기반 공고 수: {len(job_ids_by_store)}")
             
-            # 1-1) 고용주 ID가 job.employerId로 직접 저장된 경우
-            direct_job_ids = [j.id for j in session.exec(select(Job).where(Job.employerId == userId)).all()]
-            if direct_job_ids:
-                owned_job_ids.extend(direct_job_ids)
-                print(f"[DEBUG] list_applications - employerId==userId 직접 매핑 공고 수: {len(direct_job_ids)}")
-            
             # 2) 사업자 기반: employer_profiles.user_id == userId → employer.businessNo == profile.id → 그 employerId의 공고
             profile = session.exec(select(EmployerProfile).where(EmployerProfile.user_id == userId)).first()
             if profile:
                 employer = session.exec(select(Employer).where(Employer.businessNo == profile.id)).first()
                 if employer:
-                    employerId = employer.id  # 아래 employerId 필터 재사용
                     job_ids_by_employer = [j.id for j in session.exec(select(Job).where(Job.employerId == employer.id)).all()]
                     owned_job_ids.extend(job_ids_by_employer)
                     print(f"[DEBUG] list_applications - employer 기반 공고 수: {len(job_ids_by_employer)}")
+            
+            # 3) 레거시: job.employerId가 userId와 동일한 경우
+            direct_job_ids = [j.id for j in session.exec(select(Job).where(Job.employerId == userId)).all()]
+            if direct_job_ids:
+                owned_job_ids.extend(direct_job_ids)
+                print(f"[DEBUG] list_applications - employerId==userId 직접 매핑 공고 수: {len(direct_job_ids)}")
             
             # 중복 제거
             owned_job_ids = list(dict.fromkeys(owned_job_ids))
@@ -251,8 +249,7 @@ async def list_applications(
             return []
     # userId로 확보한 owned_job_ids가 있다면 추가 필터 적용
     if userId and owned_job_ids:
-        conditions = [Application.jobId == jid for jid in owned_job_ids]
-        statement = statement.where(or_(*conditions))
+        statement = statement.where(Application.jobId.in_(owned_job_ids))
     
     try:
         applications = session.exec(statement).all()
