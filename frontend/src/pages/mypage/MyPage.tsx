@@ -426,9 +426,9 @@ export const MyPage = () => {
           <button
             onClick={() => {
               if (isEmployer) {
-                navigate("/employer/coming-soon", { state: { message: "새로운 메시지 기능을 준비 중입니다.", iconType: "message" } });
+                navigate("/employer/coming-soon", { state: { message: "기능을 준비 중입니다.", iconType: "message" } });
               } else {
-                navigate("/employer/coming-soon", { state: { message: "새로운 메시지 기능을 준비 중입니다.", iconType: "message" } });
+                navigate("/employer/coming-soon", { state: { message: "기능을 준비 중입니다.", iconType: "message" } });
               }
             }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"

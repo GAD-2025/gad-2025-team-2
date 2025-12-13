@@ -334,3 +334,22 @@ export default {
   translate: translateAPI,
   learning: learningAPI,
 };
+
+// Profile API
+export interface ProfileData {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  nationality_code: string | null;
+  birthdate: string | null;
+  visaType: string | null;
+  languageLevel: string | null;
+  location: string | null;
+  skills: string[];
+  bio: string | null;
+}
+
+export const profileAPI = {
+  get: () => apiClient.get<ProfileData>('/profile/me'),
+  update: (data: ProfileData) => apiClient.put<ProfileData>('/profile/me', data),
+};

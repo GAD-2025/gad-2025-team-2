@@ -272,3 +272,15 @@ class PostRead(BaseModel):
     title: str
     body: str
     created_at: datetime
+
+class ProfileData(BaseModel):
+    name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    nationality_code: Optional[str] = None
+    birthdate: Optional[str] = None
+    visaType: Optional[str] = None
+    languageLevel: Optional[str] = None
+    location: Optional[str] = None
+    skills: List[str] = []
+    bio: Optional[str] = None
