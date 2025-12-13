@@ -48,11 +48,26 @@ async def list_jobs(
         stores_stmt = select(Store).where(Store.user_id == user_id)
         stores = session.exec(stores_stmt).all()
         store_ids = [store.id for store in stores]
+        
+        print(f"[DEBUG] list_jobs - user_id 필터링:")
+        print(f"  user_id: {user_id}")
+        print(f"  매장 개수: {len(stores)}")
+        print(f"  매장 IDs: {store_ids}")
+        
         if store_ids:
-            statement = statement.where(Job.store_id.in_(store_ids))
+            # 매장이 있으면: 해당 매장의 공고 + store_id가 NULL인 공고 (레거시 공고)
+            from sqlalchemy import or_
+            statement = statement.where(
+                or_(
+                    Job.store_id.in_(store_ids),
+                    Job.store_id.is_(None)  # store_id가 NULL인 공고도 포함
+                )
+            )
+            print(f"[DEBUG] list_jobs - 매장 필터 적용: {store_ids} 또는 NULL")
         else:
-            # 매장이 없으면 빈 결과 반환 (에러가 아닌 정상적인 빈 결과)
-            statement = statement.where(Job.id == "nonexistent")
+            # 매장이 없으면: store_id가 NULL인 공고만 (레거시 공고)
+            statement = statement.where(Job.store_id.is_(None))
+            print(f"[DEBUG] list_jobs - 매장이 없음, store_id가 NULL인 공고만 조회")
 
     jobs = session.exec(statement.offset(offset).limit(limit)).all()
 
@@ -342,7 +357,6 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         requiredLanguage=request.required_language,
         requiredVisa=json.dumps(request.required_visa),
         benefits=request.benefits,
-        employerMessage=request.employer_message,
         createdAt=current_time,
         postedAt=current_time,
         status=job_status,
@@ -358,15 +372,36 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
     
     # 디버깅: 저장할 Job 객체 확인
     print(f"[DEBUG] create_job - 저장할 Job 객체:")
+    print(f"  job_id: {job_id}")
+    print(f"  employerId: {employer.id}")
+    print(f"  title: {job.title}")
+    print(f"  status: {job_status}")
     print(f"  shop_name: {job.shop_name}")
     print(f"  shop_address: {job.shop_address}")
     print(f"  shop_address_detail: {job.shop_address_detail}")
     print(f"  shop_phone: {job.shop_phone}")
     print(f"  store_id: {job.store_id}")
     
-    session.add(job)
-    session.commit()
-    session.refresh(job)
+    try:
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+        
+        # 데이터베이스에 실제로 저장되었는지 확인
+        verify_stmt = select(Job).where(Job.id == job_id)
+        verified = session.exec(verify_stmt).first()
+        if verified:
+            print(f"[DEBUG] create_job - 데이터베이스 저장 확인됨: {verified.id}")
+            print(f"  verified.employerId: {verified.employerId}")
+            print(f"  verified.title: {verified.title}")
+            print(f"  verified.status: {verified.status}")
+        else:
+            print(f"[ERROR] create_job - 데이터베이스 저장 실패! job_id: {job_id}")
+    except Exception as e:
+        print(f"[ERROR] create_job - 공고 저장 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
     
     return JobResponse(
         id=job.id,
