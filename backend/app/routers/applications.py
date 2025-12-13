@@ -194,6 +194,12 @@ async def list_applications(
                 owned_job_ids.extend(job_ids_by_store)
                 print(f"[DEBUG] list_applications - store 기반 공고 수: {len(job_ids_by_store)}")
             
+            # 1-1) 고용주 ID가 job.employerId로 직접 저장된 경우
+            direct_job_ids = [j.id for j in session.exec(select(Job).where(Job.employerId == userId)).all()]
+            if direct_job_ids:
+                owned_job_ids.extend(direct_job_ids)
+                print(f"[DEBUG] list_applications - employerId==userId 직접 매핑 공고 수: {len(direct_job_ids)}")
+            
             # 2) 사업자 기반: employer_profiles.user_id == userId → employer.businessNo == profile.id → 그 employerId의 공고
             profile = session.exec(select(EmployerProfile).where(EmployerProfile.user_id == userId)).first()
             if profile:
