@@ -429,17 +429,10 @@ async def update_application(
     application.status = request.status
     application.updatedAt = datetime.utcnow().isoformat()
     
-    if request.status == "hired":
+    if request.status == "accepted" or request.status == "hired":
         application.hiredAt = datetime.utcnow().isoformat()
     
     session.add(application)
-    
-    # 공고의 지원자 수 증가
-    job = session.get(Job, request.jobId)
-    if job:
-        job.applications = (job.applications or 0) + 1
-        session.add(job)
-    
     session.commit()
     session.refresh(application)
     

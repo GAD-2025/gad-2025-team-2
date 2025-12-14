@@ -183,6 +183,21 @@ export const InterviewProposalModal = ({
           }
           return prevTimes;
         });
+        // 날짜를 선택하면 자동으로 해당 날짜의 시간 슬롯 설정 탭 표시
+        setSelectedDateForTimeSlot(dateStr);
+        // 저장된 날짜를 다시 선택한 경우 편집 가능하도록 복사
+        if (savedDateTimes[dateStr] && !dateSpecificTimes[dateStr]) {
+          setDateSpecificTimes((prev) => ({
+            ...prev,
+            [dateStr]: savedDateTimes[dateStr].map(slot => ({
+              ...slot,
+              useCustomTime: false,
+              customTime: '',
+              useCustomDuration: false,
+              customDuration: '',
+            })),
+          }));
+        }
       }
       
       return newDates;
@@ -750,7 +765,7 @@ export const InterviewProposalModal = ({
                     <div className="border border-line-200 rounded-[10px] p-3 bg-gray-50">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="text-[14px] font-semibold text-text-900">
-                          {dateLabel} 시간 슬롯 설정
+                          {dateLabel}
                         </h4>
                         {isSaved && (
                           <span className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[6px] text-[11px] font-medium">

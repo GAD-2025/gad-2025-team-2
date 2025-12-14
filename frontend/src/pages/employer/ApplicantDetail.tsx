@@ -4,8 +4,10 @@ import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import { Tag } from '@/components/Tag';
 import { BottomCTA, CTAButton } from '@/components/BottomCTA';
-import { getJobSeekerProfile, type JobSeekerProfileData } from '@/api/endpoints';
+import { getJobSeekerProfile, type JobSeekerProfileData, applicationsAPI } from '@/api/endpoints';
 import { InterviewProposalModal, type InterviewProposalData } from '@/components/InterviewProposalModal';
+import { AcceptanceGuideModal, type AcceptanceGuideData } from '@/components/AcceptanceGuideModal';
+import { useAuthStore } from '@/store/useAuth';
 
 export const ApplicantDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +17,10 @@ export const ApplicantDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [showAcceptanceGuideModal, setShowAcceptanceGuideModal] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<'pending' | 'reviewed' | 'accepted' | 'rejected' | 'hold' | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [coordinationMessages, setCoordinationMessages] = useState<Array<{ message: string; sentAt: string }>>([]);
 
   useEffect(() => {
     const fetchApplicant = async () => {
@@ -34,6 +40,52 @@ export const ApplicantDetail = () => {
         // 저장된 지원자 목록 확인
         const savedApplicants = JSON.parse(localStorage.getItem('saved_applicants') || '[]');
         setIsSaved(savedApplicants.includes(id));
+        
+        // 지원서 상태 확인 (진행중 여부 확인)
+        const signupUserId = useAuthStore.getState().signupUserId;
+        const userId = signupUserId || localStorage.getItem('signup_user_id');
+        if (userId) {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+          const applicationsRes = await fetch(`${API_BASE_URL}/applications?userId=${userId}`);
+          if (applicationsRes.ok) {
+            const applications = await applicationsRes.json();
+            const application = applications.find((app: any) => 
+              app.seekerId === id || app.seeker?.id === id || app.jobseeker?.user_id === id
+            );
+            if (application) {
+              setApplicationId(application.applicationId);
+              // 백엔드 상태 확인
+              const backendStatus = application.status;
+              // localStorage의 면접 제안도 확인
+              const interviewProposalKey = `interview_proposal_${application.applicationId}`;
+              const hasInterviewProposal = !!localStorage.getItem(interviewProposalKey);
+              
+              if (backendStatus === 'reviewed' || hasInterviewProposal) {
+                setApplicationStatus('reviewed');
+              } else if (backendStatus === 'applied') {
+                setApplicationStatus('pending');
+              } else if (backendStatus === 'accepted' || backendStatus === 'hired') {
+                setApplicationStatus('accepted');
+              } else if (backendStatus === 'rejected') {
+                setApplicationStatus('rejected');
+              } else if (backendStatus === 'hold') {
+                setApplicationStatus('hold');
+              }
+              
+              // 조율 메시지 로드
+              if (application) {
+                const interviewProposalKey = `interview_proposal_${application.applicationId}`;
+                const proposalData = localStorage.getItem(interviewProposalKey);
+                if (proposalData) {
+                  const proposal = JSON.parse(proposalData);
+                  if (proposal.coordinationMessages && proposal.coordinationMessages.length > 0) {
+                    setCoordinationMessages(proposal.coordinationMessages);
+                  }
+                }
+              }
+            }
+          }
+        }
       } catch (error: any) {
         console.error('[ERROR] 지원자 정보 로딩 실패:', error);
         const errorMessage = error?.message || '지원자 정보를 불러오는데 실패했습니다';
@@ -65,10 +117,82 @@ export const ApplicantDetail = () => {
     try {
       setHiring(true);
       console.log('면접 제안 데이터:', data);
-      // TODO: 실제 API 호출
-      // await applicationsAPI.proposeInterview(id, data);
+      
+      // 면접제안 데이터를 로컬스토리지에 저장
+      const interviewProposal = {
+        dates: data.selectedDates,
+        time: data.time,
+        duration: data.duration,
+        message: data.message,
+        status: 'pending' as const,
+        isRead: false,
+        allDatesTimeSlots: data.allDatesTimeSlots,
+        dateSpecificTimes: data.dateSpecificTimes,
+      };
+      
+      // 지원서 ID를 찾기 위해 applications API 호출
+      try {
+        const signupUserId = useAuthStore.getState().signupUserId;
+        const userId = signupUserId || localStorage.getItem('signup_user_id');
+        
+        if (userId) {
+          // 현재 고용주의 모든 지원서 목록에서 해당 구직자의 지원서 찾기
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+          const applicationsRes = await fetch(`${API_BASE_URL}/applications?userId=${userId}`);
+          
+          if (applicationsRes.ok) {
+            const applications = await applicationsRes.json();
+            
+            // 해당 구직자(userId = id)의 지원서 찾기
+            const application = applications.find((app: any) => 
+              app.seekerId === id || app.seeker?.id === id || app.jobseeker?.user_id === id
+            );
+            
+            if (application && application.applicationId) {
+              // 지원 상태를 'reviewed' (진행중)로 업데이트 (에러 발생해도 계속 진행)
+              try {
+                await applicationsAPI.update(application.applicationId, 'reviewed');
+                console.log('[SUCCESS] 지원 상태 업데이트 성공:', application.applicationId);
+              } catch (updateError) {
+                console.error('지원 상태 업데이트 실패 (계속 진행):', updateError);
+                // 백엔드 업데이트 실패해도 localStorage에는 저장하고 계속 진행
+              }
+              
+              // 면접제안 데이터를 로컬스토리지에 저장 (applicationId만 사용 - 공고별로 구분)
+              localStorage.setItem(`interview_proposal_${application.applicationId}`, JSON.stringify(interviewProposal));
+              console.log('[SUCCESS] 면접 제안 데이터 저장:', {
+                applicationId: application.applicationId,
+                jobId: application.jobId,
+                seekerId: id
+              });
+            } else {
+              // 지원서를 찾을 수 없으면 에러 처리
+              console.error('[ERROR] 지원서를 찾을 수 없습니다:', { seekerId: id, applications });
+              toast.error('지원서를 찾을 수 없습니다. 다시 시도해주세요.');
+              return;
+            }
+          } else {
+            // API 호출 실패 시 에러 처리
+            console.error('[ERROR] 지원서 목록을 가져올 수 없습니다');
+            toast.error('지원서 정보를 불러올 수 없습니다. 다시 시도해주세요.');
+            return;
+          }
+        } else {
+          // 사용자 ID가 없으면 에러 처리
+          console.error('[ERROR] 사용자 ID가 없습니다');
+          toast.error('로그인이 필요합니다.');
+          return;
+        }
+      } catch (error) {
+        console.error('지원 상태 업데이트 실패:', error);
+        toast.error('면접 제안 전송 중 오류가 발생했습니다.');
+        return;
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 500));
       setShowInterviewModal(false);
+      toast.success('면접 제안이 전송되었습니다');
+      
       // 면접 제안 완료 화면으로 이동
       navigate('/employer/interview-proposed', {
         state: {
@@ -247,6 +371,68 @@ export const ApplicantDetail = () => {
               ))}
             </div>
           )}
+          
+          {/* 진행중 상태일 때 면접 대기 중 표시 및 조율 메시지 */}
+          {applicationStatus === 'reviewed' && applicationId && (() => {
+            const interviewProposalKey = `interview_proposal_${applicationId}`;
+            const interviewProposalData = localStorage.getItem(interviewProposalKey);
+            const proposal = interviewProposalData ? JSON.parse(interviewProposalData) : null;
+            const interviewResponseKey = `interview_response_${applicationId}`;
+            const responseData = localStorage.getItem(interviewResponseKey);
+            const response = responseData ? JSON.parse(responseData) : null;
+            const messages = proposal?.coordinationMessages || [];
+            
+            return (
+              <div className="mt-3 pt-3 border-t border-mint-200 space-y-2">
+                {proposal && !response && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-[8px]">
+                    <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-[13px] font-medium text-blue-700">면접 제안 대기 중</span>
+                  </div>
+                )}
+                {response && (
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-[8px] border ${
+                    response.response === 'accepted' 
+                      ? 'bg-mint-50 border-mint-200'
+                      : response.response === 'rejected'
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    <span className={`text-[13px] font-medium ${
+                      response.response === 'accepted' 
+                        ? 'text-mint-700'
+                        : response.response === 'rejected'
+                        ? 'text-red-700'
+                        : 'text-amber-700'
+                    }`}>
+                      {response.response === 'accepted' ? '✓ 면접 수락함' : response.response === 'rejected' ? '✗ 면접 거절함' : '⏸ 면접 보류함'}
+                    </span>
+                  </div>
+                )}
+                {/* 조율 메시지 표시 */}
+                {messages.length > 0 && (
+                  <div className="bg-white border border-mint-200 rounded-[8px] p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[14px]">💬</span>
+                      <h4 className="text-[13px] font-semibold text-text-900">조율 메시지 ({messages.length}개)</h4>
+                    </div>
+                    <div className="space-y-2 max-h-[120px] overflow-y-auto">
+                      {messages.map((msg: { message: string; sentAt: string }, idx: number) => (
+                        <div key={idx} className="bg-mint-50 rounded-[6px] p-2.5">
+                          <p className="text-[12px] text-text-700 mb-1">{msg.message}</p>
+                          <span className="text-[10px] text-text-500">
+                            {new Date(msg.sentAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Self Introduction */}
@@ -366,60 +552,136 @@ export const ApplicantDetail = () => {
         </div>
       </div>
 
-      {/* Bottom Action Bar - 모바일 화면 크기에 맞게 조정, 내비게이션 바 대신 표시 */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 px-3 py-3 safe-area-bottom z-50 shadow-lg">
-        <div className="flex items-center gap-2">
-          {/* 저장 아이콘 - 모바일 크기에 맞게 */}
-          <button
-            onClick={handleSave}
-            className={`w-11 h-11 rounded-[10px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
-              isSaved
-                ? 'bg-mint-600 border-mint-600'
-                : 'bg-white border-mint-600'
-            }`}
-          >
-            <svg
-              className={`w-5 h-5 ${isSaved ? 'text-white' : 'text-mint-600'}`}
-              fill={isSaved ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+      {/* Bottom Action Bar - 진행중 상태에 따라 다른 버튼 표시 */}
+      {applicationStatus === 'reviewed' && applicationId ? (
+        // 진행중: 합격/보류/불합격 버튼
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 px-3 py-3 safe-area-bottom z-50 shadow-lg">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setShowAcceptanceGuideModal(true);
+              }}
+              className="flex-1 h-11 rounded-[10px] bg-emerald-600 text-white font-medium text-[14px] flex items-center justify-center hover:bg-emerald-700 transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-              />
-            </svg>
-          </button>
-
-          {/* 채팅 버튼 - 모바일 크기에 맞게 */}
-          <button
-            onClick={handleStartChat}
-            className="flex-1 h-11 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            채팅
-          </button>
-
-          {/* 면접 제안하기 버튼 - 모바일 크기에 맞게 */}
-          <button
-            onClick={handleHire}
-            disabled={hiring}
-            className="flex-1 h-11 rounded-[10px] bg-mint-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-mint-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {hiring ? '처리 중...' : '면접 제안하기'}
-          </button>
+              합격
+            </button>
+            <button
+              onClick={async () => {
+                if (!applicationId) return;
+                try {
+                  await applicationsAPI.update(applicationId, 'hold');
+                  toast.success('보류 처리되었습니다');
+                  setApplicationStatus('hold');
+                  navigate('/employer/recruitment?filter=interview_result&result=hold');
+                } catch (error) {
+                  console.error('보류 처리 실패:', error);
+                  toast.error('보류 처리에 실패했습니다');
+                }
+              }}
+              className="flex-1 h-11 rounded-[10px] bg-amber-500 text-white font-medium text-[14px] flex items-center justify-center hover:bg-amber-600 transition-colors"
+            >
+              보류
+            </button>
+            <button
+              onClick={async () => {
+                if (!applicationId) return;
+                if (confirm('이 지원자와 관련된 정보는 삭제됩니다. 정말 불합격 처리하시겠습니까?')) {
+                  try {
+                    await applicationsAPI.update(applicationId, 'rejected');
+                    toast.success('불합격 처리되었습니다');
+                    setApplicationStatus('rejected');
+                    navigate('/employer/recruitment?filter=interview_result&result=rejected');
+                  } catch (error) {
+                    console.error('불합격 처리 실패:', error);
+                    toast.error('불합격 처리에 실패했습니다');
+                  }
+                }
+              }}
+              className="flex-1 h-11 rounded-[10px] bg-red-500 text-white font-medium text-[14px] flex items-center justify-center hover:bg-red-600 transition-colors"
+            >
+              불합격
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        // 신규/기타: 저장/채팅/면접제안하기 버튼
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 px-3 py-3 safe-area-bottom z-50 shadow-lg">
+          <div className="flex items-center gap-2">
+            {/* 저장 아이콘 - 모바일 크기에 맞게 */}
+            <button
+              onClick={handleSave}
+              className={`w-11 h-11 rounded-[10px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
+                isSaved
+                  ? 'bg-mint-600 border-mint-600'
+                  : 'bg-white border-mint-600'
+              }`}
+            >
+              <svg
+                className={`w-5 h-5 ${isSaved ? 'text-white' : 'text-mint-600'}`}
+                fill={isSaved ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                />
+              </svg>
+            </button>
+
+            {/* 채팅 버튼 - 모바일 크기에 맞게 */}
+            <button
+              onClick={handleStartChat}
+              className="flex-1 h-11 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              채팅
+            </button>
+
+            {/* 면접 제안하기 버튼 - 모바일 크기에 맞게 */}
+            <button
+              onClick={handleHire}
+              disabled={hiring}
+              className="flex-1 h-11 rounded-[10px] bg-mint-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-mint-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {hiring ? '처리 중...' : '면접 제안하기'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 면접 제안 모달 */}
       <InterviewProposalModal
         isOpen={showInterviewModal}
         onClose={() => setShowInterviewModal(false)}
         onSubmit={handleInterviewSubmit}
+        applicantName={applicant?.name}
+      />
+
+      {/* 합격 안내 모달 */}
+      <AcceptanceGuideModal
+        isOpen={showAcceptanceGuideModal}
+        onClose={() => setShowAcceptanceGuideModal(false)}
+        onConfirm={async (data: AcceptanceGuideData) => {
+          if (!applicationId) return;
+          try {
+            await applicationsAPI.update(applicationId, 'accepted');
+            // 합격 안내 데이터 저장 (나중에 사용 가능)
+            localStorage.setItem(`acceptance_guide_${applicationId}`, JSON.stringify(data));
+            toast.success('합격 처리되었습니다');
+            setApplicationStatus('accepted');
+            setShowAcceptanceGuideModal(false);
+            // 면접결과 섹션의 합격 필터로 이동하기 위해 쿼리 파라미터 전달
+            navigate('/employer/recruitment?filter=interview_result&result=accepted');
+          } catch (error) {
+            console.error('합격 처리 실패:', error);
+            toast.error('합격 처리에 실패했습니다');
+          }
+        }}
         applicantName={applicant?.name}
       />
     </div>

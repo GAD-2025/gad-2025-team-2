@@ -1,12 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/useAuth';
+import { useState, useEffect } from 'react';
 
 export const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const { userMode } = useAuthStore();
+  const [unreadInterviewCount, setUnreadInterviewCount] = useState(0);
 
   // 모드에 따라 홈 경로 변경
   const homePath = userMode === 'employer' ? '/employer/home' : '/jobseeker/home';
@@ -70,9 +72,16 @@ export const BottomNav = () => {
           id: 'jobs', 
           label: '공고', 
           icon: (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
+            <div className="relative">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              {unreadInterviewCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-[8px] text-white font-bold">{unreadInterviewCount > 9 ? '9+' : unreadInterviewCount}</span>
+                </span>
+              )}
+            </div>
           ), 
           path: '/jobs' 
         },
@@ -139,6 +148,49 @@ export const BottomNav = () => {
                         location.pathname.startsWith('/employer/applicants/') ||
                         (location.pathname.startsWith('/applicant/') && userMode === 'employer');
 
+  // 구직자 모드일 때 면접 제안 알림 개수 확인
+  useEffect(() => {
+    if (userMode === 'jobseeker') {
+      const checkUnreadInterviews = () => {
+        const signupUserId = useAuthStore.getState().signupUserId;
+        const userId = signupUserId || localStorage.getItem('signup_user_id');
+        if (!userId) {
+          setUnreadInterviewCount(0);
+          return;
+        }
+
+        // localStorage에서 모든 면접 제안 키 찾기
+        let count = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('interview_proposal_')) {
+            try {
+              const proposal = JSON.parse(localStorage.getItem(key) || '{}');
+              if (proposal && !proposal.isRead && proposal.status === 'pending') {
+                count++;
+              }
+            } catch (e) {
+              // 파싱 실패 시 무시
+            }
+          }
+        }
+        setUnreadInterviewCount(count);
+      };
+
+      checkUnreadInterviews();
+      // 주기적으로 확인 (5초마다)
+      const interval = setInterval(checkUnreadInterviews, 5000);
+      // 페이지 포커스 시에도 확인
+      const handleFocus = () => checkUnreadInterviews();
+      window.addEventListener('focus', handleFocus);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('focus', handleFocus);
+      };
+    }
+  }, [userMode, location.pathname]);
+
   if (shouldHideNav) {
     return null;
   }
@@ -159,7 +211,7 @@ export const BottomNav = () => {
               `}
               aria-label={tab.label}
             >
-              <div className="w-6 h-6 flex items-center justify-center">
+              <div className="w-6 h-6 flex items-center justify-center relative">
                 {tab.icon}
               </div>
               <span className={`text-[10px] ${active ? 'font-semibold' : 'font-regular'}`}>

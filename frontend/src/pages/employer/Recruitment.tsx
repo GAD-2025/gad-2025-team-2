@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { InterviewProposalModal, type InterviewProposalData } from '@/components/InterviewProposalModal';
+import { AcceptanceGuideModal, type AcceptanceGuideData } from '@/components/AcceptanceGuideModal';
 import { useAuthStore } from '@/store/useAuth';
 import { getStores, type StoreData } from '@/api/endpoints';
 
@@ -58,11 +59,27 @@ export const Recruitment = () => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<'all' | 'new' | 'in_progress' | 'interview_result' | 'saved'>('all');
   const [interviewResultFilter, setInterviewResultFilter] = useState<'accepted' | 'hold' | 'rejected' | null>(null);
+  
+  // URL 쿼리 파라미터로 필터 초기화
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const filterParam = params.get('filter');
+    const resultParam = params.get('result');
+    
+    if (filterParam === 'interview_result') {
+      setActiveFilter('interview_result');
+      if (resultParam === 'accepted' || resultParam === 'hold' || resultParam === 'rejected') {
+        setInterviewResultFilter(resultParam);
+      }
+    }
+  }, []);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
   const savedApplicantIds = useLocalStorage('saved_applicants');
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
+  const [showAcceptanceGuideModal, setShowAcceptanceGuideModal] = useState(false);
+  const [selectedApplicantForAcceptance, setSelectedApplicantForAcceptance] = useState<Applicant | null>(null);
   const [stores, setStores] = useState<StoreData[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
@@ -87,6 +104,27 @@ export const Recruitment = () => {
     loadStores();
     fetchApplicants();
   }, [selectedStoreId]);
+
+  // 페이지가 포커스될 때마다 지원자 목록 새로고침 (면접 제안 후 상태 업데이트를 위해)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchApplicants();
+    };
+    
+    // visibilitychange 이벤트도 추가 (탭 전환 시)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchApplicants();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const fetchApplicants = async () => {
     try {
@@ -197,6 +235,29 @@ export const Recruitment = () => {
             finalStoreId: storeId
           });
           
+          // 면접 제안 데이터 확인 (localStorage에서) - applicationId만 확인 (공고별로 구분)
+          const interviewProposalKey = `interview_proposal_${app.applicationId}`;
+          const interviewProposalData = localStorage.getItem(interviewProposalKey);
+          const hasInterviewProposal = !!interviewProposalData;
+          
+          // 상태 결정: 백엔드 상태를 우선하되, 면접 제안이 있으면 'reviewed'로 설정
+          let finalStatus: Applicant['status'];
+          if (app.status === 'applied') {
+            // 백엔드 상태가 'applied'이지만 면접 제안이 있으면 'reviewed'로 변경
+            finalStatus = hasInterviewProposal ? 'reviewed' : 'pending';
+          } else if (app.status === 'hired') {
+            finalStatus = 'accepted';
+          } else if (app.status === 'rejected') {
+            finalStatus = 'rejected';
+          } else if (app.status === 'hold') {
+            finalStatus = 'hold';
+          } else if (app.status === 'reviewed' || hasInterviewProposal) {
+            // 면접 제안이 있거나 상태가 'reviewed'면 'reviewed' (진행중)
+            finalStatus = 'reviewed';
+          } else {
+            finalStatus = 'pending';
+          }
+          
           return {
             id: app.applicationId,
             userId: userId, // 지원자의 user_id (지원자 상세 페이지에서 필요) - app.seekerId는 signup_user_id
@@ -206,10 +267,7 @@ export const Recruitment = () => {
             nationality: seeker.nationality || '국적 없음',
             jobTitle: app.job?.title || '공고 제목 없음',
             appliedDate: app.appliedAt || new Date().toISOString(),
-            status: app.status === 'applied' ? 'pending' :
-                    app.status === 'hired' ? 'accepted' :
-                    app.status === 'rejected' ? 'rejected' :
-                    app.status === 'hold' ? 'hold' : 'reviewed',
+            status: finalStatus,
             languageLevel: seeker.languageLevel || '정보 없음',
             experience: expStr,
             tags: tags,
@@ -357,22 +415,53 @@ export const Recruitment = () => {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="bg-white border-b border-line-200 px-4 py-4 sticky top-0 z-10">
-        <h1 className="text-[20px] font-bold text-text-900">지원자 관리</h1>
-        <p className="text-[13px] text-text-500 mt-1">
-          총 {applicants.length}명의 지원자
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[20px] font-bold text-text-900">지원자 관리</h1>
+            <p className="text-[13px] text-text-500 mt-1">
+              총 {applicants.length}명의 지원자
+            </p>
+          </div>
+          {/* 저장한 지원자 보기 버튼 */}
+          <button
+            onClick={() => {
+              setActiveFilter('saved');
+              setInterviewResultFilter(null);
+            }}
+            className={`p-2 rounded-[10px] transition-all ${
+              activeFilter === 'saved'
+                ? 'bg-mint-600 text-white'
+                : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+            }`}
+            title="저장한 지원자"
+          >
+            <svg
+              className="w-5 h-5"
+              fill={activeFilter === 'saved' ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+              />
+            </svg>
+          </button>
+        </div>
       </header>
 
-      {/* Filter Tabs - 오른쪽부터 전체, 신규, 진행중, 면접결과, 저장, 가게선택 */}
+      {/* Filter Tabs - 전체, 신규, 진행중, 면접결과, 가게선택 */}
       <div className="bg-white border-b border-line-200 px-4">
-        <div className="flex gap-1.5 py-2.5 items-center justify-end">
-          <div className="flex gap-1.5 items-center flex-1 min-w-0 justify-end">
+        <div className="flex gap-1.5 py-2.5 items-center justify-between">
+          <div className="flex gap-1.5 items-center flex-1 min-w-0 overflow-x-auto">
             <button
               onClick={() => {
                 setActiveFilter('all');
                 setInterviewResultFilter(null);
               }}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-3 py-2 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 activeFilter === 'all'
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -385,7 +474,7 @@ export const Recruitment = () => {
                 setActiveFilter('new');
                 setInterviewResultFilter(null);
               }}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-3 py-2 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 activeFilter === 'new'
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -398,7 +487,7 @@ export const Recruitment = () => {
                 setActiveFilter('in_progress');
                 setInterviewResultFilter(null);
               }}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-3 py-2 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 activeFilter === 'in_progress'
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -411,7 +500,7 @@ export const Recruitment = () => {
                 setActiveFilter('interview_result');
                 setInterviewResultFilter(null);
               }}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-3 py-2 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 activeFilter === 'interview_result'
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -419,23 +508,10 @@ export const Recruitment = () => {
             >
               면접결과 ({statusCounts.interview_result})
             </button>
-            <button
-              onClick={() => {
-                setActiveFilter('saved');
-                setInterviewResultFilter(null);
-              }}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                activeFilter === 'saved'
-                  ? 'bg-mint-600 text-white'
-                  : 'bg-gray-100 text-text-700 hover:bg-gray-200'
-              }`}
-            >
-              저장 ({statusCounts.saved})
-            </button>
           </div>
           
-          {/* 가게별 필터 드롭다운 - 오른쪽 끝 */}
-          <div className="relative flex-shrink-0">
+          {/* 가게 선택 드롭다운 - 필터 탭 줄 오른쪽 끝 */}
+          <div className="relative flex-shrink-0 ml-2">
             <button
               onClick={(e) => {
                 if (stores.length > 0) {
@@ -449,18 +525,18 @@ export const Recruitment = () => {
                   toast.info('등록된 매장이 없습니다. 마이페이지에서 매장을 추가하세요.');
                 }
               }}
-              className="px-3 py-1.5 rounded-[10px] text-[12px] font-medium bg-white border border-line-200 
+              className="px-3 py-2 rounded-[10px] text-[12px] font-medium bg-white border border-line-200 
                        text-text-700 hover:bg-gray-50 transition-all flex items-center gap-1.5 whitespace-nowrap
                        disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={stores.length === 0}
             >
-              <span className="inline-block max-w-[80px] truncate">
+              <span className="inline-block max-w-[70px] truncate">
                 {selectedStoreId === null
                   ? '가게선택'
                   : stores.find(s => s.id === selectedStoreId)?.store_name || '가게선택'}
               </span>
               <svg 
-                className={`w-3.5 h-3.5 transition-transform flex-shrink-0 ${showStoreDropdown ? 'rotate-180' : ''}`}
+                className={`w-3 h-3 transition-transform flex-shrink-0 ${showStoreDropdown ? 'rotate-180' : ''}`}
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor"
@@ -473,10 +549,10 @@ export const Recruitment = () => {
         
         {/* 면접결과 서브 필터 - 면접결과 탭 선택 시 표시 */}
         {activeFilter === 'interview_result' && (
-          <div className="flex gap-1.5 py-2.5 items-center border-t border-line-200">
+          <div className="flex gap-1.5 py-2.5 items-center border-t border-line-200 overflow-x-auto">
             <button
               onClick={() => setInterviewResultFilter(null)}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 interviewResultFilter === null
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -486,7 +562,7 @@ export const Recruitment = () => {
             </button>
             <button
               onClick={() => setInterviewResultFilter('accepted')}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 interviewResultFilter === 'accepted'
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -496,7 +572,7 @@ export const Recruitment = () => {
             </button>
             <button
               onClick={() => setInterviewResultFilter('hold')}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 interviewResultFilter === 'hold'
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -506,7 +582,7 @@ export const Recruitment = () => {
             </button>
             <button
               onClick={() => setInterviewResultFilter('rejected')}
-              className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 interviewResultFilter === 'rejected'
                   ? 'bg-mint-600 text-white'
                   : 'bg-gray-100 text-text-700 hover:bg-gray-200'
@@ -616,6 +692,72 @@ export const Recruitment = () => {
                     <p className="text-[13px] text-text-500">
                       {applicant.nationality} · {applicant.jobTitle}
                     </p>
+                    {/* 진행중 섹션에서 구직자 응답 상태 표시 */}
+                    {activeFilter === 'in_progress' && applicant.status === 'reviewed' && applicant.applicationId && (() => {
+                      const interviewResponseKey = `interview_response_${applicant.applicationId}`;
+                      const responseData = localStorage.getItem(interviewResponseKey);
+                      const response = responseData ? JSON.parse(responseData) : null;
+                      
+                      // 조율 메시지 확인
+                      const interviewProposalKey = `interview_proposal_${applicant.applicationId}`;
+                      const proposalData = localStorage.getItem(interviewProposalKey);
+                      const proposal = proposalData ? JSON.parse(proposalData) : null;
+                      const hasCoordinationMessage = proposal?.coordinationMessages && proposal.coordinationMessages.length > 0;
+                      
+                      // 면접 제안이 있지만 아직 응답이 없으면 "면접 제안 대기중" 표시
+                      const hasInterviewProposal = !!proposalData;
+                      
+                      if (hasInterviewProposal || response || hasCoordinationMessage) {
+                        return (
+                          <div className="mt-2 space-y-1.5">
+                            {!response && hasInterviewProposal && (
+                              <span className="inline-block px-2.5 py-1 rounded-[6px] text-[11px] font-medium bg-gray-100 text-gray-700">
+                                ⏳ 면접 제안 대기중
+                              </span>
+                            )}
+                            {response && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2.5 py-1 rounded-[6px] text-[11px] font-medium ${
+                                  response.response === 'accepted' 
+                                    ? 'bg-mint-100 text-mint-700 border border-mint-300'
+                                    : response.response === 'rejected'
+                                    ? 'bg-mint-200 text-mint-800 border border-mint-400'
+                                    : 'bg-mint-300 text-mint-900 border border-mint-500'
+                                }`}>
+                                  {response.response === 'accepted' ? '✓ 수락함' : response.response === 'rejected' ? '✗ 거절함' : '⏸ 보류함'}
+                                </span>
+                                {response.respondedAt && (
+                                  <span className="text-[10px] text-text-500">
+                                    {new Date(response.respondedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })} 응답
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {hasCoordinationMessage && (
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium bg-blue-100 text-blue-700 border border-blue-300">
+                                    💬 조율 메시지 {proposal.coordinationMessages.length}개
+                                  </span>
+                                  {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.sentAt && (
+                                    <span className="text-[10px] text-text-500">
+                                      {new Date(proposal.coordinationMessages[proposal.coordinationMessages.length - 1].sentAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                  )}
+                                </div>
+                                {/* 최근 메시지 미리보기 */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-[6px] p-2">
+                                  <p className="text-[11px] text-blue-800 line-clamp-2">
+                                    {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.message}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <svg className="w-5 h-5 text-text-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -661,25 +803,14 @@ export const Recruitment = () => {
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
                     {activeFilter === 'in_progress' && applicant.status === 'reviewed' ? (
-                      // 진행중 섹션: 합격/불합격/보류 버튼
+                      // 진행중 섹션: 합격/불합격/보류 버튼 (항상 표시)
                       <>
                         <button
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            if (!applicant.applicationId) return;
-                            try {
-                              const { applicationsAPI } = await import('@/api/endpoints');
-                              await applicationsAPI.update(applicant.applicationId, 'accepted');
-                              setApplicants(prev => prev.map(a => 
-                                a.applicationId === applicant.applicationId 
-                                  ? { ...a, status: 'accepted' as const }
-                                  : a
-                              ));
-                              toast.success('합격 처리되었습니다');
-                            } catch (error) {
-                              console.error('합격 처리 실패:', error);
-                              toast.error('합격 처리에 실패했습니다');
-                            }
+                            // 지원자 상세 페이지로 이동하여 합격 안내 모달 표시
+                            const targetId = applicant.userId || applicant.id;
+                            navigate(`/employer/applicant/${targetId}`);
                           }}
                           className="flex-1 h-10 rounded-[10px] bg-emerald-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-emerald-700 transition-colors"
                         >
@@ -691,7 +822,7 @@ export const Recruitment = () => {
                             setApplicantToReject(applicant);
                             setShowRejectConfirm(true);
                           }}
-                          className="flex-1 h-10 rounded-[10px] bg-red-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-red-700 transition-colors"
+                          className="flex-1 h-10 rounded-[10px] bg-red-500 text-white font-medium text-[13px] flex items-center justify-center hover:bg-red-600 transition-colors"
                         >
                           불합격
                         </button>
@@ -707,13 +838,17 @@ export const Recruitment = () => {
                                   ? { ...a, status: 'hold' as const }
                                   : a
                               ));
+                              // 면접결과 섹션의 보류 필터로 자동 이동
+                              setActiveFilter('interview_result');
+                              setInterviewResultFilter('hold');
+                              navigate('/employer/recruitment?filter=interview_result&result=hold', { replace: true });
                               toast.success('보류 처리되었습니다');
                             } catch (error) {
                               console.error('보류 처리 실패:', error);
                               toast.error('보류 처리에 실패했습니다');
                             }
                           }}
-                          className="flex-1 h-10 rounded-[10px] bg-amber-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-amber-700 transition-colors"
+                          className="flex-1 h-10 rounded-[10px] bg-amber-500 text-white font-medium text-[13px] flex items-center justify-center hover:bg-amber-600 transition-colors"
                         >
                           보류
                         </button>
@@ -722,22 +857,11 @@ export const Recruitment = () => {
                       // 보류 섹션: 합격/불합격 버튼
                       <>
                         <button
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            if (!applicant.applicationId) return;
-                            try {
-                              const { applicationsAPI } = await import('@/api/endpoints');
-                              await applicationsAPI.update(applicant.applicationId, 'accepted');
-                              setApplicants(prev => prev.map(a => 
-                                a.applicationId === applicant.applicationId 
-                                  ? { ...a, status: 'accepted' as const }
-                                  : a
-                              ));
-                              toast.success('합격 처리되었습니다');
-                            } catch (error) {
-                              console.error('합격 처리 실패:', error);
-                              toast.error('합격 처리에 실패했습니다');
-                            }
+                            // 지원자 상세 페이지로 이동하여 합격 안내 모달 표시
+                            const targetId = applicant.userId || applicant.id;
+                            navigate(`/employer/applicant/${targetId}`);
                           }}
                           className="flex-1 h-10 rounded-[10px] bg-emerald-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-emerald-700 transition-colors"
                         >
@@ -749,7 +873,7 @@ export const Recruitment = () => {
                             setApplicantToReject(applicant);
                             setShowRejectConfirm(true);
                           }}
-                          className="flex-1 h-10 rounded-[10px] bg-red-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-red-700 transition-colors"
+                          className="flex-1 h-10 rounded-[10px] bg-red-500 text-white font-medium text-[13px] flex items-center justify-center hover:bg-red-600 transition-colors"
                         >
                           불합격
                         </button>
@@ -938,6 +1062,10 @@ export const Recruitment = () => {
                         ? { ...a, status: 'rejected' as const }
                         : a
                     ));
+                    // 면접결과 섹션의 불합격 필터로 자동 이동
+                    setActiveFilter('interview_result');
+                    setInterviewResultFilter('rejected');
+                    navigate('/employer/recruitment?filter=interview_result&result=rejected', { replace: true });
                     toast.success('불합격 처리되었습니다');
                     setShowRejectConfirm(false);
                     setApplicantToReject(null);
@@ -946,7 +1074,7 @@ export const Recruitment = () => {
                     toast.error('불합격 처리에 실패했습니다');
                   }
                 }}
-                className="flex-1 h-12 rounded-[12px] bg-red-600 text-white font-medium text-[14px] flex items-center justify-center hover:bg-red-700 transition-colors"
+                className="flex-1 h-12 rounded-[12px] bg-red-500 text-white font-medium text-[14px] flex items-center justify-center hover:bg-red-600 transition-colors"
               >
                 불합격 (삭제하기)
               </button>
@@ -961,6 +1089,10 @@ export const Recruitment = () => {
                         ? { ...a, status: 'hold' as const }
                         : a
                     ));
+                    // 면접결과 섹션의 보류 필터로 자동 이동
+                    setActiveFilter('interview_result');
+                    setInterviewResultFilter('hold');
+                    navigate('/employer/recruitment?filter=interview_result&result=hold', { replace: true });
                     toast.success('보류 처리되었습니다');
                     setShowRejectConfirm(false);
                     setApplicantToReject(null);
@@ -969,13 +1101,50 @@ export const Recruitment = () => {
                     toast.error('보류 처리에 실패했습니다');
                   }
                 }}
-                className="flex-1 h-12 rounded-[12px] bg-amber-600 text-white font-medium text-[14px] flex items-center justify-center hover:bg-amber-700 transition-colors"
+                className="flex-1 h-12 rounded-[12px] bg-amber-500 text-white font-medium text-[14px] flex items-center justify-center hover:bg-amber-600 transition-colors"
               >
                 보류
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 합격 안내 모달 */}
+      {showAcceptanceGuideModal && selectedApplicantForAcceptance && (
+        <AcceptanceGuideModal
+          isOpen={showAcceptanceGuideModal}
+          onClose={() => {
+            setShowAcceptanceGuideModal(false);
+            setSelectedApplicantForAcceptance(null);
+          }}
+          onConfirm={async (data: AcceptanceGuideData) => {
+            if (!selectedApplicantForAcceptance.applicationId) return;
+            try {
+              const { applicationsAPI } = await import('@/api/endpoints');
+              await applicationsAPI.update(selectedApplicantForAcceptance.applicationId, 'accepted');
+              // 합격 안내 데이터 저장
+              localStorage.setItem(`acceptance_guide_${selectedApplicantForAcceptance.applicationId}`, JSON.stringify(data));
+              setApplicants(prev => prev.map(a => 
+                a.applicationId === selectedApplicantForAcceptance.applicationId 
+                  ? { ...a, status: 'accepted' as const }
+                  : a
+              ));
+              // 면접결과 섹션의 합격 필터로 자동 이동
+              setActiveFilter('interview_result');
+              setInterviewResultFilter('accepted');
+              // URL 업데이트
+              navigate('/employer/recruitment?filter=interview_result&result=accepted', { replace: true });
+              toast.success('합격 처리되었습니다');
+              setShowAcceptanceGuideModal(false);
+              setSelectedApplicantForAcceptance(null);
+            } catch (error) {
+              console.error('합격 처리 실패:', error);
+              toast.error('합격 처리에 실패했습니다');
+            }
+          }}
+          applicantName={selectedApplicantForAcceptance.name}
+        />
       )}
     </div>
   );

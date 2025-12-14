@@ -200,6 +200,10 @@ export const router = createBrowserRouter([
         element: <JobEdit />,
       },
       {
+        path: 'employer/recruitment',
+        element: <Recruitment />,
+      },
+      {
         path: 'recruitment',
         element: <Recruitment />,
       },

@@ -31,9 +31,14 @@ export const InterviewProposed = () => {
           <h2 className="text-[20px] font-bold text-text-900 mb-2">
             면접 제안이 전송되었습니다
           </h2>
-          <p className="text-[14px] text-text-500">
+          <p className="text-[14px] text-text-500 mb-3">
             지원자에게 면접 일정이 전달되었습니다
           </p>
+          <div className="bg-mint-50 rounded-[12px] p-4 mt-4">
+            <p className="text-[14px] text-text-700 font-medium">
+              구직자가 면접제안을 수락하면 면접을 진행할 수 있어요
+            </p>
+          </div>
         </div>
 
         {/* Interview Details */}
@@ -101,7 +106,15 @@ export const InterviewProposed = () => {
         {/* Action Buttons */}
         <div className="space-y-3">
           <button
-            onClick={() => navigate('/recruitment')}
+            onClick={() => {
+              navigate('/employer/recruitment');
+              // 페이지 이동 후 강제 새로고침을 위해 약간의 지연 후 focus 이벤트 발생
+              setTimeout(() => {
+                window.dispatchEvent(new Event('focus'));
+                // visibilitychange 이벤트도 발생시켜서 확실하게 새로고침
+                document.dispatchEvent(new Event('visibilitychange'));
+              }, 200);
+            }}
             className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] font-semibold hover:bg-mint-700 transition-colors"
           >
             채용 탭으로 돌아가기
