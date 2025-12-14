@@ -134,6 +134,14 @@ export const BottomNav = () => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
+  // 지원자 상세 페이지에서는 내비게이션 바 숨기기
+  const shouldHideNav = location.pathname.startsWith('/employer/applicant/') || 
+                        location.pathname.startsWith('/employer/applicants/');
+
+  if (shouldHideNav) {
+    return null;
+  }
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-gray-100 z-40" style={{ paddingBottom: '34px' }}>
       <div className="mx-auto max-w-[480px] bg-white border-t border-line-200 flex items-center justify-around h-16">

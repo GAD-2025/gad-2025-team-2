@@ -461,6 +461,24 @@ export const InterviewProposalModal = ({
           {allDatesSame ? (
             // 모든 날짜 동일 모드 - 여러 시간 슬롯
             <div className="space-y-4">
+              {selectedDates.length > 0 && (
+                <div className="mb-3 pb-2 border-b border-line-200">
+                  <p className="text-[12px] text-text-500 mb-1.5">선택된 날짜:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedDates.map((date) => {
+                      const d = new Date(date);
+                      return (
+                        <span
+                          key={date}
+                          className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[6px] text-[11px] font-medium"
+                        >
+                          {d.getMonth() + 1}/{d.getDate()}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               {allDatesTimeSlots.map((slot, slotIndex) => (
                 <div key={slotIndex} className="border border-line-200 rounded-[10px] p-3 bg-gray-50">
                   <div className="flex items-center justify-between mb-3">
