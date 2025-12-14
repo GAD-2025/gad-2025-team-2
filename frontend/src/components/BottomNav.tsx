@@ -136,7 +136,8 @@ export const BottomNav = () => {
 
   // 지원자 상세 페이지에서는 내비게이션 바 숨기기
   const shouldHideNav = location.pathname.startsWith('/employer/applicant/') || 
-                        location.pathname.startsWith('/employer/applicants/');
+                        location.pathname.startsWith('/employer/applicants/') ||
+                        (location.pathname.startsWith('/applicant/') && userMode === 'employer');
 
   if (shouldHideNav) {
     return null;

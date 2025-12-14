@@ -42,6 +42,12 @@ export const InterviewProposalModal = ({
   // 날짜별 시간/소요시간 저장 (날짜별로 다를 때) - 배열로 변경
   const [dateSpecificTimes, setDateSpecificTimes] = useState<Record<string, Array<{ time: string; duration: number; useCustomTime?: boolean; customTime?: string; useCustomDuration?: boolean; customDuration?: string }>>>({});
   
+  // 저장된 날짜별 시간 슬롯 (저장 버튼을 누른 것들)
+  const [savedDateTimes, setSavedDateTimes] = useState<Record<string, Array<{ time: string; duration: number; useCustomTime?: boolean; customTime?: string; useCustomDuration?: boolean; customDuration?: string }>>>({});
+  
+  // 현재 시간 슬롯을 설정할 날짜 (하나만 선택)
+  const [selectedDateForTimeSlot, setSelectedDateForTimeSlot] = useState<string | null>(null);
+  
   // 현재 표시할 월 (0 = 현재 월, 1 = 다음 달, ...)
   const [currentMonthOffset, setCurrentMonthOffset] = useState<number>(0);
 
@@ -58,10 +64,37 @@ export const InterviewProposalModal = ({
       setUseCustomDuration(false);
       setMessage('');
       setDateSpecificTimes({});
+      setSavedDateTimes({});
+      setSelectedDateForTimeSlot(null);
       setAllDatesTimeSlots([{ time: '', duration: 30 }]);
       setCurrentMonthOffset(0);
     }
   }, [isOpen]);
+
+  // selectedDates가 변경될 때 제거된 날짜의 편집 중인 데이터 정리
+  useEffect(() => {
+    if (!allDatesSame) {
+      setDateSpecificTimes((prev) => {
+        const updated = { ...prev };
+        let hasChanges = false;
+        
+        // 제거된 날짜의 편집 중인 데이터 정리 (저장된 것은 유지)
+        Object.keys(prev).forEach((date) => {
+          if (!selectedDates.includes(date)) {
+            delete updated[date];
+            hasChanges = true;
+          }
+        });
+        
+        return hasChanges ? updated : prev;
+      });
+      
+      // 선택된 날짜가 제거되면 선택 해제
+      if (selectedDateForTimeSlot && !selectedDates.includes(selectedDateForTimeSlot)) {
+        setSelectedDateForTimeSlot(null);
+      }
+    }
+  }, [selectedDates, allDatesSame, selectedDateForTimeSlot]);
 
   // 시간 옵션 생성 (30분 단위, 09:00 ~ 20:00)
   const timeOptions = [];
@@ -115,21 +148,113 @@ export const InterviewProposalModal = ({
     const dateStr = formatDate(date);
     setSelectedDates((prev) => {
       const isRemoving = prev.includes(dateStr);
-      const newDates = isRemoving
-        ? prev.filter((d) => d !== dateStr)
-        : [...prev, dateStr];
+      let newDates: string[];
       
-      // 날짜 제거 시 해당 날짜의 시간 정보도 제거
       if (isRemoving) {
+        // 날짜 제거
+        newDates = prev.filter((d) => d !== dateStr);
+        // 날짜 제거 시 해당 날짜의 시간 정보도 제거
         setDateSpecificTimes((prevTimes) => {
           const newTimes = { ...prevTimes };
           delete newTimes[dateStr];
           return newTimes;
         });
+        setSavedDateTimes((prevSaved) => {
+          const newSaved = { ...prevSaved };
+          delete newSaved[dateStr];
+          return newSaved;
+        });
+        // 선택된 날짜가 제거되면 선택 해제
+        if (selectedDateForTimeSlot === dateStr) {
+          setSelectedDateForTimeSlot(null);
+        }
+      } else {
+        // 날짜 추가 - 날짜 순서대로 정렬
+        newDates = [...prev, dateStr].sort((a, b) => {
+          return new Date(a).getTime() - new Date(b).getTime();
+        });
+        // 새 날짜 추가 시 초기 시간 슬롯 생성 (저장되지 않은 상태)
+        setDateSpecificTimes((prevTimes) => {
+          if (!prevTimes[dateStr] && !savedDateTimes[dateStr]) {
+            return {
+              ...prevTimes,
+              [dateStr]: [{ time: '', duration: 30 }],
+            };
+          }
+          return prevTimes;
+        });
       }
       
       return newDates;
     });
+  };
+  
+  // 날짜 클릭 시 해당 날짜의 시간 슬롯 설정 탭 표시
+  const handleDateClickForTimeSlot = (date: string) => {
+    setSelectedDateForTimeSlot(date);
+    // 해당 날짜의 시간 슬롯이 없으면 초기화
+    if (!dateSpecificTimes[date] && !savedDateTimes[date]) {
+      setDateSpecificTimes((prev) => ({
+        ...prev,
+        [date]: [{ time: '', duration: 30 }],
+      }));
+    } else if (savedDateTimes[date] && !dateSpecificTimes[date]) {
+      // 저장된 날짜를 다시 편집할 때는 저장된 데이터를 복사 (편집 가능하도록)
+      setDateSpecificTimes((prev) => ({
+        ...prev,
+        [date]: savedDateTimes[date].map(slot => ({
+          ...slot,
+          useCustomTime: false,
+          customTime: '',
+          useCustomDuration: false,
+          customDuration: '',
+        })),
+      }));
+    }
+  };
+  
+  // 현재 선택된 날짜의 시간 슬롯 저장
+  const handleSaveDateTimes = (date: string) => {
+    const currentSlots = dateSpecificTimes[date];
+    if (!currentSlots || currentSlots.length === 0) {
+      toast.error('시간 슬롯을 최소 1개 이상 설정해주세요');
+      return;
+    }
+    
+    // 모든 슬롯이 유효한지 검증
+    for (let i = 0; i < currentSlots.length; i++) {
+      const slot = currentSlots[i];
+      const finalTime = slot.useCustomTime ? slot.customTime : slot.time;
+      if (!finalTime) {
+        toast.error(`${i + 1}번째 시간 슬롯의 시간을 선택해주세요`);
+        return;
+      }
+      const finalDuration = slot.useCustomDuration
+        ? parseInt(slot.customDuration || '0')
+        : slot.duration;
+      if (!finalDuration || finalDuration < 10) {
+        toast.error(`${i + 1}번째 시간 슬롯의 소요 시간을 올바르게 입력해주세요 (최소 10분)`);
+        return;
+      }
+    }
+    
+    // 저장
+    setSavedDateTimes((prev) => ({
+      ...prev,
+      [date]: currentSlots.map(slot => ({
+        time: slot.useCustomTime ? (slot.customTime || '') : slot.time,
+        duration: slot.useCustomDuration
+          ? parseInt(slot.customDuration || '0')
+          : slot.duration,
+      })),
+    }));
+    
+    toast.success('저장되었습니다');
+  };
+  
+  // 현재 선택된 날짜의 시간 슬롯 수정 저장
+  const handleUpdateDateTimes = (date: string) => {
+    handleSaveDateTimes(date);
   };
 
   const isDateSelected = (date: Date): boolean => {
@@ -182,48 +307,20 @@ export const InterviewProposalModal = ({
         allDatesTimeSlots: validTimeSlots,
       });
     } else {
-      // 날짜별로 다를 때 - 각 날짜별로 여러 시간 슬롯 검증
+      // 날짜별로 다를 때 - 저장된 날짜별 시간 슬롯 검증
       const dateTimes: Record<string, { time: string; duration: number }[]> = {};
       let hasError = false;
 
       for (const date of selectedDates) {
-        const dateTimeSlots = dateSpecificTimes[date] || [];
-        if (dateTimeSlots.length === 0) {
+        const savedSlots = savedDateTimes[date];
+        if (!savedSlots || savedSlots.length === 0) {
           const d = new Date(date);
-          toast.error(`${d.getMonth() + 1}월 ${d.getDate()}일의 시간을 선택해주세요`);
+          toast.error(`${d.getMonth() + 1}월 ${d.getDate()}일의 시간 슬롯을 저장해주세요`);
           hasError = true;
           break;
         }
 
-        const validSlots: { time: string; duration: number }[] = [];
-        for (let i = 0; i < dateTimeSlots.length; i++) {
-          const slot = dateTimeSlots[i];
-          const finalTime = slot.useCustomTime ? slot.customTime : slot.time;
-          if (!finalTime) {
-            const d = new Date(date);
-            toast.error(`${d.getMonth() + 1}월 ${d.getDate()}일의 ${i + 1}번째 시간 슬롯을 선택해주세요`);
-            hasError = true;
-            break;
-          }
-
-          const finalDuration = slot.useCustomDuration
-            ? parseInt(slot.customDuration || '0')
-            : slot.duration;
-          if (!finalDuration || finalDuration < 10) {
-            const d = new Date(date);
-            toast.error(`${d.getMonth() + 1}월 ${d.getDate()}일의 ${i + 1}번째 소요 시간을 올바르게 입력해주세요 (최소 10분)`);
-            hasError = true;
-            break;
-          }
-
-          validSlots.push({
-            time: finalTime,
-            duration: finalDuration,
-          });
-        }
-
-        if (hasError) break;
-        dateTimes[date] = validSlots;
+        dateTimes[date] = savedSlots;
       }
 
       if (hasError) return;
@@ -412,21 +509,27 @@ export const InterviewProposalModal = ({
             <div className="mt-3 pt-3 border-t border-line-200">
               <p className="text-[12px] text-text-500 mb-2">선택된 날짜 ({selectedDates.length}개):</p>
               <div className="flex flex-wrap gap-2">
-                {selectedDates.map((date) => {
+                {[...selectedDates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime()).map((date) => {
                   const d = new Date(date);
-                  const dateTime = !allDatesSame ? dateSpecificTimes[date] : null;
+                  const isSaved = savedDateTimes[date] && savedDateTimes[date].length > 0;
+                  const isSelected = selectedDateForTimeSlot === date;
                   return (
-                    <div
+                    <button
                       key={date}
-                      className="px-2.5 py-1.5 bg-mint-100 text-mint-700 rounded-[6px] text-[12px] font-medium"
+                      onClick={() => handleDateClickForTimeSlot(date)}
+                      className={`px-2.5 py-1.5 rounded-[6px] text-[12px] font-medium transition-all ${
+                        isSelected
+                          ? 'bg-mint-600 text-white'
+                          : isSaved
+                          ? 'bg-mint-100 text-mint-700 border border-mint-300'
+                          : 'bg-gray-100 text-text-700 border border-gray-200'
+                      }`}
                     >
                       <span>{d.getMonth() + 1}/{d.getDate()}</span>
-                      {!allDatesSame && dateSpecificTimes[date] && dateSpecificTimes[date].length > 0 && (
-                        <span className="ml-1.5 text-[11px] text-mint-600">
-                          ({dateSpecificTimes[date].length}개 슬롯)
-                        </span>
+                      {isSaved && (
+                        <span className="ml-1.5 text-[11px]">✓</span>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -600,23 +703,61 @@ export const InterviewProposalModal = ({
               </button>
             </div>
           ) : (
-            // 날짜별로 다를 때 - 각 날짜별로 여러 시간 슬롯
+            // 날짜별로 다를 때 - 선택한 날짜의 시간 슬롯만 표시
             <div className="space-y-4">
               {selectedDates.length === 0 ? (
                 <p className="text-[13px] text-text-500 text-center py-3">
                   먼저 날짜를 선택해주세요
                 </p>
+              ) : !selectedDateForTimeSlot ? (
+                <p className="text-[13px] text-text-500 text-center py-3">
+                  위에서 날짜를 클릭하여 시간 슬롯을 설정해주세요
+                </p>
               ) : (
-                selectedDates.map((date) => {
-                  const dateTimeSlots = dateSpecificTimes[date] || [{ time: '', duration: 30 }];
-                  const d = new Date(date);
+                (() => {
+                  // 선택된 날짜의 시간 슬롯 (편집 중이면 dateSpecificTimes, 아니면 savedDateTimes)
+                  const dateTimeSlots = dateSpecificTimes[selectedDateForTimeSlot] || savedDateTimes[selectedDateForTimeSlot] || [{ time: '', duration: 30 }];
+                  const d = new Date(selectedDateForTimeSlot);
                   const dateLabel = `${d.getMonth() + 1}월 ${d.getDate()}일`;
+                  const isSaved = savedDateTimes[selectedDateForTimeSlot] && savedDateTimes[selectedDateForTimeSlot].length > 0;
+                  
+                  // 변경사항 확인: 저장된 데이터와 현재 편집 중인 데이터 비교
+                  const hasChanges = (() => {
+                    if (!isSaved || !dateSpecificTimes[selectedDateForTimeSlot]) return false;
+                    const saved = savedDateTimes[selectedDateForTimeSlot];
+                    const editing = dateSpecificTimes[selectedDateForTimeSlot];
+                    
+                    if (saved.length !== editing.length) return true;
+                    
+                    for (let i = 0; i < saved.length; i++) {
+                      const savedSlot = saved[i];
+                      const editingSlot = editing[i];
+                      const savedTime = savedSlot.time || '';
+                      const editingTime = editingSlot.useCustomTime ? (editingSlot.customTime || '') : (editingSlot.time || '');
+                      const savedDuration = savedSlot.duration || 0;
+                      const editingDuration = editingSlot.useCustomDuration
+                        ? parseInt(editingSlot.customDuration || '0')
+                        : (editingSlot.duration || 0);
+                      
+                      if (savedTime !== editingTime || savedDuration !== editingDuration) {
+                        return true;
+                      }
+                    }
+                    return false;
+                  })();
                   
                   return (
-                    <div key={date} className="border border-line-200 rounded-[10px] p-3 bg-gray-50">
-                      <h4 className="text-[14px] font-semibold text-text-900 mb-3">
-                        {dateLabel}
-                      </h4>
+                    <div className="border border-line-200 rounded-[10px] p-3 bg-gray-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-[14px] font-semibold text-text-900">
+                          {dateLabel} 시간 슬롯 설정
+                        </h4>
+                        {isSaved && (
+                          <span className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[6px] text-[11px] font-medium">
+                            저장됨
+                          </span>
+                        )}
+                      </div>
                       <div className="space-y-3">
                         {dateTimeSlots.map((slot, slotIndex) => (
                           <div key={slotIndex} className="border border-line-200 rounded-[8px] p-3 bg-white">
@@ -624,7 +765,7 @@ export const InterviewProposalModal = ({
                               <span className="text-[12px] font-medium text-text-600">시간 슬롯 {slotIndex + 1}</span>
                               {dateTimeSlots.length > 1 && (
                                 <button
-                                  onClick={() => removeDateTimeSlot(date, slotIndex)}
+                                  onClick={() => removeDateTimeSlot(selectedDateForTimeSlot, slotIndex)}
                                   className="text-red-500 hover:text-red-700 text-[11px] font-medium"
                                 >
                                   삭제
@@ -639,13 +780,13 @@ export const InterviewProposalModal = ({
                                 </label>
                                 <div className="flex gap-2">
                                   <select
-                                    value={slot.useCustomTime ? 'custom' : slot.time}
+                                    value={slot.useCustomTime ? 'custom' : (slot.time || '')}
                                     onChange={(e) => {
                                       if (e.target.value === 'custom') {
-                                        updateDateTimeSlot(date, slotIndex, 'useCustomTime', true);
+                                        updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'useCustomTime', true);
                                       } else {
-                                        updateDateTimeSlot(date, slotIndex, 'useCustomTime', false);
-                                        updateDateTimeSlot(date, slotIndex, 'time', e.target.value);
+                                        updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'useCustomTime', false);
+                                        updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'time', e.target.value);
                                       }
                                     }}
                                     className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
@@ -662,7 +803,7 @@ export const InterviewProposalModal = ({
                                     <input
                                       type="time"
                                       value={slot.customTime || ''}
-                                      onChange={(e) => updateDateTimeSlot(date, slotIndex, 'customTime', e.target.value)}
+                                      onChange={(e) => updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'customTime', e.target.value)}
                                       className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
                                     />
                                   )}
@@ -676,13 +817,13 @@ export const InterviewProposalModal = ({
                                 </label>
                                 <div className="flex gap-2">
                                   <select
-                                    value={slot.useCustomDuration ? 'custom' : slot.duration.toString()}
+                                    value={slot.useCustomDuration ? 'custom' : (slot.duration?.toString() || '30')}
                                     onChange={(e) => {
                                       if (e.target.value === 'custom') {
-                                        updateDateTimeSlot(date, slotIndex, 'useCustomDuration', true);
+                                        updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'useCustomDuration', true);
                                       } else {
-                                        updateDateTimeSlot(date, slotIndex, 'useCustomDuration', false);
-                                        updateDateTimeSlot(date, slotIndex, 'duration', parseInt(e.target.value));
+                                        updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'useCustomDuration', false);
+                                        updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'duration', parseInt(e.target.value));
                                       }
                                     }}
                                     className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
@@ -700,7 +841,7 @@ export const InterviewProposalModal = ({
                                       min="10"
                                       step="10"
                                       value={slot.customDuration || ''}
-                                      onChange={(e) => updateDateTimeSlot(date, slotIndex, 'customDuration', e.target.value)}
+                                      onChange={(e) => updateDateTimeSlot(selectedDateForTimeSlot, slotIndex, 'customDuration', e.target.value)}
                                       placeholder="분"
                                       className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
                                     />
@@ -713,7 +854,7 @@ export const InterviewProposalModal = ({
                         
                         {/* 시간 슬롯 추가 버튼 */}
                         <button
-                          onClick={() => addDateTimeSlot(date)}
+                          onClick={() => addDateTimeSlot(selectedDateForTimeSlot)}
                           className="w-full py-2 border-2 border-dashed border-mint-300 rounded-[8px] text-mint-600 text-[12px] font-medium hover:bg-mint-50 transition-colors flex items-center justify-center gap-1.5"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -722,9 +863,28 @@ export const InterviewProposalModal = ({
                           시간 슬롯 추가
                         </button>
                       </div>
+                      
+                      {/* 저장/수정 버튼 */}
+                      <div className="mt-4 pt-3 border-t border-line-200">
+                        {!isSaved ? (
+                          <button
+                            onClick={() => handleSaveDateTimes(selectedDateForTimeSlot)}
+                            className="w-full py-2.5 bg-mint-600 text-white rounded-[10px] text-[13px] font-medium hover:bg-mint-700 transition-colors"
+                          >
+                            저장
+                          </button>
+                        ) : hasChanges ? (
+                          <button
+                            onClick={() => handleUpdateDateTimes(selectedDateForTimeSlot)}
+                            className="w-full py-2.5 bg-mint-600 text-white rounded-[10px] text-[13px] font-medium hover:bg-mint-700 transition-colors"
+                          >
+                            수정
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   );
-                })
+                })()
               )}
             </div>
           )}

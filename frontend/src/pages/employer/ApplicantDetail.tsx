@@ -203,7 +203,7 @@ export const ApplicantDetail = () => {
   })();
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-20">
       <Header showBack title="지원자 상세 정보" />
 
       <div className="p-4">
@@ -366,9 +366,9 @@ export const ApplicantDetail = () => {
         </div>
       </div>
 
-      {/* Bottom Action Bar - 모바일 화면 크기에 맞게 조정 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 px-3 py-2.5 safe-area-bottom z-50 shadow-lg">
-        <div className="flex items-center gap-2 max-w-md mx-auto">
+      {/* Bottom Action Bar - 모바일 화면 크기에 맞게 조정, 내비게이션 바 대신 표시 */}
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 px-3 py-3 safe-area-bottom z-50 shadow-lg">
+        <div className="flex items-center gap-2">
           {/* 저장 아이콘 - 모바일 크기에 맞게 */}
           <button
             onClick={handleSave}
