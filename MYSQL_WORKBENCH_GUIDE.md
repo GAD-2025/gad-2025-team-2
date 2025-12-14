@@ -80,3 +80,4 @@ WHERE id = 'job-id-here';  -- 실제 job ID로 변경
 
 3. **결과 확인**: 하단의 "Result Grid" 탭에서 결과를 확인할 수 있습니다.
 
+

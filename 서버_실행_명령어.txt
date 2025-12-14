@@ -56,3 +56,4 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'C:\Users\Admi
    그 다음 cd frontend 또는 cd backend
 
 ========================================
+

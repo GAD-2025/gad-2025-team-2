@@ -17,7 +17,15 @@ from app.models import (
     EmployerProfile,
 )
 from app.models import Store  # 매장 정보로 공고 소유주 조회
-from app.schemas import ApplicationCreate, ApplicationUpdate
+from app.schemas import (
+    ApplicationCreate, 
+    ApplicationUpdate,
+    InterviewProposalUpdate,
+    AcceptanceGuideUpdate,
+    FirstWorkDateUpdate,
+    CoordinationMessageCreate,
+    WorkDateConfirmation,
+)
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -285,6 +293,33 @@ async def list_applications(
         try:
             app_dict = app.dict()  # This includes seekerId, jobId, status, etc.
             
+            # Parse JSON fields if they exist
+            if app.interviewData:
+                try:
+                    app_dict['interviewData'] = json.loads(app.interviewData)
+                except:
+                    app_dict['interviewData'] = None
+            else:
+                app_dict['interviewData'] = None
+            
+            if app.acceptanceData:
+                try:
+                    app_dict['acceptanceData'] = json.loads(app.acceptanceData)
+                except:
+                    app_dict['acceptanceData'] = None
+            else:
+                app_dict['acceptanceData'] = None
+            
+            if app.coordinationMessages:
+                try:
+                    app_dict['coordinationMessages'] = json.loads(app.coordinationMessages)
+                except:
+                    app_dict['coordinationMessages'] = []
+            else:
+                app_dict['coordinationMessages'] = []
+            
+            app_dict['firstWorkDateConfirmed'] = app.firstWorkDateConfirmed
+            
             # If filtering by seekerId, include Job information
             if seekerId:
                 job = session.exec(select(Job).where(Job.id == app.jobId)).first()
@@ -443,6 +478,220 @@ async def update_application(
         "status": application.status,
         "appliedAt": application.appliedAt,
         "updatedAt": application.updatedAt,
+        "hiredAt": application.hiredAt,
+    }
+
+
+@router.post("/{application_id}/interview-proposal", response_model=dict)
+async def update_interview_proposal(
+    application_id: str,
+    request: InterviewProposalUpdate,
+    session: Session = Depends(get_session),
+):
+    """Update interview proposal (면접 제안 업데이트)"""
+    statement = select(Application).where(Application.applicationId == application_id)
+    application = session.exec(statement).first()
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    interview_data = {
+        "selectedDates": request.selectedDates,
+        "time": request.time,
+        "duration": request.duration,
+        "message": request.message,
+        "allDatesSame": request.allDatesSame,
+        "allDatesTimeSlots": request.allDatesTimeSlots,
+        "dateSpecificTimes": request.dateSpecificTimes,
+        "isConfirmed": request.isConfirmed,
+        "confirmedAt": datetime.utcnow().isoformat() if request.isConfirmed else None,
+    }
+    
+    application.interviewData = json.dumps(interview_data)
+    application.status = "reviewed" if application.status == "applied" else application.status
+    application.updatedAt = datetime.utcnow().isoformat()
+    
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+    
+    return {"applicationId": application.applicationId, "interviewData": interview_data}
+
+
+@router.post("/{application_id}/acceptance-guide", response_model=dict)
+async def update_acceptance_guide(
+    application_id: str,
+    request: AcceptanceGuideUpdate,
+    session: Session = Depends(get_session),
+):
+    """Update acceptance guide (합격 안내 업데이트)"""
+    statement = select(Application).where(Application.applicationId == application_id)
+    application = session.exec(statement).first()
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    acceptance_data = {
+        "documents": request.documents,
+        "workAttire": request.workAttire,
+        "workNotes": request.workNotes,
+        "firstWorkDate": request.firstWorkDate,
+        "firstWorkTime": request.firstWorkTime,
+        "coordinationMessage": request.coordinationMessage,
+        "createdAt": datetime.utcnow().isoformat(),
+    }
+    
+    application.acceptanceData = json.dumps(acceptance_data)
+    application.status = "accepted"
+    application.updatedAt = datetime.utcnow().isoformat()
+    
+    # 조율 메시지가 있으면 추가
+    if request.coordinationMessage:
+        messages = []
+        if application.coordinationMessages:
+            try:
+                messages = json.loads(application.coordinationMessages)
+            except:
+                messages = []
+        messages.append({
+            "message": request.coordinationMessage,
+            "sentAt": datetime.utcnow().isoformat(),
+            "from": "employer",
+        })
+        application.coordinationMessages = json.dumps(messages)
+    
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+    
+    return {"applicationId": application.applicationId, "acceptanceData": acceptance_data}
+
+
+@router.post("/{application_id}/first-work-date", response_model=dict)
+async def update_first_work_date(
+    application_id: str,
+    request: FirstWorkDateUpdate,
+    session: Session = Depends(get_session),
+):
+    """Update first work date (첫 출근 날짜 수정)"""
+    statement = select(Application).where(Application.applicationId == application_id)
+    application = session.exec(statement).first()
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    # acceptanceData 업데이트
+    acceptance_data = {}
+    if application.acceptanceData:
+        try:
+            acceptance_data = json.loads(application.acceptanceData)
+        except:
+            acceptance_data = {}
+    
+    acceptance_data["firstWorkDate"] = request.firstWorkDate
+    acceptance_data["firstWorkTime"] = request.firstWorkTime
+    acceptance_data["updatedAt"] = datetime.utcnow().isoformat()
+    
+    application.acceptanceData = json.dumps(acceptance_data)
+    
+    # 조율 메시지가 있으면 추가
+    if request.coordinationMessage:
+        messages = []
+        if application.coordinationMessages:
+            try:
+                messages = json.loads(application.coordinationMessages)
+            except:
+                messages = []
+        messages.append({
+            "message": request.coordinationMessage,
+            "sentAt": datetime.utcnow().isoformat(),
+            "from": "employer",
+        })
+        application.coordinationMessages = json.dumps(messages)
+    
+    application.updatedAt = datetime.utcnow().isoformat()
+    
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+    
+    return {"applicationId": application.applicationId, "acceptanceData": acceptance_data}
+
+
+@router.post("/{application_id}/coordination-message", response_model=dict)
+async def add_coordination_message(
+    application_id: str,
+    request: CoordinationMessageCreate,
+    session: Session = Depends(get_session),
+):
+    """Add coordination message (조율 메시지 추가)"""
+    statement = select(Application).where(Application.applicationId == application_id)
+    application = session.exec(statement).first()
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    messages = []
+    if application.coordinationMessages:
+        try:
+            messages = json.loads(application.coordinationMessages)
+        except:
+            messages = []
+    
+    messages.append({
+        "message": request.message,
+        "sentAt": datetime.utcnow().isoformat(),
+        "from": "jobseeker",
+        "type": request.type,
+    })
+    
+    application.coordinationMessages = json.dumps(messages)
+    application.updatedAt = datetime.utcnow().isoformat()
+    
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+    
+    return {"applicationId": application.applicationId, "coordinationMessages": messages}
+
+
+@router.post("/{application_id}/confirm-work-date", response_model=dict)
+async def confirm_work_date(
+    application_id: str,
+    request: WorkDateConfirmation,
+    session: Session = Depends(get_session),
+):
+    """Confirm work date (출근 확정 - 채용 확정)"""
+    statement = select(Application).where(Application.applicationId == application_id)
+    application = session.exec(statement).first()
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    if request.confirmed:
+        # acceptanceData에서 첫 출근 날짜 가져오기
+        acceptance_data = {}
+        if application.acceptanceData:
+            try:
+                acceptance_data = json.loads(application.acceptanceData)
+            except:
+                acceptance_data = {}
+        
+        first_work_date = acceptance_data.get("firstWorkDate")
+        if first_work_date:
+            application.firstWorkDateConfirmed = first_work_date
+            application.status = "hired"
+            application.hiredAt = datetime.utcnow().isoformat()
+            application.updatedAt = datetime.utcnow().isoformat()
+    
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+    
+    return {
+        "applicationId": application.applicationId,
+        "status": application.status,
+        "firstWorkDateConfirmed": application.firstWorkDateConfirmed,
         "hiredAt": application.hiredAt,
     }
 

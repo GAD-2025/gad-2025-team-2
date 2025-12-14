@@ -92,3 +92,4 @@ SELECT
      WHERE e.businessNo = ep.id) as application_count
 FROM employer_profiles ep
 ORDER BY application_count DESC;
+

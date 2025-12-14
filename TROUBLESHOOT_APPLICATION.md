@@ -114,3 +114,4 @@ SELECT id, name, role FROM signup_users WHERE role = 'jobseeker' ORDER BY id DES
 
 이 정보를 알려주시면 정확한 해결 방법을 제시하겠습니다!
 
+

@@ -20,3 +20,4 @@ DESCRIBE posts;
 -- CREATE INDEX idx_user_id ON posts(user_id);
 -- CREATE INDEX idx_created_at ON posts(created_at);
 
+

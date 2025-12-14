@@ -23,9 +23,11 @@ export const InterviewProposalModal = ({
   onClose,
   onSubmit,
   applicantName = '지원자',
+  initialData,
+  coordinationMessages = [],
 }: InterviewProposalModalProps) => {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [allDatesSame, setAllDatesSame] = useState<boolean>(true); // 모든 날짜 동일 체크박스
+  const [allDatesSame, setAllDatesSame] = useState<boolean>(false); // 모든 날짜 동일 체크박스 (기본값: 개별 설정)
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customTime, setCustomTime] = useState<string>('');
   const [useCustomTime, setUseCustomTime] = useState(false);
@@ -45,31 +47,64 @@ export const InterviewProposalModal = ({
   // 저장된 날짜별 시간 슬롯 (저장 버튼을 누른 것들)
   const [savedDateTimes, setSavedDateTimes] = useState<Record<string, Array<{ time: string; duration: number; useCustomTime?: boolean; customTime?: string; useCustomDuration?: boolean; customDuration?: string }>>>({});
   
+  // 모든 날짜 동일 모드에서 저장된 시간 슬롯
+  const [savedAllDatesTimeSlots, setSavedAllDatesTimeSlots] = useState<Array<{ time: string; duration: number }>>([]);
+  
   // 현재 시간 슬롯을 설정할 날짜 (하나만 선택)
   const [selectedDateForTimeSlot, setSelectedDateForTimeSlot] = useState<string | null>(null);
   
   // 현재 표시할 월 (0 = 현재 월, 1 = 다음 달, ...)
   const [currentMonthOffset, setCurrentMonthOffset] = useState<number>(0);
 
-  // 모달이 열릴 때마다 상태 초기화
+  // 모달이 열릴 때마다 상태 초기화 또는 초기 데이터 로드
   useEffect(() => {
     if (isOpen) {
-      setSelectedDates([]);
-      setAllDatesSame(true);
-      setSelectedTime('');
-      setCustomTime('');
-      setUseCustomTime(false);
-      setDuration(30);
-      setCustomDuration('');
-      setUseCustomDuration(false);
-      setMessage('');
-      setDateSpecificTimes({});
-      setSavedDateTimes({});
-      setSelectedDateForTimeSlot(null);
-      setAllDatesTimeSlots([{ time: '', duration: 30 }]);
-      setCurrentMonthOffset(0);
+      if (initialData) {
+        // 수정 모드: 초기 데이터로 채우기
+        setSelectedDates(initialData.selectedDates || []);
+        setAllDatesSame(initialData.allDatesSame !== undefined ? initialData.allDatesSame : false);
+        setSelectedTime(initialData.time || '');
+        setCustomTime('');
+        setUseCustomTime(false);
+        setDuration(initialData.duration || 30);
+        setCustomDuration('');
+        setUseCustomDuration(false);
+        setMessage(initialData.message || '');
+        setDateSpecificTimes(initialData.dateSpecificTimes || {});
+        setSelectedDateForTimeSlot(null);
+        if (initialData.allDatesSame && initialData.allDatesTimeSlots) {
+          setAllDatesTimeSlots(initialData.allDatesTimeSlots);
+          setSavedAllDatesTimeSlots(initialData.allDatesTimeSlots);
+        } else {
+          setAllDatesTimeSlots([{ time: '', duration: 30 }]);
+          setSavedAllDatesTimeSlots([]);
+        }
+        if (initialData.dateSpecificTimes) {
+          setSavedDateTimes(initialData.dateSpecificTimes);
+        } else {
+          setSavedDateTimes({});
+        }
+        setCurrentMonthOffset(0);
+      } else {
+        // 새로 만들기 모드: 초기화 (날짜별 개별 설정이 기본)
+        setSelectedDates([]);
+        setAllDatesSame(false); // 기본값: 날짜별 개별 설정
+        setSelectedTime('');
+        setCustomTime('');
+        setUseCustomTime(false);
+        setDuration(30);
+        setCustomDuration('');
+        setUseCustomDuration(false);
+        setMessage('');
+        setDateSpecificTimes({});
+        setSavedDateTimes({});
+        setSelectedDateForTimeSlot(null);
+        setAllDatesTimeSlots([{ time: '', duration: 30 }]);
+        setSavedAllDatesTimeSlots([]);
+        setCurrentMonthOffset(0);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   // selectedDates가 변경될 때 제거된 날짜의 편집 중인 데이터 정리
   useEffect(() => {
@@ -228,6 +263,65 @@ export const InterviewProposalModal = ({
     }
   };
   
+  // 모든 날짜 동일 모드에서 시간 슬롯 저장
+  const handleSaveAllDatesTimeSlots = () => {
+    if (allDatesTimeSlots.length === 0) {
+      toast.error('시간 슬롯을 최소 1개 이상 설정해주세요');
+      return;
+    }
+    
+    // 모든 슬롯이 유효한지 검증
+    for (let i = 0; i < allDatesTimeSlots.length; i++) {
+      const slot = allDatesTimeSlots[i];
+      const finalTime = slot.useCustomTime ? slot.customTime : slot.time;
+      if (!finalTime) {
+        toast.error(`${i + 1}번째 시간 슬롯의 시간을 선택해주세요`);
+        return;
+      }
+      const finalDuration = slot.useCustomDuration
+        ? parseInt(slot.customDuration || '0')
+        : slot.duration;
+      if (!finalDuration || finalDuration < 10) {
+        toast.error(`${i + 1}번째 시간 슬롯의 소요 시간을 올바르게 입력해주세요 (최소 10분)`);
+        return;
+      }
+    }
+    
+    // 저장
+    setSavedAllDatesTimeSlots(
+      allDatesTimeSlots.map(slot => ({
+        time: slot.useCustomTime ? (slot.customTime || '') : slot.time,
+        duration: slot.useCustomDuration
+          ? parseInt(slot.customDuration || '0')
+          : slot.duration,
+      }))
+    );
+    
+    toast.success('저장되었습니다');
+  };
+  
+  // 모든 날짜 동일 모드에서 변경사항 확인
+  const hasAllDatesChanges = () => {
+    if (savedAllDatesTimeSlots.length === 0) return false;
+    if (savedAllDatesTimeSlots.length !== allDatesTimeSlots.length) return true;
+    
+    for (let i = 0; i < savedAllDatesTimeSlots.length; i++) {
+      const savedSlot = savedAllDatesTimeSlots[i];
+      const editingSlot = allDatesTimeSlots[i];
+      const savedTime = savedSlot.time || '';
+      const editingTime = editingSlot.useCustomTime ? (editingSlot.customTime || '') : (editingSlot.time || '');
+      const savedDuration = savedSlot.duration || 0;
+      const editingDuration = editingSlot.useCustomDuration
+        ? parseInt(editingSlot.customDuration || '0')
+        : (editingSlot.duration || 0);
+      
+      if (savedTime !== editingTime || savedDuration !== editingDuration) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
   // 현재 선택된 날짜의 시간 슬롯 저장
   const handleSaveDateTimes = (date: string) => {
     const currentSlots = dateSpecificTimes[date];
@@ -283,33 +377,38 @@ export const InterviewProposalModal = ({
     }
 
     if (allDatesSame) {
-      // 모든 날짜 동일 모드 - 여러 시간 슬롯 검증
-      const validTimeSlots: { time: string; duration: number }[] = [];
+      // 모든 날짜 동일 모드 - 저장된 시간 슬롯 사용 (저장되지 않았으면 현재 편집 중인 것 사용)
+      const validTimeSlots: { time: string; duration: number }[] = savedAllDatesTimeSlots.length > 0 
+        ? savedAllDatesTimeSlots 
+        : [];
       
-      for (let i = 0; i < allDatesTimeSlots.length; i++) {
-        const slot = allDatesTimeSlots[i];
-        const finalTime = slot.useCustomTime ? slot.customTime : slot.time;
-        if (!finalTime) {
-          toast.error(`${i + 1}번째 시간 슬롯의 시간을 선택해주세요`);
-          return;
-        }
+      // 저장된 것이 없으면 현재 편집 중인 것 검증
+      if (validTimeSlots.length === 0) {
+        for (let i = 0; i < allDatesTimeSlots.length; i++) {
+          const slot = allDatesTimeSlots[i];
+          const finalTime = slot.useCustomTime ? slot.customTime : slot.time;
+          if (!finalTime) {
+            toast.error(`${i + 1}번째 시간 슬롯의 시간을 선택해주세요`);
+            return;
+          }
 
-        const finalDuration = slot.useCustomDuration
-          ? parseInt(slot.customDuration || '0')
-          : slot.duration;
-        if (!finalDuration || finalDuration < 10) {
-          toast.error(`${i + 1}번째 시간 슬롯의 소요 시간을 올바르게 입력해주세요 (최소 10분)`);
-          return;
-        }
+          const finalDuration = slot.useCustomDuration
+            ? parseInt(slot.customDuration || '0')
+            : slot.duration;
+          if (!finalDuration || finalDuration < 10) {
+            toast.error(`${i + 1}번째 시간 슬롯의 소요 시간을 올바르게 입력해주세요 (최소 10분)`);
+            return;
+          }
 
-        validTimeSlots.push({
-          time: finalTime,
-          duration: finalDuration,
-        });
+          validTimeSlots.push({
+            time: finalTime,
+            duration: finalDuration,
+          });
+        }
       }
 
       if (validTimeSlots.length === 0) {
-        toast.error('최소 1개의 시간 슬롯을 입력해주세요');
+        toast.error('시간 슬롯을 저장해주세요');
         return;
       }
 
@@ -441,9 +540,23 @@ export const InterviewProposalModal = ({
         {/* 화면 제목 */}
         <div className="mb-6">
           <h2 className="text-[20px] font-bold text-white mb-1">
-            면접 가능한 일자와 시간을 선택하세요
+            {initialData ? '조율 메시지를 바탕으로 면접 일정을 수정하세요.' : '면접 가능한 일자와 시간을 선택하세요'}
           </h2>
         </div>
+
+        {/* 구직자가 보낸 조율 메시지 표시 (수정 모드일 때만) */}
+        {initialData && coordinationMessages.length > 0 && (
+          <div className="bg-white rounded-[16px] p-4 mb-4">
+            <h3 className="text-[14px] font-semibold text-text-900 mb-3">구직자 조율 메시지</h3>
+            <div className="space-y-2 max-h-[120px] overflow-y-auto">
+              {coordinationMessages.map((msg, idx) => (
+                <div key={idx} className="bg-mint-50 rounded-[8px] p-3 border border-mint-200">
+                  <p className="text-[13px] text-text-700 whitespace-pre-wrap">{msg.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 날짜 선택 섹션 (하얀색 배경) */}
         <div className="bg-white rounded-[16px] p-4 mb-4">
@@ -716,6 +829,29 @@ export const InterviewProposalModal = ({
                 </svg>
                 시간 슬롯 추가
               </button>
+              
+              {/* 저장/수정 버튼 */}
+              <div className="mt-4 pt-3 border-t border-line-200">
+                {savedAllDatesTimeSlots.length === 0 ? (
+                  <button
+                    onClick={handleSaveAllDatesTimeSlots}
+                    className="w-full py-2.5 bg-mint-600 text-white rounded-[10px] text-[13px] font-medium hover:bg-mint-700 transition-colors"
+                  >
+                    저장
+                  </button>
+                ) : hasAllDatesChanges() ? (
+                  <button
+                    onClick={handleSaveAllDatesTimeSlots}
+                    className="w-full py-2.5 bg-mint-600 text-white rounded-[10px] text-[13px] font-medium hover:bg-mint-700 transition-colors"
+                  >
+                    수정
+                  </button>
+                ) : (
+                  <div className="w-full py-2.5 bg-mint-100 text-mint-700 rounded-[10px] text-[13px] font-medium text-center">
+                    저장됨
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             // 날짜별로 다를 때 - 선택한 날짜의 시간 슬롯만 표시
@@ -939,11 +1075,12 @@ export const InterviewProposalModal = ({
             }
             className="flex-1 px-4 py-3 bg-white text-mint-600 rounded-[12px] font-medium text-[14px] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-2 border-white"
           >
-            면접 제안 보내기
+            {initialData ? '수정 후 확정하기' : '면접 제안 보내기'}
           </button>
         </div>
       </div>
     </div>
   );
 };
+
 

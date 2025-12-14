@@ -61,3 +61,4 @@ SELECT
 FROM signup_users
 WHERE role = 'job_seeker'
   AND (password IS NULL OR password = '');
+

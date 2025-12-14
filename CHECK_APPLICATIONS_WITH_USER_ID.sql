@@ -56,3 +56,4 @@ LEFT JOIN applications a ON a.jobId = j.id
 GROUP BY ep.user_id, e.id
 ORDER BY 지원수 DESC, 공고수 DESC;
 
+

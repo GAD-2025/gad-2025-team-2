@@ -15,3 +15,4 @@ SET SQL_SAFE_UPDATES = 1;
 -- 확인
 SELECT id, title, wage, wage_type FROM jobs LIMIT 10;
 
+

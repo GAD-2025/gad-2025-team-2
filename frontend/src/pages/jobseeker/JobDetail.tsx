@@ -191,7 +191,6 @@ export const JobDetail = () => {
               </div>
             )}
           </div>
-          <p className="text-[14px] text-text-700 mb-2">{job.category || job.employer.industry}</p>
           <div className="flex items-center gap-1 text-text-700 text-[14px]">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -215,7 +214,6 @@ export const JobDetail = () => {
             />
             <InfoRow label="근무기간" value={Array.isArray(job.workDays) ? `주 ${job.workDays.length}일, 6시간` : job.workDays} />
             <InfoRow label="근무요일 / 시간" value={job.workHours || "시간, 요일 협의"} />
-            <InfoRow label="업직종" value={job.category || job.title} />
             <InfoRow label="언어요구사항">
               <span className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[16px] text-[13px] font-medium border border-mint-600">
                 {job.requiredLanguage}
@@ -253,7 +251,7 @@ export const JobDetail = () => {
           <div className="flex gap-2 w-full">
             <button
               onClick={() => {
-                navigate(`/messages/chat/${id}`);
+                navigate('/employer/coming-soon');
               }}
               className="flex-1 h-[52px] border-2 border-mint-600 bg-white text-mint-600 
                        rounded-[12px] text-[15px] font-semibold hover:bg-mint-50 

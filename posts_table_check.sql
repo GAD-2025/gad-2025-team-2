@@ -17,3 +17,4 @@ ON DUPLICATE KEY UPDATE title=title;
 
 -- 4. 삽입 후 데이터 확인
 SELECT * FROM posts ORDER BY created_at DESC;
+

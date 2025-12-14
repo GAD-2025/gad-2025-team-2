@@ -12,7 +12,6 @@ export interface AcceptanceGuideData {
   documents: string[];
   workAttire: string[];
   workNotes: string[];
-  message: string;
   firstWorkDate?: string; // YYYY-MM-DD format
   firstWorkTime?: string; // HH:mm format
   coordinationMessage?: string; // 조율 메시지
@@ -32,7 +31,6 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
   const [documents, setDocuments] = useState<string[]>(defaultDocuments);
   const [workAttire, setWorkAttire] = useState<string[]>([]);
   const [workNotes, setWorkNotes] = useState<string[]>([]);
-  const [message, setMessage] = useState('');
   const [showRecommendedDocs, setShowRecommendedDocs] = useState(false);
   const [documentInput, setDocumentInput] = useState('');
   const [attireInput, setAttireInput] = useState('');
@@ -54,7 +52,6 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
       setDocuments(defaultDocuments);
       setWorkAttire([]);
       setWorkNotes([]);
-      setMessage('');
       setFirstWorkDate('');
       setFirstWorkTime('');
       setCustomTime('');
@@ -170,7 +167,6 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
       documents, 
       workAttire, 
       workNotes, 
-      message,
       firstWorkDate: firstWorkDate || undefined,
       firstWorkTime: finalTime || undefined,
       coordinationMessage: coordinationMessage.trim() || undefined,
@@ -330,27 +326,30 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
               <h3 className="text-[15px] font-semibold text-text-900">근무 시 유의 사항</h3>
             </div>
 
-            {/* 추천 항목 */}
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {recommendedNotes.map((note) => (
-                <button
-                  key={note}
-                  onClick={() => {
-                    if (workNotes.includes(note)) {
-                      handleRemoveNote(note);
-                    } else {
-                      handleAddNote(note);
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
-                    workNotes.includes(note)
-                      ? 'bg-mint-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {note}
-                </button>
-              ))}
+            {/* 추천 키워드 */}
+            <div className="mb-2">
+              <p className="text-[11px] text-text-500 mb-1.5">추천 키워드</p>
+              <div className="flex flex-wrap gap-1.5">
+                {recommendedNotes.map((note) => (
+                  <button
+                    key={note}
+                    onClick={() => {
+                      if (workNotes.includes(note)) {
+                        handleRemoveNote(note);
+                      } else {
+                        handleAddNote(note);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                      workNotes.includes(note)
+                        ? 'bg-mint-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {note}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 선택된 유의 사항 */}
@@ -531,21 +530,6 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
             </div>
           )}
 
-          {/* 📝 전달 메시지 */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[16px]">📝</span>
-              <h3 className="text-[15px] font-semibold text-text-900">전달 메시지</h3>
-            </div>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="예) 첫 출근 시 준비물과 복장을 꼭 확인해주세요."
-              rows={2}
-              className="w-full px-3 py-2 bg-white border border-mint-300 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500 resize-none"
-            />
-          </div>
-
           {/* 💬 조율 메시지 */}
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -582,3 +566,4 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
     </div>
   );
 };
+

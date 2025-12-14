@@ -53,6 +53,17 @@ interface Applicant {
   experience: string;
   tags: string[];
   storeId?: string; // 공고의 store_id
+  acceptanceData?: {
+    documents: string[];
+    workAttire: string[];
+    workNotes: string[];
+    firstWorkDate?: string;
+    firstWorkTime?: string;
+    coordinationMessage?: string;
+    createdAt?: string;
+  };
+  firstWorkDateConfirmed?: string; // 채용 확정된 첫 출근 날짜
+  coordinationMessages?: Array<{ message: string; sentAt: string; from?: string }>;
 }
 
 export const Recruitment = () => {
@@ -68,7 +79,7 @@ export const Recruitment = () => {
     
     if (filterParam === 'interview_result') {
       setActiveFilter('interview_result');
-      if (resultParam === 'accepted' || resultParam === 'hold' || resultParam === 'rejected') {
+      if (resultParam === 'accepted' || resultParam === 'hold' || resultParam === 'rejected' || resultParam === 'hired') {
         setInterviewResultFilter(resultParam);
       }
     }
@@ -235,22 +246,27 @@ export const Recruitment = () => {
             finalStoreId: storeId
           });
           
-          // 면접 제안 데이터 확인 (localStorage에서) - applicationId만 확인 (공고별로 구분)
-          const interviewProposalKey = `interview_proposal_${app.applicationId}`;
-          const interviewProposalData = localStorage.getItem(interviewProposalKey);
-          const hasInterviewProposal = !!interviewProposalData;
+          // 면접 제안 데이터 확인 (API 우선, localStorage fallback)
+          const hasInterviewProposal = !!app.interviewData || !!localStorage.getItem(`interview_proposal_${app.applicationId}`);
           
-          // 상태 결정: 백엔드 상태를 우선하되, 면접 제안이 있으면 'reviewed'로 설정
+          // 합격 안내 데이터 확인 (API 우선, localStorage fallback)
+          const apiAcceptanceData = app.acceptanceData;
+          const hasAcceptanceGuide = !!apiAcceptanceData || !!localStorage.getItem(`acceptance_guide_${app.applicationId}`);
+          
+          // 상태 결정: 합격안내 > 불합격 > 보류 > 면접제안 > 기타
           let finalStatus: Applicant['status'];
-          if (app.status === 'applied') {
-            // 백엔드 상태가 'applied'이지만 면접 제안이 있으면 'reviewed'로 변경
-            finalStatus = hasInterviewProposal ? 'reviewed' : 'pending';
-          } else if (app.status === 'hired') {
+          if (hasAcceptanceGuide) {
+            // 합격안내가 있으면 'accepted'
             finalStatus = 'accepted';
           } else if (app.status === 'rejected') {
             finalStatus = 'rejected';
           } else if (app.status === 'hold') {
             finalStatus = 'hold';
+          } else if (app.status === 'hired') {
+            finalStatus = 'accepted';
+          } else if (app.status === 'applied') {
+            // 백엔드 상태가 'applied'이지만 면접 제안이 있으면 'reviewed'로 변경
+            finalStatus = hasInterviewProposal ? 'reviewed' : 'pending';
           } else if (app.status === 'reviewed' || hasInterviewProposal) {
             // 면접 제안이 있거나 상태가 'reviewed'면 'reviewed' (진행중)
             finalStatus = 'reviewed';
@@ -271,7 +287,10 @@ export const Recruitment = () => {
             languageLevel: seeker.languageLevel || '정보 없음',
             experience: expStr,
             tags: tags,
-            storeId: storeId // 공고의 store_id 추가
+            storeId: storeId, // 공고의 store_id 추가
+            acceptanceData: apiAcceptanceData || null, // API 데이터
+            firstWorkDateConfirmed: app.firstWorkDateConfirmed || null, // 채용 확정된 첫 출근 날짜
+            coordinationMessages: app.coordinationMessages || [], // 조율 메시지
           };
         });
 
@@ -340,6 +359,34 @@ export const Recruitment = () => {
     }
   ];
 
+  // 채용 확정된 지원자 확인 (첫 출근 날짜가 확정되고 구직자가 확인한 경우)
+  const isHired = (applicant: Applicant): boolean => {
+    // API 데이터 우선 확인
+    if (applicant.firstWorkDateConfirmed) {
+      // API에 firstWorkDateConfirmed가 있으면 채용 확정
+      return true;
+    }
+    
+    // localStorage fallback
+    if (!applicant.applicationId) return false;
+    
+    const acceptanceKey = `acceptance_guide_${applicant.applicationId}`;
+    const acceptanceData = localStorage.getItem(acceptanceKey);
+    if (!acceptanceData) return false;
+    
+    try {
+      const data = JSON.parse(acceptanceData);
+      if (!data.firstWorkDate) return false;
+      
+      // 구직자가 확인했는지 확인
+      const confirmationKey = `first_work_date_confirmed_${applicant.applicationId}`;
+      const isConfirmed = localStorage.getItem(confirmationKey) === 'true';
+      return isConfirmed;
+    } catch {
+      return false;
+    }
+  };
+
   const filteredApplicants = (() => {
     let filtered = applicants;
     
@@ -366,16 +413,25 @@ export const Recruitment = () => {
       // 진행중: 면접 제안 보낸 사람들 (status가 reviewed)
       return filtered.filter(a => a.status === 'reviewed');
     } else if (activeFilter === 'interview_result') {
-      // 면접결과: 합격/보류/불합격
+      // 면접결과: 합격/보류/불합격/채용확정
       if (interviewResultFilter === 'accepted') {
-        return filtered.filter(a => a.status === 'accepted');
+        // 합격: accepted 상태이지만 채용 확정되지 않은 경우만
+        return filtered.filter(a => a.status === 'accepted' && !isHired(a));
       } else if (interviewResultFilter === 'hold') {
         return filtered.filter(a => a.status === 'hold');
       } else if (interviewResultFilter === 'rejected') {
         return filtered.filter(a => a.status === 'rejected');
+      } else if (interviewResultFilter === 'hired') {
+        // 채용 확정: 첫 출근 날짜가 확정되고 구직자가 확인한 경우
+        return filtered.filter(a => isHired(a));
       }
-      // interviewResultFilter가 null이면 모든 면접결과 상태 표시
-      return filtered.filter(a => a.status === 'accepted' || a.status === 'hold' || a.status === 'rejected');
+      // interviewResultFilter가 null이면 모든 면접결과 상태 표시 (채용 확정 제외)
+      return filtered.filter(a => {
+        const statusMatch = a.status === 'accepted' || a.status === 'hold' || a.status === 'rejected';
+        // accepted인 경우 채용 확정된 것은 제외
+        if (a.status === 'accepted' && isHired(a)) return false;
+        return statusMatch;
+      });
     }
     return filtered;
   })();
@@ -406,9 +462,10 @@ export const Recruitment = () => {
   };
 
   const interviewResultCounts = {
-    accepted: applicants.filter(a => a.status === 'accepted').length,
+    accepted: applicants.filter(a => a.status === 'accepted' && !isHired(a)).length, // 채용 확정 제외
     hold: applicants.filter(a => a.status === 'hold').length,
     rejected: applicants.filter(a => a.status === 'rejected').length,
+    hired: applicants.filter(a => isHired(a)).length,
   };
 
   return (
@@ -590,6 +647,16 @@ export const Recruitment = () => {
             >
               불합격 ({interviewResultCounts.rejected})
             </button>
+            <button
+              onClick={() => setInterviewResultFilter('hired')}
+              className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                interviewResultFilter === 'hired'
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+              }`}
+            >
+              채용 확정 ({interviewResultCounts.hired})
+            </button>
           </div>
         )}
       </div>
@@ -645,6 +712,216 @@ export const Recruitment = () => {
         </>
       )}
 
+      {/* 채용 확정 섹션 - 캘린더 UI */}
+      {activeFilter === 'interview_result' && interviewResultFilter === 'hired' && (() => {
+        // 채용 확정된 지원자만 필터링 (isHired 함수 사용)
+        const hiredApplicants = applicants.filter(a => {
+          // 가게 필터 적용
+          if (selectedStoreId && a.storeId !== selectedStoreId) return false;
+          return isHired(a);
+        });
+        
+        // 첫 출근 날짜별로 그룹화 (API 데이터 우선)
+        const groupedByDate: Record<string, Applicant[]> = {};
+          hiredApplicants.forEach(applicant => {
+            let firstWorkDate: string | null = null;
+            
+            // API 데이터 우선 사용: firstWorkDateConfirmed가 최우선
+            if (applicant.firstWorkDateConfirmed) {
+              firstWorkDate = applicant.firstWorkDateConfirmed;
+            } else if (applicant.acceptanceData?.firstWorkDate) {
+              firstWorkDate = applicant.acceptanceData.firstWorkDate;
+            } else {
+              // localStorage fallback
+              const acceptanceKey = `acceptance_guide_${applicant.applicationId}`;
+              const acceptanceData = localStorage.getItem(acceptanceKey);
+              if (acceptanceData) {
+                try {
+                  const data = JSON.parse(acceptanceData);
+                  firstWorkDate = data.firstWorkDate || null;
+                } catch {}
+              }
+            }
+            
+            if (firstWorkDate) {
+              if (!groupedByDate[firstWorkDate]) {
+                groupedByDate[firstWorkDate] = [];
+              }
+              groupedByDate[firstWorkDate].push(applicant);
+            }
+          });
+        
+        // 날짜 순서대로 정렬
+        const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
+          new Date(a).getTime() - new Date(b).getTime()
+        );
+        
+        // 현재 월의 날짜들 추출
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+        
+        // 채용 확정된 지원자가 없으면 안내 메시지 표시
+        if (filteredApplicants.length === 0) {
+          return (
+            <div className="p-4">
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <p className="text-[15px] text-text-500">채용 확정된 지원자가 없습니다</p>
+                <p className="text-[13px] text-text-400 mt-2">합격 안내를 보내고 첫 출근 날짜를 확정하면 여기에 표시됩니다.</p>
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <div className="p-4">
+            {/* 캘린더 */}
+            <div className="bg-white rounded-[16px] p-4 border border-line-200 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[16px] font-bold text-text-900">
+                  {currentYear}년 {currentMonth + 1}월
+                </h3>
+                <span className="text-[12px] text-mint-600 font-medium bg-mint-50 px-2 py-1 rounded-[6px]">
+                  첫 출근 날짜
+                </span>
+              </div>
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+                  <div key={day} className="text-center text-[11px] font-medium text-text-500 py-1">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {/* 빈 칸 */}
+                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square" />
+                ))}
+                {/* 날짜 */}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const date = new Date(currentYear, currentMonth, day);
+                  const dateStr = date.toISOString().split('T')[0];
+                  const hasHired = groupedByDate[dateStr] && groupedByDate[dateStr].length > 0;
+                  const isToday = dateStr === today.toISOString().split('T')[0];
+                  
+                  return (
+                    <div
+                      key={day}
+                      className={`aspect-square rounded-[6px] flex items-center justify-center text-[12px] font-medium transition-colors ${
+                        hasHired
+                          ? 'bg-mint-600 text-white'
+                          : isToday
+                          ? 'bg-mint-100 text-mint-700 border border-mint-300'
+                          : 'bg-white text-text-700 border border-line-200'
+                      }`}
+                    >
+                      {day}
+                      {hasHired && (
+                        <span className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 bg-white rounded-full" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* 날짜별 지원자 목록 */}
+            <div className="space-y-4">
+              {sortedDates.map(dateStr => {
+                const date = new Date(dateStr);
+                const applicantsForDate = groupedByDate[dateStr];
+                return (
+                  <div key={dateStr} className="space-y-3">
+                    <h4 className="text-[15px] font-semibold text-text-900">
+                      {date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} ({applicantsForDate.length}명)
+                    </h4>
+                    {applicantsForDate.map(applicant => {
+                      const statusBadge = getStatusBadge(applicant.status);
+                      return (
+                        <div
+                          key={applicant.id}
+                          onClick={() => {
+                            const targetId = applicant.userId || applicant.id;
+                            navigate(`/employer/applicant/${targetId}`);
+                          }}
+                          className="bg-white rounded-[16px] p-4 border border-line-200 
+                                   hover:border-mint-600/30 hover:shadow-soft transition-all cursor-pointer"
+                        >
+                          {/* 지원자 정보는 기존과 동일 */}
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="w-14 h-14 bg-gradient-to-br from-mint-100 to-mint-200 
+                                         rounded-full flex items-center justify-center text-2xl flex-shrink-0">
+                              {applicant.avatar || '👤'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-[16px] font-bold text-text-900">
+                                  {applicant.name}, {applicant.age}세
+                                </h3>
+                                <span className={`px-2 py-0.5 rounded-[6px] text-[11px] font-medium ${statusBadge.bg} ${statusBadge.text}`}>
+                                  {statusBadge.label}
+                                </span>
+                              </div>
+                              <p className="text-[13px] text-text-500">
+                                {applicant.nationality} · {applicant.jobTitle}
+                              </p>
+                              {/* 첫 출근 날짜 표시 */}
+                              {(() => {
+                                const acceptanceKey = `acceptance_guide_${applicant.applicationId}`;
+                                const acceptanceData = localStorage.getItem(acceptanceKey);
+                                if (acceptanceData) {
+                                  try {
+                                    const data = JSON.parse(acceptanceData);
+                                    if (data.firstWorkDate) {
+                                      const date = new Date(data.firstWorkDate);
+                                      return (
+                                        <p className="text-[12px] text-mint-700 font-medium mt-1">
+                                          첫 출근: {date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                                          {data.firstWorkTime && ` ${data.firstWorkTime}`}
+                                        </p>
+                                      );
+                                    }
+                                  } catch {}
+                                }
+                                return null;
+                              })()}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {/* 출근 일정 수정 버튼 */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const targetId = applicant.userId || applicant.id;
+                                  navigate(`/employer/first-work-date-edit/${targetId}`);
+                                }}
+                                className="px-3 py-1.5 bg-mint-600 text-white rounded-[8px] text-[11px] font-medium hover:bg-mint-700 transition-colors whitespace-nowrap"
+                              >
+                                일정 수정
+                              </button>
+                              <svg className="w-5 h-5 text-text-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Applicants List */}
       <div className="p-4 space-y-3">
         {loading ? (
@@ -698,11 +975,12 @@ export const Recruitment = () => {
                       const responseData = localStorage.getItem(interviewResponseKey);
                       const response = responseData ? JSON.parse(responseData) : null;
                       
-                      // 조율 메시지 확인
+                      // 조율 메시지 확인 (고용주 입장에서는 구직자가 보낸 메시지만 표시)
                       const interviewProposalKey = `interview_proposal_${applicant.applicationId}`;
                       const proposalData = localStorage.getItem(interviewProposalKey);
                       const proposal = proposalData ? JSON.parse(proposalData) : null;
-                      const hasCoordinationMessage = proposal?.coordinationMessages && proposal.coordinationMessages.length > 0;
+                      const jobseekerMessages = proposal?.coordinationMessages?.filter((msg: any) => msg.from === 'jobseeker') || [];
+                      const hasCoordinationMessage = jobseekerMessages.length > 0;
                       
                       // 면접 제안이 있지만 아직 응답이 없으면 "면접 제안 대기중" 표시
                       const hasInterviewProposal = !!proposalData;
@@ -734,33 +1012,13 @@ export const Recruitment = () => {
                               </div>
                             )}
                             {hasCoordinationMessage && (
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium bg-blue-100 text-blue-700 border border-blue-300">
-                                    💬 조율 메시지 {proposal.coordinationMessages.length}개
-                                  </span>
-                                  {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.sentAt && (
-                                    <span className="text-[10px] text-text-500">
-                                      {new Date(proposal.coordinationMessages[proposal.coordinationMessages.length - 1].sentAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
-                                    </span>
-                                  )}
-                                  {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.from === 'employer' && (
-                                    <span className="px-1.5 py-0.5 rounded-[4px] text-[9px] font-medium bg-mint-100 text-mint-700">
-                                      고용주
-                                    </span>
-                                  )}
-                                  {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.from === 'jobseeker' && (
-                                    <span className="px-1.5 py-0.5 rounded-[4px] text-[9px] font-medium bg-blue-100 text-blue-700">
-                                      구직자
-                                    </span>
-                                  )}
-                                </div>
-                                {/* 최근 메시지 미리보기 */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-[6px] p-2">
-                                  <p className="text-[11px] text-blue-800 line-clamp-2 whitespace-pre-wrap">
-                                    {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.message}
-                                  </p>
-                                </div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium bg-blue-100 text-blue-700 border border-blue-300">
+                                  💬 조율 메시지
+                                </span>
+                                <span className="text-[11px] text-text-700 line-clamp-1 flex-1">
+                                  {jobseekerMessages[jobseekerMessages.length - 1]?.message}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -939,9 +1197,7 @@ export const Recruitment = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const applicantId = applicant.userId || applicant.id;
-                            const conversationId = `conv-${applicantId}`;
-                            navigate(`/messages/${conversationId}`);
+                            navigate('/employer/coming-soon');
                           }}
                           className="flex-1 h-10 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
                         >

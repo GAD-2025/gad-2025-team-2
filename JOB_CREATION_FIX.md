@@ -122,3 +122,4 @@ SELECT * FROM jobs WHERE employerId = '여기에_고용주_ID_입력' ORDER BY c
 
 백엔드 서버가 자동으로 재시작되었습니다. 이제 테스트해보세요!
 
+

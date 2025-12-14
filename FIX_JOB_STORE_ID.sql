@@ -56,3 +56,4 @@ SELECT
 FROM jobs
 WHERE store_id IS NULL;
 
+

@@ -76,3 +76,4 @@ GROUP BY jsp.user_id, jsp.name
 HAVING 지원수 = 0
 ORDER BY jsp.user_id DESC;
 
+

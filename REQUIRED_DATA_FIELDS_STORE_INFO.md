@@ -68,3 +68,4 @@ WHERE TABLE_SCHEMA = 'team2_db'
 - 선택한 매장 정보가 있으면 그것을 사용하고, 없으면 기본 `employer` 정보를 사용합니다.
 - `store_id`는 `stores` 테이블의 `id`를 참조합니다.
 
+

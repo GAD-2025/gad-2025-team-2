@@ -164,3 +164,4 @@ LEFT JOIN jobseekers js ON js.id = a.seekerId
 LEFT JOIN signup_users su ON su.id = a.seekerId
 ORDER BY a.appliedAt DESC
 LIMIT 10;
+

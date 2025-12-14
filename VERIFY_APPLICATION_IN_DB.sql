@@ -81,3 +81,4 @@ SELECT
     COUNT(DISTINCT jobId) as 공고수
 FROM applications;
 
+

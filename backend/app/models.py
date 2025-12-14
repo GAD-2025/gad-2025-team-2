@@ -94,10 +94,18 @@ class Application(SQLModel, table=True):
     applicationId: str = Field(primary_key=True)
     seekerId: str  # User ID (signup_user_id)
     jobId: str  # Job ID
-    status: str = Field(default="applied")  # applied, reviewed, hired, rejected, hold
+    status: str = Field(default="applied")  # applied, reviewed, accepted, rejected, hold, hired
     appliedAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     updatedAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     hiredAt: Optional[str] = None
+    # 면접 관련 정보
+    interviewData: Optional[str] = None  # JSON string: {dates: [], time: "", duration: 0, message: "", allDatesSame: bool, allDatesTimeSlots: [], dateSpecificTimes: {}, isConfirmed: bool, confirmedAt: ""}
+    # 합격 관련 정보
+    acceptanceData: Optional[str] = None  # JSON string: {documents: [], workAttire: [], workNotes: [], firstWorkDate: "", firstWorkTime: "", coordinationMessage: ""}
+    # 조율 메시지
+    coordinationMessages: Optional[str] = None  # JSON string: [{message: "", sentAt: "", from: "employer"|"jobseeker", type: ""}]
+    # 채용 확정 정보
+    firstWorkDateConfirmed: Optional[str] = None  # YYYY-MM-DD, 채용 확정된 첫 출근 날짜
 
 
 class Conversation(SQLModel, table=True):

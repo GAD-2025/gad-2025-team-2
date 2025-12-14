@@ -44,10 +44,43 @@ export const jobsAPI = {
 export const applicationsAPI = {
   create: (seekerId: string, jobId: string) =>
     apiClient.post<Application>('/applications', { seekerId, jobId }),
-  list: (seekerId?: string, jobId?: string) =>
-    apiClient.get<Application[]>('/applications', { params: { seekerId, jobId } }),
+  list: (seekerId?: string, jobId?: string, employerId?: string, userId?: string) =>
+    apiClient.get<Application[]>('/applications', { params: { seekerId, jobId, employerId, userId } }),
   update: (id: string, status: string) =>
     apiClient.patch<Application>(`/applications/${id}`, { status }),
+  updateInterviewProposal: (id: string, data: {
+    selectedDates: string[];
+    time?: string;
+    duration?: number;
+    message?: string;
+    allDatesSame: boolean;
+    allDatesTimeSlots?: Array<{ time: string; duration: number }>;
+    dateSpecificTimes?: Record<string, Array<{ time: string; duration: number }>>;
+    isConfirmed: boolean;
+  }) =>
+    apiClient.post(`/applications/${id}/interview-proposal`, data),
+  updateAcceptanceGuide: (id: string, data: {
+    documents: string[];
+    workAttire: string[];
+    workNotes: string[];
+    firstWorkDate?: string;
+    firstWorkTime?: string;
+    coordinationMessage?: string;
+  }) =>
+    apiClient.post(`/applications/${id}/acceptance-guide`, data),
+  updateFirstWorkDate: (id: string, data: {
+    firstWorkDate: string;
+    firstWorkTime?: string;
+    coordinationMessage?: string;
+  }) =>
+    apiClient.post(`/applications/${id}/first-work-date`, data),
+  addCoordinationMessage: (id: string, data: {
+    message: string;
+    type?: string;
+  }) =>
+    apiClient.post(`/applications/${id}/coordination-message`, data),
+  confirmWorkDate: (id: string, confirmed: boolean) =>
+    apiClient.post(`/applications/${id}/confirm-work-date`, { confirmed }),
 };
 
 // Users

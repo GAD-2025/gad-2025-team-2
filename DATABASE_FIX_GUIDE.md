@@ -76,3 +76,4 @@ WHERE wage_type IS NULL OR wage_type = '';
    - 구직자 화면에서 공고 확인
    - 업직종과 급여 타입이 올바르게 표시되는지 확인
 
+

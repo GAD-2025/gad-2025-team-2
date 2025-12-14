@@ -45,3 +45,4 @@ WHERE phone = '01059146247'
 -- FROM signup_users
 -- WHERE phone = '01059146247'
 --   AND role = 'job_seeker';
+

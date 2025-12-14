@@ -133,3 +133,4 @@ SELECT
      INNER JOIN jobs j ON a.jobId = j.id 
      INNER JOIN stores s ON j.store_id = s.id 
      WHERE s.user_id COLLATE utf8mb4_unicode_ci = @employer_user_id COLLATE utf8mb4_unicode_ci) as application_count;
+

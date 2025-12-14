@@ -24,3 +24,4 @@ INSERT INTO posts (id, user_id, title, body, created_at) VALUES
 
 -- 4. 데이터 확인
 SELECT * FROM posts ORDER BY created_at DESC;
+

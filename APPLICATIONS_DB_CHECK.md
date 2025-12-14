@@ -267,3 +267,4 @@ LEFT JOIN employer_profiles ep ON e.businessNo = ep.id;
 
 **위의 SQL 명령어들을 MySQL Workbench에서 실행하여 결과를 확인하세요!** 🔍
 
+

@@ -182,6 +182,19 @@ export const JobCreate = () => {
   const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
   const timeOptions = generateTimeOptions();
 
+  const handleStoreSelect = (store: StoreData) => {
+    setSelectedStore(store);
+    // 매장 정보를 폼에 자동 입력
+    setFormData(prev => ({
+      ...prev,
+      shopName: store.store_name,
+      shopAddress: store.address,
+      shopAddressDetail: store.address_detail || '',
+      shopPhone: store.phone,
+      industry: store.industry,
+    }));
+  };
+
   const handleChange = (field: keyof JobFormData, value: string | string[] | boolean | File | null | number) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };

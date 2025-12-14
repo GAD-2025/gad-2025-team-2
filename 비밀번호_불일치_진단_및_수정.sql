@@ -66,3 +66,4 @@ WHERE role = 'job_seeker'
   AND password IS NOT NULL
 GROUP BY LENGTH(password)
 ORDER BY hash_length;
+

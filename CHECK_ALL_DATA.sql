@@ -100,3 +100,4 @@ WHERE ep.user_id = '여기에_고용주_user_id_입력'
 GROUP BY ep.user_id, e.id, j.id, j.title, j.status, j.createdAt
 ORDER BY j.createdAt DESC;
 
+

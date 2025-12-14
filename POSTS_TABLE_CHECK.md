@@ -128,3 +128,4 @@ CREATE TABLE posts (
 - 먼저 `DESCRIBE posts;` 결과를 확인하세요
 - 문제가 있는 컬럼만 `ALTER TABLE`로 수정하세요
 
+

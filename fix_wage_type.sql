@@ -6,3 +6,4 @@ ALTER TABLE jobs
 ADD COLUMN wage_type VARCHAR(20) DEFAULT 'hourly' 
 COMMENT '급여 타입: hourly(시급), weekly(주급), monthly(월급)';
 
+

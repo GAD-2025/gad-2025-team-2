@@ -99,3 +99,4 @@ FROM jobs j
 ORDER BY j.createdAt DESC
 LIMIT 1;
 
+

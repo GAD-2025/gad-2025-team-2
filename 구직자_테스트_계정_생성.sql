@@ -73,3 +73,4 @@ SELECT
 FROM signup_users u
 LEFT JOIN job_seeker_profiles p ON u.id = p.user_id
 WHERE u.phone = '01012345678' OR u.id = 'seeker-test-001';
+

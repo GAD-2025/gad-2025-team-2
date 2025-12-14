@@ -20,7 +20,10 @@ export const ApplicantDetail = () => {
   const [showAcceptanceGuideModal, setShowAcceptanceGuideModal] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<'pending' | 'reviewed' | 'accepted' | 'rejected' | 'hold' | null>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
-  const [coordinationMessages, setCoordinationMessages] = useState<Array<{ message: string; sentAt: string }>>([]);
+  const [coordinationMessages, setCoordinationMessages] = useState<Array<{ message: string; sentAt: string; from?: string }>>([]);
+  const [interviewData, setInterviewData] = useState<any>(null); // API에서 가져온 면접 제안 데이터
+  const [showInterviewEditModal, setShowInterviewEditModal] = useState(false);
+  const [originalInterviewProposal, setOriginalInterviewProposal] = useState<InterviewProposalData | null>(null);
 
   useEffect(() => {
     const fetchApplicant = async () => {
@@ -56,9 +59,23 @@ export const ApplicantDetail = () => {
               setApplicationId(application.applicationId);
               // 백엔드 상태 확인
               const backendStatus = application.status;
-              // localStorage의 면접 제안도 확인
-              const interviewProposalKey = `interview_proposal_${application.applicationId}`;
-              const hasInterviewProposal = !!localStorage.getItem(interviewProposalKey);
+              
+              // API에서 면접 제안 데이터 확인 (우선), localStorage는 fallback
+              const apiInterviewData = application.interviewData;
+              const hasInterviewProposal = !!apiInterviewData || !!localStorage.getItem(`interview_proposal_${application.applicationId}`);
+              
+              // 면접 제안 데이터 저장 (API 우선)
+              if (apiInterviewData) {
+                setInterviewData(apiInterviewData);
+              } else {
+                // localStorage fallback
+                const interviewProposalKey = `interview_proposal_${application.applicationId}`;
+                const proposalData = localStorage.getItem(interviewProposalKey);
+                if (proposalData) {
+                  const proposal = JSON.parse(proposalData);
+                  setInterviewData(proposal);
+                }
+              }
               
               if (backendStatus === 'reviewed' || hasInterviewProposal) {
                 setApplicationStatus('reviewed');
@@ -72,8 +89,11 @@ export const ApplicantDetail = () => {
                 setApplicationStatus('hold');
               }
               
-              // 조율 메시지 로드
-              if (application) {
+              // 조율 메시지 로드 (API 우선, localStorage fallback)
+              if (application.coordinationMessages && application.coordinationMessages.length > 0) {
+                setCoordinationMessages(application.coordinationMessages);
+              } else {
+                // localStorage fallback
                 const interviewProposalKey = `interview_proposal_${application.applicationId}`;
                 const proposalData = localStorage.getItem(interviewProposalKey);
                 if (proposalData) {
@@ -111,96 +131,169 @@ export const ApplicantDetail = () => {
     setShowInterviewModal(true);
   };
 
-  const handleInterviewSubmit = async (data: InterviewProposalData) => {
+  const handleInterviewSubmit = async (data: InterviewProposalData, isEdit: boolean = false) => {
     if (!id) return;
     
     try {
       setHiring(true);
-      console.log('면접 제안 데이터:', data);
-      
-      // 면접제안 데이터를 로컬스토리지에 저장
-      const interviewProposal = {
-        dates: data.selectedDates,
-        time: data.time,
-        duration: data.duration,
-        message: data.message,
-        status: 'pending' as const,
-        isRead: false,
-        allDatesTimeSlots: data.allDatesTimeSlots,
-        dateSpecificTimes: data.dateSpecificTimes,
-      };
+      console.log('면접 제안 데이터:', data, 'isEdit:', isEdit);
       
       // 지원서 ID를 찾기 위해 applications API 호출
-      try {
-        const signupUserId = useAuthStore.getState().signupUserId;
-        const userId = signupUserId || localStorage.getItem('signup_user_id');
-        
-        if (userId) {
-          // 현재 고용주의 모든 지원서 목록에서 해당 구직자의 지원서 찾기
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-          const applicationsRes = await fetch(`${API_BASE_URL}/applications?userId=${userId}`);
-          
-          if (applicationsRes.ok) {
-            const applications = await applicationsRes.json();
-            
-            // 해당 구직자(userId = id)의 지원서 찾기
-            const application = applications.find((app: any) => 
-              app.seekerId === id || app.seeker?.id === id || app.jobseeker?.user_id === id
-            );
-            
-            if (application && application.applicationId) {
-              // 지원 상태를 'reviewed' (진행중)로 업데이트 (에러 발생해도 계속 진행)
-              try {
-                await applicationsAPI.update(application.applicationId, 'reviewed');
-                console.log('[SUCCESS] 지원 상태 업데이트 성공:', application.applicationId);
-              } catch (updateError) {
-                console.error('지원 상태 업데이트 실패 (계속 진행):', updateError);
-                // 백엔드 업데이트 실패해도 localStorage에는 저장하고 계속 진행
-              }
-              
-              // 면접제안 데이터를 로컬스토리지에 저장 (applicationId만 사용 - 공고별로 구분)
-              localStorage.setItem(`interview_proposal_${application.applicationId}`, JSON.stringify(interviewProposal));
-              console.log('[SUCCESS] 면접 제안 데이터 저장:', {
-                applicationId: application.applicationId,
-                jobId: application.jobId,
-                seekerId: id
-              });
-            } else {
-              // 지원서를 찾을 수 없으면 에러 처리
-              console.error('[ERROR] 지원서를 찾을 수 없습니다:', { seekerId: id, applications });
-              toast.error('지원서를 찾을 수 없습니다. 다시 시도해주세요.');
-              return;
-            }
-          } else {
-            // API 호출 실패 시 에러 처리
-            console.error('[ERROR] 지원서 목록을 가져올 수 없습니다');
-            toast.error('지원서 정보를 불러올 수 없습니다. 다시 시도해주세요.');
-            return;
-          }
-        } else {
-          // 사용자 ID가 없으면 에러 처리
-          console.error('[ERROR] 사용자 ID가 없습니다');
-          toast.error('로그인이 필요합니다.');
-          return;
-        }
-      } catch (error) {
-        console.error('지원 상태 업데이트 실패:', error);
-        toast.error('면접 제안 전송 중 오류가 발생했습니다.');
+      const signupUserId = useAuthStore.getState().signupUserId;
+      const userId = signupUserId || localStorage.getItem('signup_user_id');
+      
+      if (!userId) {
+        toast.error('로그인이 필요합니다.');
         return;
       }
       
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setShowInterviewModal(false);
-      toast.success('면접 제안이 전송되었습니다');
+      // 현재 고용주의 모든 지원서 목록에서 해당 구직자의 지원서 찾기
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const applicationsRes = await fetch(`${API_BASE_URL}/applications?userId=${userId}`);
       
-      // 면접 제안 완료 화면으로 이동
-      navigate('/employer/interview-proposed', {
-        state: {
-          interviewData: data,
-          applicantName: applicant?.name,
-        },
-      });
+      if (!applicationsRes.ok) {
+        toast.error('지원서 정보를 불러올 수 없습니다. 다시 시도해주세요.');
+        return;
+      }
+      
+      const applications = await applicationsRes.json();
+      const application = applications.find((app: any) => 
+        app.seekerId === id || app.seeker?.id === id || app.jobseeker?.user_id === id
+      );
+      
+      if (!application || !application.applicationId) {
+        toast.error('지원서를 찾을 수 없습니다. 다시 시도해주세요.');
+        return;
+      }
+      
+      // 수정인 경우 기존 coordinationMessages 유지
+      let existingCoordinationMessages: any[] = [];
+      if (isEdit && application.coordinationMessages) {
+        existingCoordinationMessages = application.coordinationMessages;
+      } else if (isEdit) {
+        // localStorage에서도 확인 (fallback)
+        const existingProposalKey = `interview_proposal_${application.applicationId}`;
+        const existingProposalData = localStorage.getItem(existingProposalKey);
+        if (existingProposalData) {
+          const existingProposal = JSON.parse(existingProposalData);
+          existingCoordinationMessages = existingProposal.coordinationMessages || [];
+        }
+      }
+      
+      // API로 면접 제안 데이터 업데이트
+      try {
+        // 지원 상태를 'reviewed' (진행중)로 업데이트
+        await applicationsAPI.update(application.applicationId, 'reviewed');
+        
+        // 면접 제안 데이터 업데이트
+        const interviewProposalPayload = {
+          selectedDates: data.selectedDates,
+          time: data.time || undefined,
+          duration: data.duration || undefined,
+          message: data.message || undefined,
+          allDatesSame: data.allDatesSame,
+          allDatesTimeSlots: data.allDatesTimeSlots,
+          dateSpecificTimes: data.dateSpecificTimes,
+          isConfirmed: isEdit, // 수정인 경우 확정
+        };
+        
+        await applicationsAPI.updateInterviewProposal(application.applicationId, interviewProposalPayload);
+        
+        console.log('[SUCCESS] 면접 제안 API 업데이트 성공:', {
+          applicationId: application.applicationId,
+          jobId: application.jobId,
+          seekerId: id,
+          isEdit
+        });
+        
+        // localStorage에도 저장 (fallback 및 기존 코드 호환성)
+        const interviewProposal = {
+          selectedDates: data.selectedDates,
+          dates: data.selectedDates,
+          time: data.time,
+          duration: data.duration,
+          message: data.message,
+          allDatesSame: data.allDatesSame,
+          allDatesTimeSlots: data.allDatesTimeSlots,
+          dateSpecificTimes: data.dateSpecificTimes,
+          status: 'pending' as const,
+          isRead: false,
+          coordinationMessages: existingCoordinationMessages,
+          isConfirmed: isEdit,
+          confirmedAt: isEdit ? new Date().toISOString() : undefined,
+          coordinationStatus: isEdit ? 'confirmed' : undefined,
+        };
+        localStorage.setItem(`interview_proposal_${application.applicationId}`, JSON.stringify(interviewProposal));
+        
+        if (isEdit) {
+          setShowInterviewEditModal(false);
+          setOriginalInterviewProposal(null);
+          toast.success('면접 내용이 수정 확정되었습니다');
+          // 수정 후 페이지 새로고침하여 변경사항 반영
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else {
+          setShowInterviewModal(false);
+          toast.success('면접 제안이 전송되었습니다');
+          // 면접 제안 완료 화면으로 이동
+          navigate('/employer/interview-proposed', {
+            state: {
+              interviewData: data,
+              applicantName: applicant?.name,
+            },
+          });
+        }
+      } catch (apiError) {
+        console.error('[ERROR] API 업데이트 실패:', apiError);
+        // API 실패 시 localStorage fallback (기존 동작 유지)
+        const interviewProposal = {
+          selectedDates: data.selectedDates,
+          dates: data.selectedDates,
+          time: data.time,
+          duration: data.duration,
+          message: data.message,
+          allDatesSame: data.allDatesSame,
+          allDatesTimeSlots: data.allDatesTimeSlots,
+          dateSpecificTimes: data.dateSpecificTimes,
+          status: 'pending' as const,
+          isRead: false,
+          coordinationMessages: existingCoordinationMessages,
+        };
+        if (isEdit) {
+          interviewProposal.isConfirmed = true;
+          interviewProposal.confirmedAt = new Date().toISOString();
+          interviewProposal.coordinationStatus = 'confirmed';
+        }
+        localStorage.setItem(`interview_proposal_${application.applicationId}`, JSON.stringify(interviewProposal));
+        
+        // 상태는 업데이트 시도 (실패해도 계속 진행)
+        try {
+          await applicationsAPI.update(application.applicationId, 'reviewed');
+        } catch (e) {
+          console.error('상태 업데이트 실패:', e);
+        }
+        
+        if (isEdit) {
+          setShowInterviewEditModal(false);
+          setOriginalInterviewProposal(null);
+          toast.success('면접 내용이 수정되었습니다 (로컬 저장)');
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else {
+          setShowInterviewModal(false);
+          toast.success('면접 제안이 전송되었습니다 (로컬 저장)');
+          navigate('/employer/interview-proposed', {
+            state: {
+              interviewData: data,
+              applicantName: applicant?.name,
+            },
+          });
+        }
+      }
     } catch (error) {
+      console.error('[ERROR] 면접 제안 처리 실패:', error);
       toast.error('면접 제안 전송 중 오류가 발생했습니다');
     } finally {
       setHiring(false);
@@ -208,10 +301,7 @@ export const ApplicantDetail = () => {
   };
 
   const handleStartChat = () => {
-    // 실제로는 conversation을 생성하거나 기존 conversation을 찾아서 이동
-    // 임시로 conv-1로 이동 (Mock)
-    const conversationId = `conv-${id}`;
-    navigate(`/messages/${conversationId}`);
+    navigate('/employer/coming-soon');
   };
 
   const handleCall = () => {
@@ -372,18 +462,120 @@ export const ApplicantDetail = () => {
             </div>
           )}
           
-          {/* 진행중 상태일 때 면접 대기 중 표시 및 조율 메시지 */}
+          {/* 진행중 상태일 때 면접 제안 내용 표시 및 수정 기능 */}
           {applicationStatus === 'reviewed' && applicationId && (() => {
-            const interviewProposalKey = `interview_proposal_${applicationId}`;
-            const interviewProposalData = localStorage.getItem(interviewProposalKey);
-            const proposal = interviewProposalData ? JSON.parse(interviewProposalData) : null;
+            // API 데이터 우선, localStorage fallback
+            let proposal = interviewData;
+            if (!proposal) {
+              const interviewProposalKey = `interview_proposal_${applicationId}`;
+              const interviewProposalData = localStorage.getItem(interviewProposalKey);
+              proposal = interviewProposalData ? JSON.parse(interviewProposalData) : null;
+            }
+            
             const interviewResponseKey = `interview_response_${applicationId}`;
             const responseData = localStorage.getItem(interviewResponseKey);
             const response = responseData ? JSON.parse(responseData) : null;
-            const messages = proposal?.coordinationMessages || [];
+            
+            // 고용주 입장에서는 구직자가 보낸 메시지만 표시
+            // coordinationMessages state 사용 (API 또는 localStorage에서 로드됨)
+            const messages = coordinationMessages.filter((msg: any) => msg.from === 'jobseeker');
+            
+            // 구직자가 보낸 조율 메시지 중 면접 수정 요청이 있는지 확인
+            const hasModificationRequest = messages.some((msg: any) => 
+              msg.message && msg.message.trim().length > 0
+            );
             
             return (
-              <div className="mt-3 pt-3 border-t border-mint-200 space-y-2">
+              <div className="mt-3 pt-3 border-t border-mint-200 space-y-3">
+                {/* 면접 제안 내용 표시 */}
+                {proposal && (
+                  <div className="bg-white border border-mint-200 rounded-[8px] p-4">
+                    <h4 className="text-[14px] font-semibold text-text-900 mb-3">면접 제안 내용</h4>
+                    {proposal.allDatesSame && proposal.allDatesTimeSlots ? (
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-[12px] text-text-600 mb-1">선택된 날짜</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(proposal.selectedDates || proposal.dates || []).map((date: string) => {
+                              const d = new Date(date);
+                              return (
+                                <span key={date} className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[6px] text-[11px] font-medium">
+                                  {d.getMonth() + 1}/{d.getDate()}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[12px] text-text-600 mb-1">시간 슬롯</p>
+                          <div className="space-y-1">
+                            {proposal.allDatesTimeSlots.map((slot: any, idx: number) => (
+                              <div key={idx} className="px-2 py-1 bg-gray-50 rounded-[6px] text-[11px] text-text-700">
+                                {slot.time} ({slot.duration}분)
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : proposal.dateSpecificTimes && Object.keys(proposal.dateSpecificTimes).length > 0 ? (
+                      <div className="space-y-2">
+                        {Object.entries(proposal.dateSpecificTimes).map(([date, slots]: [string, any]) => {
+                          const d = new Date(date);
+                          return (
+                            <div key={date} className="border-b border-line-100 pb-2 last:border-b-0">
+                              <p className="text-[12px] font-medium text-text-700 mb-1">
+                                {d.getMonth() + 1}월 {d.getDate()}일
+                              </p>
+                              <div className="space-y-1">
+                                {(Array.isArray(slots) ? slots : []).map((slot: any, idx: number) => (
+                                  <div key={idx} className="px-2 py-1 bg-gray-50 rounded-[6px] text-[11px] text-text-700">
+                                    {slot.time} ({slot.duration}분)
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (proposal.selectedDates || proposal.dates) && (proposal.selectedDates?.length > 0 || proposal.dates?.length > 0) ? (
+                      // 기본 형식: 날짜만 있고 시간 슬롯이 없는 경우
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-[12px] text-text-600 mb-1">선택된 날짜</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(proposal.selectedDates || proposal.dates || []).map((date: string) => {
+                              const d = new Date(date);
+                              return (
+                                <span key={date} className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[6px] text-[11px] font-medium">
+                                  {d.getMonth() + 1}/{d.getDate()}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {proposal.time && (
+                          <div>
+                            <p className="text-[12px] text-text-600 mb-1">시간</p>
+                            <p className="text-[13px] text-text-700">{proposal.time}</p>
+                          </div>
+                        )}
+                        {proposal.duration && (
+                          <div>
+                            <p className="text-[12px] text-text-600 mb-1">소요 시간</p>
+                            <p className="text-[13px] text-text-700">{proposal.duration}분</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                    {proposal.message && (
+                      <div className="mt-2 pt-2 border-t border-line-100">
+                        <p className="text-[12px] text-text-600 mb-1">전달 메시지</p>
+                        <p className="text-[12px] text-text-700">{proposal.message}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {proposal && !response && (
                   <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-[8px]">
                     <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -411,23 +603,70 @@ export const ApplicantDetail = () => {
                     </span>
                   </div>
                 )}
+                
                 {/* 조율 메시지 표시 */}
                 {messages.length > 0 && (
                   <div className="bg-white border border-mint-200 rounded-[8px] p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[14px]">💬</span>
-                      <h4 className="text-[13px] font-semibold text-text-900">조율 메시지 ({messages.length}개)</h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[14px]">💬</span>
+                        <h4 className="text-[13px] font-semibold text-text-900">조율 메시지 ({messages.length}개)</h4>
+                      </div>
                     </div>
                     <div className="space-y-2 max-h-[120px] overflow-y-auto">
-                      {messages.map((msg: { message: string; sentAt: string }, idx: number) => (
+                      {messages.map((msg: { message: string; sentAt?: string; from?: string; type?: string; requestedDate?: string }, idx: number) => (
                         <div key={idx} className="bg-mint-50 rounded-[6px] p-2.5">
-                          <p className="text-[12px] text-text-700 mb-1">{msg.message}</p>
-                          <span className="text-[10px] text-text-500">
-                            {new Date(msg.sentAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                          <p className="text-[12px] text-text-700">{msg.message}</p>
+                          {/* 첫 출근 날짜 수정 요청인 경우 수정 버튼 표시 */}
+                          {msg.type === 'date_modification_request' && msg.requestedDate && applicationStatus === 'accepted' && (
+                            <button
+                              onClick={() => {
+                                // 첫 출근 수정 페이지로 이동
+                                navigate(`/employer/first-work-date-edit/${id}`);
+                              }}
+                              className="mt-2 px-3 py-1.5 bg-mint-600 text-white rounded-[6px] text-[11px] font-medium hover:bg-mint-700 transition-colors"
+                            >
+                              첫 출근 수정하기
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+                
+                {/* 면접 일정 조율 버튼 - 구직자가 수정 요청 메시지를 보낸 경우에만 표시 */}
+                {hasModificationRequest && proposal?.isConfirmed !== true && (
+                  <button
+                    onClick={() => {
+                      if (proposal) {
+                        // 원본 면접 제안 데이터를 InterviewProposalData 형식으로 변환
+                        const originalData: InterviewProposalData = {
+                          selectedDates: proposal.selectedDates || proposal.dates || [],
+                          time: proposal.time || '',
+                          duration: proposal.duration || 30,
+                          message: proposal.message || '',
+                          allDatesSame: proposal.allDatesSame !== undefined ? proposal.allDatesSame : true,
+                          allDatesTimeSlots: proposal.allDatesTimeSlots,
+                          dateSpecificTimes: proposal.dateSpecificTimes,
+                        };
+                        setOriginalInterviewProposal(originalData);
+                        setShowInterviewEditModal(true);
+                      }
+                    }}
+                    className="w-full py-2.5 bg-mint-600 text-white rounded-[8px] text-[13px] font-medium hover:bg-mint-700 transition-colors"
+                  >
+                    면접 일정 조율하기
+                  </button>
+                )}
+                
+                {/* 면접 확정 상태 표시 */}
+                {proposal?.isConfirmed && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-[8px]">
+                    <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-[13px] font-medium text-blue-700">면접 확정</span>
                   </div>
                 )}
               </div>
@@ -603,6 +842,59 @@ export const ApplicantDetail = () => {
             </button>
           </div>
         </div>
+      ) : applicationStatus === 'accepted' && applicationId ? (
+        // 합격 상태: 면접 진행 단계 표시
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 px-4 py-4 safe-area-bottom z-50 shadow-lg">
+          {(() => {
+            // 면접 제안 데이터 확인 (API 우선)
+            let proposal = interviewData;
+            if (!proposal) {
+              const interviewProposalKey = `interview_proposal_${applicationId}`;
+              const interviewProposalData = localStorage.getItem(interviewProposalKey);
+              proposal = interviewProposalData ? JSON.parse(interviewProposalData) : null;
+            }
+            
+            // 면접 응답 확인
+            const interviewResponseKey = `interview_response_${applicationId}`;
+            const responseData = localStorage.getItem(interviewResponseKey);
+            const response = responseData ? JSON.parse(responseData) : null;
+            
+            if (response?.status === 'rejected') {
+              return (
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-[10px]">
+                    <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="text-[14px] font-medium text-red-700">면접 거부됨</span>
+                  </div>
+                </div>
+              );
+            }
+            
+            if (proposal?.isConfirmed) {
+              return (
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-[10px]">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-[14px] font-medium text-blue-700">면접 확정됨</span>
+                  </div>
+                </div>
+              );
+            }
+            
+            return (
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-[10px]">
+                  <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-[14px] font-medium text-amber-700">면접 확정 기다리는 중</span>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
       ) : applicationStatus === 'pending' || !applicationStatus ? (
         // 신규/기타: 저장/채팅/면접제안하기 버튼
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 px-3 py-3 safe-area-bottom z-50 shadow-lg">
@@ -656,10 +948,28 @@ export const ApplicantDetail = () => {
 
       {/* 면접 제안 모달 */}
       <InterviewProposalModal
-        isOpen={showInterviewModal}
-        onClose={() => setShowInterviewModal(false)}
-        onSubmit={handleInterviewSubmit}
+        isOpen={showInterviewModal || showInterviewEditModal}
+        onClose={() => {
+          setShowInterviewModal(false);
+          setShowInterviewEditModal(false);
+          setOriginalInterviewProposal(null);
+        }}
+        onSubmit={(data) => {
+          handleInterviewSubmit(data, showInterviewEditModal);
+          if (showInterviewEditModal) {
+            setShowInterviewEditModal(false);
+            setOriginalInterviewProposal(null);
+          }
+        }}
         applicantName={applicant?.name}
+        initialData={showInterviewEditModal ? originalInterviewProposal : undefined}
+        coordinationMessages={showInterviewEditModal && applicationId ? (() => {
+          const interviewProposalKey = `interview_proposal_${applicationId}`;
+          const interviewProposalData = localStorage.getItem(interviewProposalKey);
+          const proposal = interviewProposalData ? JSON.parse(interviewProposalData) : null;
+          const allMessages = proposal?.coordinationMessages || [];
+          return allMessages.filter((msg: any) => msg.from === 'jobseeker');
+        })() : []}
       />
 
       {/* 합격 안내 모달 */}
@@ -669,51 +979,44 @@ export const ApplicantDetail = () => {
         onConfirm={async (data: AcceptanceGuideData) => {
           if (!applicationId) return;
           try {
+            // API로 합격 안내 데이터 저장
+            await applicationsAPI.updateAcceptanceGuide(applicationId, {
+              documents: data.documents,
+              workAttire: data.workAttire || [],
+              workNotes: data.workNotes || [],
+              firstWorkDate: data.firstWorkDate,
+              firstWorkTime: data.firstWorkTime,
+              coordinationMessage: data.coordinationMessage,
+            });
+            
+            // 상태를 'accepted'로 업데이트
             await applicationsAPI.update(applicationId, 'accepted');
             
-            // 합격 안내 데이터 저장
-            localStorage.setItem(`acceptance_guide_${applicationId}`, JSON.stringify(data));
+            // localStorage에도 저장 (fallback 및 기존 코드 호환성)
+            localStorage.setItem(`acceptance_guide_${applicationId}`, JSON.stringify({
+              ...data,
+              isHired: false,
+              hiredAt: null,
+            }));
             
-            // 조율 메시지가 있으면 면접 제안 데이터에 추가
-            if (data.coordinationMessage && data.coordinationMessage.trim()) {
-              const interviewProposalKey = `interview_proposal_${applicationId}`;
-              const proposalData = localStorage.getItem(interviewProposalKey);
-              if (proposalData) {
-                const proposal = JSON.parse(proposalData);
-                if (!proposal.coordinationMessages) {
-                  proposal.coordinationMessages = [];
-                }
-                proposal.coordinationMessages.push({
-                  message: data.coordinationMessage,
-                  sentAt: new Date().toISOString(),
-                  from: 'employer',
-                });
-                localStorage.setItem(interviewProposalKey, JSON.stringify(proposal));
-              } else {
-                // 면접 제안 데이터가 없으면 새로 생성
-                const newProposal = {
-                  dates: [],
-                  time: '',
-                  duration: 0,
-                  message: '',
-                  coordinationMessages: [{
-                    message: data.coordinationMessage,
-                    sentAt: new Date().toISOString(),
-                    from: 'employer',
-                  }],
-                };
-                localStorage.setItem(interviewProposalKey, JSON.stringify(newProposal));
-              }
-            }
-            
-            toast.success('합격 처리되었습니다');
+            toast.success('합격 안내가 전송되었습니다');
             setApplicationStatus('accepted');
             setShowAcceptanceGuideModal(false);
-            // 면접결과 섹션의 합격 필터로 이동하기 위해 쿼리 파라미터 전달
+            
+            // 면접결과 섹션의 합격 필터로 이동
             navigate('/employer/recruitment?filter=interview_result&result=accepted');
           } catch (error) {
-            console.error('합격 처리 실패:', error);
-            toast.error('합격 처리에 실패했습니다');
+            console.error('[ERROR] 합격 처리 실패:', error);
+            // API 실패 시 localStorage fallback 시도
+            try {
+              localStorage.setItem(`acceptance_guide_${applicationId}`, JSON.stringify(data));
+              toast.success('합격 안내가 저장되었습니다 (로컬 저장)');
+              setApplicationStatus('accepted');
+              setShowAcceptanceGuideModal(false);
+              navigate('/employer/recruitment?filter=interview_result&result=accepted');
+            } catch (fallbackError) {
+              toast.error('합격 처리에 실패했습니다');
+            }
           }
         }}
         applicantName={applicant?.name}

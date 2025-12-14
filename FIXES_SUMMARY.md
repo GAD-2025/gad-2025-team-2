@@ -99,3 +99,4 @@ CREATE TABLE IF NOT EXISTS posts (
    - http://localhost:8000/api/posts 접속 (브라우저)
    - http://localhost:5173/posts 접속 (프론트엔드)
 
+

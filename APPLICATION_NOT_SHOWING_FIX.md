@@ -125,3 +125,4 @@ ORDER BY a.appliedAt DESC;
 2. **백엔드 로그에서 `list_applications` 결과 확인**
 3. **결과를 알려주시면 정확한 해결 방법 제시하겠습니다!**
 
+

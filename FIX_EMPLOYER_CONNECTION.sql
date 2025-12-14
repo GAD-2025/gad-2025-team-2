@@ -68,3 +68,4 @@ WHERE ep.id IS NULL;  -- employer_profiles 테이블에 연결이 안 된 것들
 -- SET e.businessNo = ep.id
 -- WHERE e.businessNo != ep.id;
 
+

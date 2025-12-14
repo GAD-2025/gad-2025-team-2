@@ -34,6 +34,41 @@ class ApplicationUpdate(BaseModel):
     status: str
 
 
+class InterviewProposalUpdate(BaseModel):
+    selectedDates: List[str]
+    time: Optional[str] = None
+    duration: Optional[int] = None
+    message: Optional[str] = None
+    allDatesSame: bool = True
+    allDatesTimeSlots: Optional[List[dict]] = None
+    dateSpecificTimes: Optional[dict] = None
+    isConfirmed: bool = False
+
+
+class AcceptanceGuideUpdate(BaseModel):
+    documents: List[str]
+    workAttire: List[str] = []
+    workNotes: List[str] = []
+    firstWorkDate: Optional[str] = None
+    firstWorkTime: Optional[str] = None
+    coordinationMessage: Optional[str] = None
+
+
+class FirstWorkDateUpdate(BaseModel):
+    firstWorkDate: str
+    firstWorkTime: Optional[str] = None
+    coordinationMessage: Optional[str] = None
+
+
+class CoordinationMessageCreate(BaseModel):
+    message: str
+    type: Optional[str] = None  # e.g., 'date_modification_request'
+
+
+class WorkDateConfirmation(BaseModel):
+    confirmed: bool  # 출근 확정
+
+
 class MessageCreate(BaseModel):
     conversationId: str
     senderId: str

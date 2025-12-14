@@ -16,3 +16,4 @@ CREATE TABLE IF NOT EXISTS posts (
 
 -- 테이블 구조 확인
 DESCRIBE posts;
+

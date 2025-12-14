@@ -45,6 +45,8 @@ import { JobSeekerHelp } from './pages/jobseeker/Help';
 import { CommunityDetail } from './pages/network/CommunityDetail';
 import { ComingSoon } from './pages/employer/ComingSoon';
 import { PostsPage } from './pages/PostsPage';
+import { FirstWorkDateEdit } from './pages/employer/FirstWorkDateEdit';
+import { HiredConfirmation } from './pages/employer/HiredConfirmation';
 
 export const router = createBrowserRouter([
   {
@@ -214,6 +216,14 @@ export const router = createBrowserRouter([
       {
         path: 'employer/applicant/:id',
         element: <ApplicantDetail />,
+      },
+      {
+        path: 'employer/first-work-date-edit/:id',
+        element: <FirstWorkDateEdit />,
+      },
+      {
+        path: 'employer/hired-confirmation/:applicationId',
+        element: <HiredConfirmation />,
       },
       {
         path: 'employer/schedule',

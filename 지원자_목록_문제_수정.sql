@@ -131,3 +131,4 @@ LIMIT 10;
 
 -- Safe Update Mode 다시 활성화
 SET SQL_SAFE_UPDATES = 1;
+

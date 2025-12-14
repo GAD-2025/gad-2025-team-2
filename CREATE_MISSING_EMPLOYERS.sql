@@ -65,3 +65,4 @@ FROM employer_profiles ep
 LEFT JOIN employers e ON e.businessNo = ep.id
 ORDER BY 연결상태, ep.user_id;
 
+

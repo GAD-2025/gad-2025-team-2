@@ -126,3 +126,4 @@ SELECT
 FROM applications a
 LEFT JOIN jobs j ON a.jobId COLLATE utf8mb4_unicode_ci = j.id COLLATE utf8mb4_unicode_ci
 WHERE j.id IS NULL;
+

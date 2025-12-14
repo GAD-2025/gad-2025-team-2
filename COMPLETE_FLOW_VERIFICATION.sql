@@ -133,3 +133,4 @@ INNER JOIN employers e ON e.businessNo = ep.id
 INNER JOIN jobs j ON j.employerId = e.id
 INNER JOIN applications a ON a.jobId = j.id;
 
+

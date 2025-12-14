@@ -1,136 +1,122 @@
-# 가게별 공고 필터링 기능 구현 완료
+# 전체 플로우 구현 완료
 
-## ✅ 완료된 작업
+## ✅ 완료된 모든 작업
 
-### 1. 백엔드 수정
-- ✅ `Job` 모델에 `store_id` 필드 추가
-- ✅ `JobCreateRequest` 스키마에 `store_id` 필드 추가
-- ✅ 공고 생성 시 `store_id` 저장
-- ✅ 공고 조회 API에 `store_id` 필터 파라미터 추가
-- ✅ 공고 조회 응답에 `store_id` 포함
+### 1. 데이터베이스 및 백엔드
+- ✅ applications 테이블에 4개 필드 추가
+  - interviewData (TEXT)
+  - acceptanceData (TEXT)
+  - coordinationMessages (TEXT)
+  - firstWorkDateConfirmed (VARCHAR)
+- ✅ 백엔드 API 엔드포인트 5개 구현
+  - POST /applications/{id}/interview-proposal
+  - POST /applications/{id}/acceptance-guide
+  - POST /applications/{id}/first-work-date
+  - POST /applications/{id}/coordination-message
+  - POST /applications/{id}/confirm-work-date
 
-### 2. 프론트엔드 수정
-- ✅ `JobCreate`에서 `store_id` 전송
-- ✅ `JobManagement`에 가게별 드롭다운 추가
-- ✅ 매장 목록 조회 및 필터링 로직 구현
-- ✅ `jobsAPI.list`에 `store_id` 파라미터 추가
+### 2. 프론트엔드 - 고용주
 
-### 3. Posts API (이미 구현됨)
-- ✅ `GET /api/posts` 엔드포인트 구현 완료
-- ✅ `posts` 테이블 CREATE 문 작성 완료
-- ✅ React `PostsPage` 컴포넌트 구현 완료
+#### ✅ ApplicantDetail.tsx
+- 면접 제안 확정: API 우선 사용, localStorage fallback
+- 면접 확정 시 isConfirmed: true 저장
+- 합격 처리: API로 acceptanceData 저장
+- 면접 제안/합격 데이터 표시: API 데이터 우선
 
-## 📋 MySQL Workbench에서 실행할 SQL
+#### ✅ FirstWorkDateEdit.tsx
+- 첫 출근 날짜 수정: API 호출
+- 수정 후 확정: API로 채용 확정 처리
+- 첫 출근 날짜 로드: API 데이터 우선
 
-### 1. jobs 테이블에 store_id 필드 추가
+#### ✅ Recruitment.tsx
+- 채용 확정 섹션: 캘린더 UI
+- isHired 함수: API 데이터 우선 확인
+- 첫 출근 날짜별 그룹화: API 데이터 사용
 
-```sql
-USE team2_db;
+### 3. 프론트엔드 - 구직자
 
-ALTER TABLE jobs 
-ADD COLUMN store_id VARCHAR(255) NULL 
-COMMENT '매장 ID (stores.id 참조)';
+#### ✅ MyApplications.tsx
+- 면접 제안 확인: API 데이터 우선, 면접 확정 상태 표시
+- 합격 안내 확인: API 데이터 사용, 근무 전 유의사항 표시
+- 조율 메시지: API 호출
+- 출근 확정: API로 채용 확정 처리
+- 출근 거부: API로 상태 업데이트
+- 합격 섹션 캘린더: API 데이터 사용
+
+## 🔄 전체 플로우
+
+### 1. 고용주 면접 제안 → 확정
+```
+고용주: 면접 일정 입력 → 면접 제안 전송 (API)
+↓
+구직자: 면접 제안 확인 (API) → 수락/거절/조율
+↓
+고용주: 조율 메시지 확인 → 면접 일정 수정 → "수정 후 확정" (API, isConfirmed: true)
+↓
+구직자: "면접 확정" 상태 확인
 ```
 
-### 2. posts 테이블 생성 (아직 안 했다면)
-
-```sql
-USE team2_db;
-
-CREATE TABLE IF NOT EXISTS posts (
-    id VARCHAR(255) PRIMARY KEY COMMENT '게시글 ID',
-    user_id VARCHAR(255) NOT NULL COMMENT '작성자 ID',
-    title VARCHAR(500) NOT NULL COMMENT '제목',
-    body TEXT NOT NULL COMMENT '본문 내용',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    INDEX idx_user_id (user_id),
-    INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+### 2. 고용주 합격 처리
+```
+고용주: "합격" 버튼 → 근무 전 유의사항 입력 → 전송 (API)
+↓
+구직자: 합격 안내 확인 (API) → 근무 전 유의사항, 첫 출근 일정 확인
+↓
+구직자: "조율" / "출근 확정" / "출근 거부" 선택
 ```
 
-## 🔧 수정된 파일
-
-### 백엔드
-- `backend/app/models.py` - Job 모델에 `store_id` 추가
-- `backend/app/schemas.py` - JobCreateRequest에 `store_id` 추가
-- `backend/app/routers/jobs.py` - store_id 필터링 및 저장 로직 추가
-
-### 프론트엔드
-- `frontend/src/pages/employer/JobCreate.tsx` - store_id 전송 추가
-- `frontend/src/pages/employer/JobManagement.tsx` - 가게별 드롭다운 추가
-- `frontend/src/api/endpoints.ts` - jobsAPI.list에 store_id 파라미터 추가
-
-## 📁 생성된 파일
-
-- `REQUIRED_DATA_FIELDS_STORE_FILTER.md` - 데이터 필드 리스트업
-- `IMPLEMENTATION_COMPLETE.md` - 이 문서
-
-## 🎯 기능 설명
-
-### 가게별 공고 필터링
-
-1. **공고 관리 페이지 접속:**
-   - `/employer/job-management` 접속
-
-2. **가게별 드롭다운:**
-   - 필터 탭 오른쪽에 "전체" 드롭다운 표시
-   - 클릭 시 매장 목록 표시
-   - "전체" 선택 시 모든 공고 표시
-   - 특정 매장 선택 시 해당 매장의 공고만 표시
-
-3. **매장 추가 시:**
-   - 마이페이지에서 매장 추가
-   - 공고 관리 페이지 새로고침 시 드롭다운에 자동 반영
-
-## 🧪 테스트 방법
-
-1. **MySQL Workbench에서 SQL 실행:**
-   ```sql
-   USE team2_db;
-   ALTER TABLE jobs ADD COLUMN store_id VARCHAR(255) NULL;
-   ```
-
-2. **백엔드 서버 재시작:**
-   - 변경사항 반영을 위해 백엔드 서버 재시작
-
-3. **테스트 시나리오:**
-   - 새 공고 등록 시 매장 선택 확인
-   - 공고 관리 페이지에서 가게별 필터링 테스트
-   - 마이페이지에서 매장 추가 후 공고 관리 페이지 확인
-
-## 📝 Posts API 정보
-
-### 엔드포인트
-- `GET /api/posts` - 모든 게시글 조회
-- `GET /api/posts/{post_id}` - 특정 게시글 조회
-
-### 응답 형식
-```json
-{
-  "posts": [
-    {
-      "id": "post-123",
-      "user_id": "user-456",
-      "title": "게시글 제목",
-      "body": "게시글 내용",
-      "created_at": "2025-01-10T12:00:00"
-    }
-  ]
-}
+### 3. 조율 → 채용 확정
+```
+구직자: "조율" 클릭 → 조율 메시지 전송 (API)
+↓
+고용주: 조율 메시지 확인 → "첫 출근 수정하기" 클릭
+↓
+고용주: 첫 출근 날짜/시간 수정 → "수정 후 확정하기" (API)
+↓
+"채용 확정이 되었습니다" 페이지
+↓
+고용주: 채용 확정 섹션 (캘린더 UI) → 날짜별 지원자 확인
+↓
+구직자: 합격 섹션 (캘린더 UI) → 자신의 출근 날짜 확인
 ```
 
-### React 사용 예시
-```typescript
-const response = await fetch(`${API_BASE_URL}/api/posts`);
-const data = await response.json();
-const posts = data.posts || [];
-```
+## 📋 테스트 체크리스트
 
-## 🚀 다음 단계
+### 고용주 플로우
+- [ ] 면접 제안 전송 → 구직자에게 표시되는지
+- [ ] 면접 일정 수정 후 확정 → 구직자에게 "면접 확정" 표시되는지
+- [ ] 합격 처리 → 구직자에게 합격 안내 표시되는지
+- [ ] 첫 출근 날짜 수정 및 확정 → 채용 확정 페이지 표시되는지
+- [ ] 채용 확정 섹션 캘린더 → 날짜별 지원자 표시되는지
 
-1. MySQL Workbench에서 `store_id` 필드 추가
-2. 백엔드 서버 재시작
-3. 새 공고 등록 및 가게별 필터링 테스트
+### 구직자 플로우
+- [ ] 면접 제안 확인 → "면접 확정" 상태 표시되는지
+- [ ] 조율 메시지 전송 → 고용주에게 전달되는지
+- [ ] 합격 안내 확인 → 근무 전 유의사항, 첫 출근 일정 표시되는지
+- [ ] 출근 확정 → 채용 확정 처리되는지
+- [ ] 합격 섹션 캘린더 → 자신의 출근 날짜 표시되는지
 
-모든 구현이 완료되었습니다! 🎉
+## 🔧 데이터 흐름
 
+### API 우선, localStorage Fallback
+- 모든 데이터는 API를 우선 사용
+- API 실패 시 localStorage fallback으로 동작
+- API 성공 시 localStorage에도 동기화 (점진적 마이그레이션)
+
+### 데이터 동기화
+- 고용주가 데이터 수정/확정 → API 저장 → 구직자가 즉시 확인 가능
+- 구직자가 조율/확정 → API 저장 → 고용주가 즉시 확인 가능
+
+## ⚠️ 주의사항
+
+1. **데이터베이스 마이그레이션 필요**
+   - applications 테이블에 4개 필드 추가
+   - SQL: `backend/migrations/add_application_fields.sql` 참고
+
+2. **기존 localStorage 데이터**
+   - 기존 localStorage 데이터는 fallback으로 사용
+   - 새로운 데이터는 API를 통해 저장됨
+
+3. **상태 동기화**
+   - 고용주와 구직자 간 상태는 API를 통해 실시간 동기화
+   - 페이지 새로고침 시 최신 데이터 표시

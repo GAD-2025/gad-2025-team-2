@@ -80,3 +80,4 @@ GROUP BY ep.user_id, e.id;
 
 **이 5개 연결만 확인하면 됩니다!**
 
+

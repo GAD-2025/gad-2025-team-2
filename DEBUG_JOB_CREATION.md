@@ -123,3 +123,4 @@ ORDER BY j.createdAt DESC;
 3. **Network 탭에서 `/jobs` POST 요청 확인**
 4. **결과를 알려주시면 정확한 해결 방법 제시하겠습니다!**
 
+

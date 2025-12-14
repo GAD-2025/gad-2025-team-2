@@ -33,3 +33,4 @@ WHERE TABLE_SCHEMA = 'team2_db'
 
 -- 결과가 없으면 제거 성공
 
+
