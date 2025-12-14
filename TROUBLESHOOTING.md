@@ -102,3 +102,4 @@ WHERE wage_type IS NULL OR wage_type = '';
 1. 브라우저 콘솔 에러 메시지
 2. Network 탭의 실패한 요청 상태 코드
 3. 백엔드 서버 로그 메시지
+

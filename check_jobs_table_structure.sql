@@ -14,3 +14,4 @@ FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_SCHEMA = 'team2_db'
   AND TABLE_NAME = 'jobs'
   AND COLUMN_NAME IN ('shop_name', 'shop_address', 'shop_address_detail', 'shop_phone', 'store_id');
+

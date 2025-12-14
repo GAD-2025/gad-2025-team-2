@@ -77,3 +77,4 @@ DESCRIBE jobs;
 - 프론트엔드에서 `employerMessage` 필드를 참조하는 코드는 모두 제거되었습니다.
 
 모든 수정이 완료되었습니다! 🎉
+

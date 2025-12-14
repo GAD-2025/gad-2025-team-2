@@ -41,3 +41,4 @@ SELECT
 FROM jobs
 WHERE store_id IS NOT NULL
 GROUP BY store_id;
+

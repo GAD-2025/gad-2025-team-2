@@ -6,3 +6,4 @@ DESCRIBE jobs;
 
 -- 또는
 SHOW COLUMNS FROM jobs LIKE 'wage_type';
+

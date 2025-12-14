@@ -134,11 +134,19 @@ export async function getSignupUser(userId: string): Promise<SignupUserData> {
 }
 
 export async function getJobSeekerProfile(userId: string): Promise<JobSeekerProfileData> {
-  const response = await fetch(`${API_BASE_URL}/job-seeker/profile/${userId}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch profile data');
+  try {
+    const response = await fetch(`${API_BASE_URL}/job-seeker/profile/${userId}`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Profile not found');
+      }
+      throw new Error(`Failed to fetch profile data: ${response.status} ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('[ERROR] getJobSeekerProfile failed:', error);
+    throw error;
   }
-  return response.json();
 }
 
 export interface JobSeekerListItem {

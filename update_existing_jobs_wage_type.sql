@@ -11,3 +11,4 @@ WHERE wage_type IS NULL OR wage_type = '';
 
 -- 3. 확인
 SELECT id, title, wage, wage_type FROM jobs LIMIT 10;
+

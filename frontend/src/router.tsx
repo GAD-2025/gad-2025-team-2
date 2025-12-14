@@ -11,6 +11,7 @@ import { ApplicantFilter } from './pages/filters/ApplicantFilter';
 import { EmployerHome } from './pages/employer/EmployerHome';
 import { ApplicantDetail } from './pages/employer/ApplicantDetail';
 import { HireDone } from './pages/employer/HireDone';
+import { InterviewProposed } from './pages/employer/InterviewProposed';
 import { JobCreate } from './pages/employer/JobCreate';
 import { JobEdit } from './pages/employer/JobEdit';
 import { Recruitment } from './pages/employer/Recruitment';
@@ -125,6 +126,10 @@ export const router = createBrowserRouter([
       {
         path: 'employer/hire-done',
         element: <HireDone />,
+      },
+      {
+        path: 'employer/interview-proposed',
+        element: <InterviewProposed />,
       },
       {
         path: 'messages',

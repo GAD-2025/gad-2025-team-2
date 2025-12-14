@@ -21,11 +21,19 @@ SECRET_KEY = os.getenv("JWT_SECRET", "devsecret")
 # Simple password hashing for development
 def hash_password(password: str) -> str:
     """Simple SHA256 hash for development"""
-    return hashlib.sha256(password.encode()).hexdigest()
+    # 공백 제거 및 인코딩 일관성 보장
+    password = password.strip() if password else ""
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify password against hash"""
-    return hash_password(plain_password) == hashed_password
+    if not plain_password or not hashed_password:
+        return False
+    # 공백 제거 및 인코딩 일관성 보장
+    plain_password = plain_password.strip() if plain_password else ""
+    hashed_password = hashed_password.strip() if hashed_password else ""
+    computed_hash = hash_password(plain_password)
+    return computed_hash == hashed_password
 
 
 def create_access_token(data: dict):
@@ -103,12 +111,20 @@ async def signin_new(request: NewSignInRequest, session: Session = Depends(get_s
             print(f"[ERROR] 비밀번호가 설정되지 않음")
             raise HTTPException(status_code=401, detail="비밀번호가 설정되지 않았습니다. 관리자에게 문의하세요.")
         
+        # 상세 디버깅 정보
         input_hash = hash_password(request.password)
+        stored_hash = user.password.strip() if user.password else ""
+        print(f"[DEBUG] 입력 비밀번호 원문 길이: {len(request.password)}")
         print(f"[DEBUG] 입력 비밀번호 해시: {input_hash}")
-        print(f"[DEBUG] 저장된 비밀번호 해시: {user.password}")
+        print(f"[DEBUG] 입력 비밀번호 해시 길이: {len(input_hash)}")
+        print(f"[DEBUG] 저장된 비밀번호 해시: {stored_hash}")
+        print(f"[DEBUG] 저장된 비밀번호 해시 길이: {len(stored_hash)}")
+        print(f"[DEBUG] 해시 일치 여부: {input_hash == stored_hash}")
         
         if not verify_password(request.password, user.password):
             print(f"[ERROR] 비밀번호 불일치")
+            print(f"[ERROR] 입력 해시: {input_hash}")
+            print(f"[ERROR] 저장 해시: {stored_hash}")
             raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다")
         
         print(f"[SUCCESS] 로그인 성공: {user.id} (role: {user.role})")
@@ -238,8 +254,9 @@ async def signup_new(request: SignupPayload, session: Session = Depends(get_sess
         # 전화번호에서 하이픈(-) 제거
         phone = request.phone.replace('-', '') if request.phone else ""
         
-        # Hash password
+        # Hash password (공백 제거 및 일관성 보장)
         hashed_password = hash_password(request.password)
+        print(f"[SIGNUP] 비밀번호 해시 생성: 원문 길이={len(request.password)}, 해시={hashed_password[:20]}...")
         
         signup_user = SignupUser(
             id=user_id,

@@ -131,3 +131,4 @@ const fetchPosts = async () => {
    - UI 확인
 
 모든 수정이 완료되었습니다! 🎉
+

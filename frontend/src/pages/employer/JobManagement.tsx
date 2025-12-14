@@ -152,12 +152,18 @@ export const JobManagement = () => {
 
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+      const userId = localStorage.getItem('signup_user_id');
+      const url = userId 
+        ? `${API_BASE_URL}/jobs/${jobId}?user_id=${encodeURIComponent(userId)}`
+        : `${API_BASE_URL}/jobs/${jobId}`;
+      
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('삭제 실패');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || '삭제 실패');
       }
 
       // 로컬 상태에서 제거

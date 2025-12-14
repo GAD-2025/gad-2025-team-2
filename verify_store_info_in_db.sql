@@ -39,3 +39,4 @@ WHERE shop_name IS NOT NULL
    AND store_id IS NOT NULL
 ORDER BY createdAt DESC
 LIMIT 10;
+

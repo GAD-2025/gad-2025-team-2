@@ -4,6 +4,7 @@ from app.db import engine
 import json
 import uuid
 from datetime import datetime, date
+import hashlib
 
 
 def seed_nationalities():
@@ -92,6 +93,53 @@ def seed_job_seekers():
             return
         
         created_count = 0
+        
+        # Hash password function (same as in auth.py)
+        def hash_password(password: str) -> str:
+            return hashlib.sha256(password.encode()).hexdigest()
+        
+        # Create test account with known credentials
+        test_user_id = "seeker-test-001"
+        test_phone = "01012345678"
+        test_password = "password123"
+        
+        # Check if test user already exists
+        existing_test = session.exec(select(SignupUser).where(SignupUser.id == test_user_id)).first()
+        if not existing_test:
+            test_user = SignupUser(
+                id=test_user_id,
+                role="job_seeker",
+                name="테스트 구직자",
+                phone=test_phone,
+                password=hash_password(test_password),
+                nationality_code="KR",
+                birthdate=datetime.fromisoformat("2000-01-01").date(),
+                created_at=datetime.utcnow()
+            )
+            session.add(test_user)
+            
+            # Create profile for test user
+            test_profile_id = f"profile-{uuid.uuid4().hex[:8]}"
+            test_profile = JobSeekerProfile(
+                id=test_profile_id,
+                user_id=test_user_id,
+                preferred_regions=json.dumps([]),
+                preferred_jobs=json.dumps([]),
+                work_available_dates=json.dumps([]),
+                work_start_time="09:00",
+                work_end_time="18:00",
+                work_days_of_week=json.dumps(["월", "화", "수", "목", "금"]),
+                experience_sections=json.dumps(["skills", "introduction"]),
+                experience_skills=json.dumps({}),
+                experience_introduction="테스트 구직자입니다.",
+                visa_type="E-9",
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            session.add(test_profile)
+            created_count += 1
+            print(f"Created test job seeker: {test_phone} / {test_password}")
+        
         for seeker_data in job_seekers_data:
             # Create SignupUser
             user_id = f"signup-{uuid.uuid4().hex[:8]}"
@@ -99,8 +147,8 @@ def seed_job_seekers():
                 id=user_id,
                 role="job_seeker",
                 name="test user",
-                phone="01000000000",
-                password="hashed_password",  # In production, use proper hashing
+                phone=f"010{created_count:08d}",
+                password=hash_password("password123"),  # Properly hashed password
                 nationality_code="KR",
                 birthdate=datetime.fromisoformat("2000-01-01").date(),
                 created_at=datetime.utcnow()

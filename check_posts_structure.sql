@@ -6,3 +6,4 @@ DESCRIBE posts;
 
 -- 또는
 SHOW COLUMNS FROM posts;
+

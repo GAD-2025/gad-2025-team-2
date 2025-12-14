@@ -6,14 +6,14 @@ echo.
 
 REM 백엔???�행 (백그?�운??
 echo [1/3] 백엔???�버�??�작?�니??..
-start "WorkFair Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate.bat && python -m uvicorn app.main:app --reload"
+start "WorkFair Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate.bat && venv\Scripts\python.exe -m uvicorn app.main:app --reload"
 
 REM ?�시 ?��?(백엔?��? ?�작???�간)
 timeout /t 3 /nobreak >nul
 
 REM ?�론?�엔???�행 (백그?�운??
 echo [2/3] ?�론?�엔?��? ?�작?�니??..
-start "WorkFair Frontend" cmd /k "cd /d %~dp0frontend && npm.cmd run dev"
+start "WorkFair Frontend" cmd /k "cd /d %~dp0frontend && set PATH=C:\Program Files\nodejs;%PATH% && "C:\Program Files\nodejs\npm.cmd" run dev"
 
 REM ?�시 ?��?(?�론?�엔?��? ?�작???�간)
 echo [3/3] 브라?��?�??�는 �?..

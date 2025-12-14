@@ -53,3 +53,4 @@ store_ids = [store.id for store in stores]
 - **마이페이지**: http://localhost:5173/mypage
 
 모든 수정이 완료되었습니다! 🎉
+

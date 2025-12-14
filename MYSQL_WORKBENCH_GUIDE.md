@@ -79,3 +79,4 @@ WHERE id = 'job-id-here';  -- 실제 job ID로 변경
 2. **쿼리 실행**: 쿼리를 선택한 후 `Execute` 버튼을 클릭하거나 `Ctrl+Shift+Enter`를 누르세요.
 
 3. **결과 확인**: 하단의 "Result Grid" 탭에서 결과를 확인할 수 있습니다.
+

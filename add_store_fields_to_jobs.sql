@@ -28,3 +28,4 @@ COMMENT '선택한 매장 ID (stores.id 참조)';
 
 -- 필드 추가 확인
 DESCRIBE jobs;
+

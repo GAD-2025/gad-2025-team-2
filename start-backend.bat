@@ -23,6 +23,7 @@ echo 서버 주소: http://localhost:8000
 echo API 문서: http://localhost:8000/docs
 echo.
 
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+REM venv의 python.exe 직접 사용
+venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 pause

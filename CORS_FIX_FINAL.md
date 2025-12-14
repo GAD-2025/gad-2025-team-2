@@ -77,3 +77,4 @@ netstat -ano | findstr :8000
 3. OPTIONS preflight 요청이 제대로 처리되는지 확인
 
 백엔드 서버를 재시작한 후 다시 시도해보세요! 🎉
+

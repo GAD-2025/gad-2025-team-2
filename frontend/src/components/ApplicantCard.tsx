@@ -35,9 +35,12 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
     return '🌏';
   };
 
+  // 백엔드 엔드포인트는 user_id를 기대하므로 userId를 우선 사용
+  const applicantId = applicant.userId || applicant.id;
+  
   return (
     <div
-      onClick={() => navigate(`/applicant/${applicant.userId || applicant.id}`)}
+      onClick={() => navigate(`/applicant/${applicantId}`)}
       className={`
         bg-white rounded-card cursor-pointer snap-start relative
         transition-all duration-120 hover:shadow-card active:scale-[0.98]
@@ -115,7 +118,7 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/applicant/${applicant.userId || applicant.id}`);
+              navigate(`/applicant/${applicantId}`);
             }}
             className="w-full h-[44px] bg-mint-600 text-white rounded-[12px] 
                      text-[15px] font-semibold hover:bg-mint-700 transition-colors"
@@ -142,7 +145,7 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/applicant/${applicant.userId || applicant.id}`);
+              navigate(`/applicant/${applicantId}`);
             }}
             className="w-full h-[44px] bg-mint-600 text-white rounded-[12px] 
                      text-[15px] font-semibold hover:bg-mint-700 transition-colors"

@@ -115,3 +115,4 @@ WHERE wage_type IS NULL OR wage_type = '';
    - 공고 관리 페이지에서 확인
 
 모든 수정이 완료되었습니다! 🎉
+

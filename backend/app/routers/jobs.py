@@ -55,21 +55,20 @@ async def list_jobs(
         print(f"  매장 IDs: {store_ids}")
         
         if store_ids:
-            # 매장이 있으면: 해당 매장의 공고 + store_id가 NULL인 공고 (레거시 공고)
-            from sqlalchemy import or_
-            statement = statement.where(
-                or_(
-                    Job.store_id.in_(store_ids),
-                    Job.store_id.is_(None)  # store_id가 NULL인 공고도 포함
-                )
-            )
-            print(f"[DEBUG] list_jobs - 매장 필터 적용: {store_ids} 또는 NULL")
+            # 매장이 있으면: 해당 매장의 공고만 조회 (store_id가 NULL인 레거시 공고는 제외)
+            statement = statement.where(Job.store_id.in_(store_ids))
+            print(f"[DEBUG] list_jobs - 매장 필터 적용: {store_ids}")
         else:
-            # 매장이 없으면: store_id가 NULL인 공고만 (레거시 공고)
-            statement = statement.where(Job.store_id.is_(None))
-            print(f"[DEBUG] list_jobs - 매장이 없음, store_id가 NULL인 공고만 조회")
+            # 매장이 없으면: 빈 결과 반환 (레거시 공고는 더 이상 표시하지 않음)
+            statement = statement.where(Job.id == "never-match")  # 항상 빈 결과
+            print(f"[DEBUG] list_jobs - 매장이 없음, 빈 결과 반환")
 
     jobs = session.exec(statement.offset(offset).limit(limit)).all()
+    print(f"[DEBUG] list_jobs - 조회된 공고 개수: {len(jobs)}")
+    
+    if len(jobs) == 0:
+        print(f"[WARNING] list_jobs - 조회된 공고가 없습니다")
+        print(f"[WARNING] list_jobs - 필터 조건을 확인하세요")
 
     # Preload application counts for popularity sorting/filtering
     app_counts = dict(
@@ -147,6 +146,10 @@ async def list_jobs(
         # Default: latest first if postedAt exists
         result.sort(key=lambda x: x.get("postedAt") or x.get("createdAt") or "", reverse=True)
 
+    print(f"[DEBUG] list_jobs - 최종 반환할 공고 개수: {len(result)}")
+    if result:
+        print(f"[DEBUG] list_jobs - 첫 번째 공고 샘플: {result[0].get('id', 'N/A')} - {result[0].get('title', 'N/A')}")
+    
     return result
 
 
@@ -222,16 +225,60 @@ async def update_job_status(
 
 
 @router.delete("/{job_id}")
-async def delete_job(job_id: str, session: Session = Depends(get_session)):
-    """Delete a job posting"""
+async def delete_job(
+    job_id: str, 
+    user_id: Optional[str] = Query(default=None, description="고용주 user_id (권한 확인용)"),
+    session: Session = Depends(get_session)
+):
+    """Delete a job posting (only by the owner)"""
+    from app.models import Store
+    
     statement = select(Job).where(Job.id == job_id)
     job = session.exec(statement).first()
     
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    session.delete(job)
-    session.commit()
+    # 권한 확인: user_id가 제공된 경우, 해당 고용주의 공고인지 확인
+    if user_id:
+        # Job의 store_id로 Store를 찾아서 user_id 확인
+        if job.store_id:
+            store_stmt = select(Store).where(Store.id == job.store_id)
+            store = session.exec(store_stmt).first()
+            if not store or store.user_id != user_id:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="이 공고를 삭제할 권한이 없습니다. 본인이 등록한 공고만 삭제할 수 있습니다."
+                )
+        else:
+            # store_id가 NULL인 레거시 공고의 경우, employerId로 확인
+            employer_stmt = select(Employer).where(Employer.id == job.employerId)
+            employer = session.exec(employer_stmt).first()
+            if employer and employer.businessNo:
+                employer_profile_stmt = select(EmployerProfile).where(EmployerProfile.id == employer.businessNo)
+                employer_profile = session.exec(employer_profile_stmt).first()
+                if not employer_profile or employer_profile.user_id != user_id:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="이 공고를 삭제할 권한이 없습니다. 본인이 등록한 공고만 삭제할 수 있습니다."
+                    )
+    
+    # Application이 있는 경우도 처리 (외래키 제약조건)
+    try:
+        # 관련 Application 삭제
+        applications_stmt = select(Application).where(Application.jobId == job_id)
+        applications = session.exec(applications_stmt).all()
+        for app in applications:
+            session.delete(app)
+        
+        session.delete(job)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        print(f"[ERROR] delete_job - 삭제 중 오류: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"공고 삭제 중 오류 발생: {str(e)}")
     
     return {"message": "Job deleted successfully"}
 
@@ -323,13 +370,17 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
     # Determine status from request or default to 'active'
     job_status = request.status if request.status else 'active'
     
-    # 디버깅: 받은 매장 정보 확인
-    print(f"[DEBUG] create_job - 받은 매장 정보:")
-    print(f"  shop_name: {request.shop_name}")
-    print(f"  shop_address: {request.shop_address}")
-    print(f"  shop_address_detail: {request.shop_address_detail}")
-    print(f"  shop_phone: {request.shop_phone}")
-    print(f"  store_id: {request.store_id}")
+    # 디버깅: 받은 매장 정보 확인 (인코딩 안전 처리)
+    try:
+        print(f"[DEBUG] create_job - 받은 매장 정보:")
+        print(f"  shop_name: {request.shop_name}")
+        print(f"  shop_address: {request.shop_address}")
+        print(f"  shop_address_detail: {request.shop_address_detail}")
+        print(f"  shop_phone: {request.shop_phone}")
+        print(f"  store_id: {request.store_id}")
+    except UnicodeEncodeError:
+        # 인코딩 오류 시 간단한 메시지만 출력
+        print(f"[DEBUG] create_job - 받은 매장 정보 확인 완료")
     
     # Use location from request if provided, otherwise extract from address
     location = request.location or None
@@ -370,38 +421,73 @@ async def create_job(request: JobCreateRequest, session: Session = Depends(get_s
         store_id=request.store_id,
     )
     
-    # 디버깅: 저장할 Job 객체 확인
-    print(f"[DEBUG] create_job - 저장할 Job 객체:")
-    print(f"  job_id: {job_id}")
-    print(f"  employerId: {employer.id}")
-    print(f"  title: {job.title}")
-    print(f"  status: {job_status}")
-    print(f"  shop_name: {job.shop_name}")
-    print(f"  shop_address: {job.shop_address}")
-    print(f"  shop_address_detail: {job.shop_address_detail}")
-    print(f"  shop_phone: {job.shop_phone}")
-    print(f"  store_id: {job.store_id}")
+    # 디버깅: 저장할 Job 객체 확인 (인코딩 안전 처리)
+    try:
+        print(f"[DEBUG] create_job - 저장할 Job 객체:")
+        print(f"  job_id: {job_id}")
+        print(f"  employerId: {employer.id}")
+        print(f"  title: {job.title}")
+        print(f"  status: {job_status}")
+        print(f"  shop_name: {job.shop_name}")
+        print(f"  shop_address: {job.shop_address}")
+        print(f"  shop_address_detail: {job.shop_address_detail}")
+        print(f"  shop_phone: {job.shop_phone}")
+        print(f"  store_id: {job.store_id}")
+    except UnicodeEncodeError:
+        # 인코딩 오류 시 간단한 메시지만 출력
+        print(f"[DEBUG] create_job - 저장할 Job 객체 준비 완료 (job_id: {job_id})")
     
     try:
+        print(f"[DEBUG] create_job - 데이터베이스에 저장 시작...")
         session.add(job)
         session.commit()
         session.refresh(job)
+        print(f"[DEBUG] create_job - commit 완료")
         
         # 데이터베이스에 실제로 저장되었는지 확인
         verify_stmt = select(Job).where(Job.id == job_id)
         verified = session.exec(verify_stmt).first()
         if verified:
-            print(f"[DEBUG] create_job - 데이터베이스 저장 확인됨: {verified.id}")
-            print(f"  verified.employerId: {verified.employerId}")
-            print(f"  verified.title: {verified.title}")
-            print(f"  verified.status: {verified.status}")
+            try:
+                print(f"[DEBUG] create_job - 데이터베이스 저장 확인됨!")
+                print(f"  job_id: {verified.id}")
+                print(f"  employerId: {verified.employerId}")
+                print(f"  title: {verified.title}")
+                print(f"  status: {verified.status}")
+                print(f"  store_id: {verified.store_id}")
+                print(f"  createdAt: {verified.createdAt}")
+                print(f"  postedAt: {verified.postedAt}")
+                
+                # 구직자에게 보이는지 확인 (status가 active인지)
+                if verified.status == 'active':
+                    print(f"[DEBUG] create_job - 구직자에게 보일 공고 (status=active)")
+                else:
+                    print(f"[WARNING] create_job - 구직자에게 안 보임 (status={verified.status})")
+            except UnicodeEncodeError:
+                # 인코딩 오류 시 간단한 메시지만 출력
+                print(f"[DEBUG] create_job - 데이터베이스 저장 확인됨 (job_id: {verified.id})")
         else:
             print(f"[ERROR] create_job - 데이터베이스 저장 실패! job_id: {job_id}")
-    except Exception as e:
-        print(f"[ERROR] create_job - 공고 저장 중 오류 발생: {e}")
-        import traceback
-        traceback.print_exc()
+            print(f"[ERROR] create_job - commit 후에도 조회되지 않음 - 트랜잭션 롤백되었을 수 있음")
+            raise HTTPException(status_code=500, detail="공고 저장에 실패했습니다")
+    except HTTPException:
         raise
+    except Exception as e:
+        try:
+            print(f"[ERROR] create_job - 공고 저장 중 오류 발생: {e}")
+            import traceback
+            traceback.print_exc()
+        except UnicodeEncodeError:
+            # 인코딩 오류 시 간단한 메시지만 출력
+            print(f"[ERROR] create_job - 공고 저장 중 오류 발생 (인코딩 오류)")
+        session.rollback()
+        # 오류 메시지도 안전하게 처리
+        error_msg = str(e)
+        try:
+            error_msg.encode('cp949')
+        except UnicodeEncodeError:
+            error_msg = "공고 저장 중 오류 발생 (특수 문자 포함)"
+        raise HTTPException(status_code=500, detail=f"공고 저장 중 오류 발생: {error_msg}")
     
     return JobResponse(
         id=job.id,

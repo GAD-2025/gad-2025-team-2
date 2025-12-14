@@ -34,3 +34,4 @@ SELECT * FROM posts;
 
 -- 6단계: 확인 후 백업 테이블 삭제 (선택사항)
 -- DROP TABLE IF EXISTS posts_backup;
+

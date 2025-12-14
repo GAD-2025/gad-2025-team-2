@@ -78,3 +78,4 @@ fetch('http://localhost:8000/jobs?limit=10&user_id=' + localStorage.getItem('sig
   .then(data => console.log('API 응답:', data))
   .catch(err => console.error('API 에러:', err));
 ```
+

@@ -63,15 +63,27 @@ export const JobDetail = () => {
     setIsApplyModalOpen(false);
     try {
       setApplying(true);
-      await applicationsAPI.create(userId, id);
+      console.log('[DEBUG] 지원하기 시작:', { userId, jobId: id });
+      const response = await applicationsAPI.create(userId, id);
+      console.log('[DEBUG] 지원 성공:', response.data);
       toast.success('지원이 완료되었습니다');
       navigate('/jobseeker/apply-done');
     } catch (error: any) {
-      console.error('지원 실패:', error);
+      console.error('[ERROR] 지원 실패:', error);
+      console.error('[ERROR] 지원 실패 상세:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
       if (error.response?.status === 409) {
         toast.warning('이미 지원한 공고입니다');
+      } else if (error.response?.status === 404) {
+        toast.error('공고를 찾을 수 없습니다');
+      } else if (error.response?.status === 500) {
+        toast.error(`지원 중 오류가 발생했습니다: ${error.response?.data?.detail || '서버 오류'}`);
       } else {
-        toast.error('지원에 실패했습니다');
+        toast.error(`지원에 실패했습니다: ${error.response?.data?.detail || error.message || '알 수 없는 오류'}`);
       }
     } finally {
       setApplying(false);

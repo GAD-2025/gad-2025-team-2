@@ -32,3 +32,4 @@ WHERE TABLE_SCHEMA = 'team2_db'
   AND COLUMN_NAME = 'employerMessage';
 
 -- 결과가 없으면 제거 성공
+

@@ -30,7 +30,7 @@ interface JobFormData {
   requiredVisa: string[];
   positions: string;
   deadline: string;
-  employerMessage: string;
+  description: string;
   preferredSkills: string;
 }
 
@@ -104,7 +104,7 @@ export const JobCreate = () => {
     requiredVisa: [],
     positions: '1',
     deadline: '',
-    employerMessage: '',
+    description: '', // employerMessage를 description으로 변경
     preferredSkills: '',
   });
 
@@ -323,10 +323,18 @@ export const JobCreate = () => {
       toast.error(`${wageTypeLabel}을 입력해주세요`);
       return;
     }
-    // 최저시급 검증 (시급인 경우만)
+    // 최저시급 검증
     if (formData.wageType === 'hourly') {
+      // 시급인 경우: 직접 입력한 시급 검증
       const wageAmount = parseFloat(formData.wage);
       if (wageAmount < 10320) {
+        toast.error('시급은 최저시급(10,320원) 이상이어야 합니다');
+        return;
+      }
+    } else if (formData.wageCalculationType === 'auto') {
+      // 주급/월급 자동계산인 경우: 자동계산에 사용된 시급 검증
+      const hourlyWageAmount = parseFloat(formData.hourlyWage);
+      if (hourlyWageAmount < 10320) {
         toast.error('시급은 최저시급(10,320원) 이상이어야 합니다');
         return;
       }
@@ -368,7 +376,7 @@ export const JobCreate = () => {
         shop_phone: selectedStore.phone,
         store_id: selectedStore.id, // 매장 ID 추가
         location: selectedStore.address, // location 필드에도 주소 설정
-        description: formData.employerMessage || '자세한 내용은 문의 바랍니다.',
+        description: formData.description || '자세한 내용은 문의 바랍니다.',
         category: finalIndustry,
         wage: parseInt(formData.wage),
         wage_type: formData.wageType, // 시급/주급/월급 타입 추가
@@ -665,6 +673,10 @@ export const JobCreate = () => {
                         원
                       </span>
                     </div>
+                    {/* 최저시급 경고 (주급/월급 자동계산 시) */}
+                    {formData.hourlyWage && parseFloat(formData.hourlyWage) < 10320 && (
+                      <p className="mt-1 text-[12px] text-red-500">최저시급(10,320원) 이상이어야 합니다</p>
+                    )}
                   </div>
 
                   {/* 주일수 드롭다운 */}
@@ -754,7 +766,7 @@ export const JobCreate = () => {
                 </div>
               )}
               
-              {/* 최저시급 경고 (시급인 경우만) */}
+              {/* 최저시급 경고 (시급 직접 입력인 경우만) */}
               {formData.wageType === 'hourly' && formData.wage && parseFloat(formData.wage) < 10320 && (
                 <p className="mt-1 text-[12px] text-red-500">최저시급(10,320원) 이상이어야 합니다</p>
               )}
@@ -989,8 +1001,8 @@ export const JobCreate = () => {
           <h3 className="text-[16px] font-bold text-text-900 mb-4">공고설명</h3>
           
           <textarea
-            value={formData.employerMessage}
-            onChange={(e) => handleChange('employerMessage', e.target.value)}
+            value={formData.description}
+            onChange={(e) => handleChange('description', e.target.value)}
             placeholder="공고에 대한 상세 설명을 작성해주세요"
             rows={4}
             className="w-full px-4 py-3 bg-background rounded-[12px] border border-line-200

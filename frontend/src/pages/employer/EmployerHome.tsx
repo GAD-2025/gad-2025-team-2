@@ -53,15 +53,21 @@ export const EmployerHome = () => {
           const s: any = seeker;
           const birth = s.birthdate ? new Date(s.birthdate) : null;
           const age = birth ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365.25))) : null;
+          
+          // user_id가 필수이므로 확인
+          if (!s.user_id) {
+            console.warn('[WARNING] 지원자 데이터에 user_id가 없습니다:', s);
+          }
+          
           return {
-            id: s.id,
-            userId: s.user_id,
-            name: s.name,
+            id: s.id || s.user_id, // profile id 또는 user_id
+            userId: s.user_id, // 백엔드 엔드포인트는 user_id를 기대하므로 필수
+            name: s.name || '이름 없음',
             nationality: s.nationality || '국적 미상',
-            nationalityCode: s.nationality,
+            nationalityCode: s.nationality || s.nationality_code,
             birthdate: s.birthdate,
             phone: s.phone || '',
-            languageLevel: s.language_level || '언어 능력 미입력',
+            languageLevel: s.language_level || s.experience_skills || '언어 능력 미입력',
             visaType: s.visa_type || (appliedFilters.visas || '미입력'),
             availability: s.availability || '즉시',
             location: s.location ? { lat: s.location.lat, lng: s.location.lng } : undefined,
@@ -79,11 +85,15 @@ export const EmployerHome = () => {
         });
 
         setApplicants(formattedApplicants);
-        console.log(`Loaded ${formattedApplicants.length} job seekers`);
-      } catch (error) {
-        console.warn('데이터 로딩 오류 (구직자 목록 없음 또는 엔드포인트 미구현):', error);
-        // 404 등으로 실패해도 UI는 빈 목록으로 표시
+        console.log(`[SUCCESS] Loaded ${formattedApplicants.length} job seekers`);
+      } catch (error: any) {
+        console.error('[ERROR] 데이터 로딩 오류:', error);
+        // 404 등으로 실패해도 UI는 빈 목록으로 표시 (토스트는 표시하지 않음)
         setApplicants([]);
+        // 심각한 에러만 토스트 표시
+        if (error?.message && !error.message.includes('404')) {
+          toast.error('지원자 목록을 불러오는데 실패했습니다');
+        }
       } finally {
         setLoading(false);
       }

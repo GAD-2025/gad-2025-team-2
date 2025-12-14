@@ -16,3 +16,4 @@ SELECT
 FROM jobs
 ORDER BY createdAt DESC
 LIMIT 10;
+

@@ -69,3 +69,4 @@
 - `frontend/src/pages/employer/JobCreate.tsx` - 공고 등록 페이지
 
 모든 수정이 완료되었습니다! 🎉
+

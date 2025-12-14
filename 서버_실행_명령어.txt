@@ -1,0 +1,58 @@
+========================================
+WorkFair 서버 실행 명령어
+========================================
+
+⚠️ 중요: 프로젝트 폴더(gad-2025-team-2)에서 실행하세요!
+
+========================================
+방법 1: 배치 파일 사용 (가장 쉬움)
+========================================
+
+프로젝트 루트 폴더(gad-2025-team-2)에서:
+- start-frontend.bat 더블클릭 → 프론트엔드만
+- start-backend.bat 더블클릭 → 백엔드만  
+- start-all.bat 더블클릭 → 둘 다 한번에
+
+========================================
+방법 2: 터미널에서 직접 실행
+========================================
+
+1. 프로젝트 폴더로 이동:
+   cd C:\Users\Administrator\Desktop\gad-2025-team-2
+
+2. 프론트엔드 실행:
+   cd frontend
+   npm.cmd run dev
+   또는
+   & "C:\Program Files\nodejs\npm.cmd" run dev
+
+3. 백엔드 실행 (새 터미널 창):
+   cd C:\Users\Administrator\Desktop\gad-2025-team-2\backend
+   venv\Scripts\python.exe -m uvicorn app.main:app --reload
+
+========================================
+방법 3: 한 번에 실행 (PowerShell)
+========================================
+
+프로젝트 루트에서:
+
+# 프론트엔드 (백그라운드)
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'C:\Users\Administrator\Desktop\gad-2025-team-2\frontend'; `$env:PATH = 'C:\Program Files\nodejs;' + `$env:PATH; npm run dev"
+
+# 백엔드 (백그라운드)
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'C:\Users\Administrator\Desktop\gad-2025-team-2\backend'; .\venv\Scripts\python.exe -m uvicorn app.main:app --reload"
+
+========================================
+주의사항
+========================================
+
+❌ 잘못된 방법:
+   cd frontend  (Desktop에서 실행하면 안 됨!)
+   cd backend   (Desktop에서 실행하면 안 됨!)
+
+✅ 올바른 방법:
+   먼저 프로젝트 폴더로 이동:
+   cd C:\Users\Administrator\Desktop\gad-2025-team-2
+   그 다음 cd frontend 또는 cd backend
+
+========================================
