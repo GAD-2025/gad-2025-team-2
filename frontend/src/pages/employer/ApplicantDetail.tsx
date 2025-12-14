@@ -158,74 +158,95 @@ export const ApplicantDetail = () => {
     return '🌏';
   };
 
-  // Parse skills if JSON string
+  // Parse skills/abilities from experience_skills
+  // 온보딩에서 선택한 언어능력이나 스킬을 제대로 파싱
   const parsedSkills = (() => {
     if (!applicant.experience_skills) return [];
+    
+    // 문자열이면 JSON 파싱 시도
     try {
       const parsed = JSON.parse(applicant.experience_skills);
-      if (Array.isArray(parsed)) return parsed;
-      if (typeof parsed === 'object') {
-        return Object.values(parsed).flatMap((v) => (Array.isArray(v) ? v : [String(v)]));
+      
+      // 배열인 경우
+      if (Array.isArray(parsed)) {
+        return parsed.filter(skill => skill && String(skill).trim() !== '');
+      }
+      
+      // 객체인 경우 - 값들을 추출
+      if (typeof parsed === 'object' && parsed !== null) {
+        const values = Object.values(parsed)
+          .flatMap((v) => {
+            if (Array.isArray(v)) return v;
+            if (v && String(v).trim() !== '') return [String(v)];
+            return [];
+          })
+          .filter(Boolean);
+        return values;
+      }
+      
+      // 단순 문자열인 경우
+      if (typeof parsed === 'string' && parsed.trim() !== '') {
+        return [parsed];
       }
     } catch (_e) {
-      /* ignore */
+      // JSON 파싱 실패 시 문자열로 처리
+      if (typeof applicant.experience_skills === 'string' && applicant.experience_skills.trim() !== '') {
+        // 쉼표로 구분된 문자열인 경우
+        if (applicant.experience_skills.includes(',')) {
+          return applicant.experience_skills.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        return [applicant.experience_skills];
+      }
     }
-    return [applicant.experience_skills];
+    
+    return [];
   })();
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header showBack title="지원자 상세 정보" />
 
       <div className="p-4">
-        {/* Profile Card */}
-        <div className="bg-white border-2 border-mint-600 rounded-[16px] p-4 mb-5 relative">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-mint-100 to-mint-200 rounded-full flex items-center justify-center text-2xl flex-shrink-0">
+        {/* Profile Card - 이미지처럼 밝은 민트색 배경 */}
+        <div className="bg-gradient-to-br from-mint-50 to-mint-100 border border-mint-200 rounded-[16px] p-5 mb-5 relative">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-mint-200 to-mint-300 rounded-full flex items-center justify-center text-3xl flex-shrink-0 shadow-sm">
               👤
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-[20px] font-bold text-text-900 mb-1">
+              <h1 className="text-[22px] font-bold text-text-900 mb-1.5">
                 {applicant.name}{age ? ` ${age}세` : ''}
               </h1>
-              <div className="flex items-center gap-1 text-[14px] text-text-500">
-                <span>{flagEmoji(applicant.nationality_code)}</span>
-                <span>{applicant.nationality_code || '국적 미상'}</span>
+              <div className="flex items-center gap-1.5 text-[14px] text-text-700 mb-2">
+                <span className="text-xl">{flagEmoji(applicant.nationality_code)}</span>
+                <span className="font-medium">{applicant.nationality_code || '국적 미상'}</span>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[13px] text-text-700">
+                  비자: <span className="font-medium">{(applicant as any).visa_type ?? (applicant as any).visaType ?? '미입력'}</span>
+                </p>
+                {applicant.experience_career && (
+                  <p className="text-[13px] text-mint-700 font-semibold">
+                    경력: {applicant.experience_career}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="space-y-2 mb-4">
-            <p className="text-[14px] text-text-700">
-              언어 능력: {parsedSkills.length ? parsedSkills.join(', ') : applicant.experience_skills || '미입력'}
-            </p>
-            <p className="text-[14px] text-text-700">
-              비자: {(applicant as any).visa_type ?? (applicant as any).visaType ?? '미입력'}
-            </p>
-            {applicant.experience_career && (
-              <p className="text-[14px] text-mint-700 font-medium">
-                경력: {applicant.experience_career}
-              </p>
-            )}
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-            {parsedSkills.length > 0 ? parsedSkills.map((skill: string, index: number) => (
-              <span
-                key={index}
-                className="px-2.5 py-1 bg-mint-100 text-mint-700 rounded-[8px] text-[12px] font-medium"
-              >
-                {skill}
-              </span>
-            )) : skills.map((skill: string, index: number) => (
-              <span
-                key={index}
-                className="px-2.5 py-1 bg-mint-100 text-mint-700 rounded-[8px] text-[12px] font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
+          {/* Tags - 능력/스킬 태그 표시 */}
+          {parsedSkills.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {parsedSkills.map((skill: string, index: number) => (
+                <span
+                  key={index}
+                  className="px-3 py-1.5 bg-white border border-mint-300 text-mint-700 rounded-full text-[12px] font-medium shadow-sm"
+                >
+                  {String(skill)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Self Introduction */}
@@ -238,58 +259,127 @@ export const ApplicantDetail = () => {
           </div>
         </div>
 
-        {/* Language Skills */}
-        {(parsedSkills.length > 0 || applicant.experience_skills) && (
-          <div className="mb-5">
-            <h2 className="text-[17px] font-bold text-text-900 mb-3">언어능력</h2>
-            <div className="flex flex-wrap gap-2">
-              {parsedSkills.length > 0 ? parsedSkills.map((skill, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1.5 bg-mint-100 text-mint-700 rounded-[8px] text-[13px] font-medium"
-                >
-                  {skill}
-                </span>
-              )) : (
-                <span className="px-3 py-1.5 bg-mint-100 text-mint-700 rounded-[8px] text-[13px] font-medium">
-                  {applicant.experience_skills || '미입력'}
-                </span>
-              )}
+        {/* 능력/스킬 섹션 */}
+        <div className="mb-5">
+          <h2 className="text-[17px] font-bold text-text-900 mb-3">능력/스킬</h2>
+          {parsedSkills.length > 0 ? (
+            <div className="bg-white border border-line-200 rounded-[12px] p-4">
+              <div className="space-y-2.5">
+                {parsedSkills.map((skill, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-1.5 border-b border-line-100 last:border-b-0">
+                    <span className="text-[14px] text-text-700 font-medium">{String(skill)}</span>
+                    {/* 언어능력인 경우 레벨 표시, 스킬인 경우는 표시 안 함 */}
+                    {String(skill).includes('한국어') || String(skill).includes('영어') || String(skill).includes('언어') ? (
+                      <span className="px-3 py-1 bg-mint-100 border border-mint-300 text-mint-700 rounded-full text-[12px] font-medium">
+                        {String(skill).includes('한국어') ? 'L1-2' : String(skill).includes('영어') ? 'IELTS 9.0' : 'L1-2'}
+                      </span>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-white border border-line-200 rounded-[12px] p-4">
+              <p className="text-[14px] text-text-500 text-center">미입력</p>
+            </div>
+          )}
+        </div>
 
         {/* Work Availability */}
         <div className="mb-5">
           <h2 className="text-[17px] font-bold text-text-900 mb-3">근무 가능 시간</h2>
-          <div className="bg-gray-50 rounded-[12px] p-4">
-            <p className="text-[14px] text-text-700 leading-relaxed">
-              {applicant.work_days_of_week?.length || applicant.work_start_time || applicant.work_available_dates?.length
-                ? [
-                    applicant.work_days_of_week?.length ? `요일: ${applicant.work_days_of_week.join(', ')}` : null,
-                    applicant.work_start_time && applicant.work_end_time ? `시간: ${applicant.work_start_time} ~ ${applicant.work_end_time}` : null,
-                    applicant.work_available_dates?.length ? `가능 날짜: ${applicant.work_available_dates.slice(0, 3).join(', ')}${applicant.work_available_dates.length > 3 ? ' 외' : ''}` : null
-                  ].filter(Boolean).join(', ')
-                : '미입력'}
-            </p>
+          <div className="bg-white border border-line-200 rounded-[12px] p-4 space-y-3">
+            {(() => {
+              const hasData = applicant.work_days_of_week?.length || applicant.work_start_time || applicant.work_available_dates?.length;
+              
+              if (!hasData) {
+                return (
+                  <p className="text-[14px] text-text-500 text-center py-2">미입력</p>
+                );
+              }
+              
+              return (
+                <>
+                  {applicant.work_days_of_week?.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-[13px] font-semibold text-text-600 min-w-[50px]">요일</span>
+                      <div className="flex flex-wrap gap-1.5 flex-1">
+                        {(() => {
+                          const days = typeof applicant.work_days_of_week === 'string' 
+                            ? JSON.parse(applicant.work_days_of_week || '[]')
+                            : applicant.work_days_of_week;
+                          const dayMap: Record<string, string> = {
+                            'MON': '월', 'TUE': '화', 'WED': '수', 'THU': '목',
+                            'FRI': '금', 'SAT': '토', 'SUN': '일'
+                          };
+                          return days.map((day: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 bg-mint-50 border border-mint-200 text-mint-700 rounded-[6px] text-[12px] font-medium"
+                            >
+                              {dayMap[day] || day}
+                            </span>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {applicant.work_start_time && applicant.work_end_time && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-semibold text-text-600 min-w-[50px]">시간</span>
+                      <span className="text-[14px] text-text-700 font-medium">
+                        {applicant.work_start_time} ~ {applicant.work_end_time}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {applicant.work_available_dates?.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-[13px] font-semibold text-text-600 min-w-[50px]">가능 날짜</span>
+                      <div className="flex flex-wrap gap-1.5 flex-1">
+                        {(() => {
+                          const dates = typeof applicant.work_available_dates === 'string'
+                            ? JSON.parse(applicant.work_available_dates || '[]')
+                            : applicant.work_available_dates;
+                          return dates.slice(0, 5).map((date: string, idx: number) => {
+                            const d = new Date(date);
+                            return (
+                              <span
+                                key={idx}
+                                className="px-2.5 py-1 bg-gray-50 border border-gray-200 text-text-700 rounded-[6px] text-[12px] font-medium"
+                              >
+                                {d.getMonth() + 1}/{d.getDate()}
+                              </span>
+                            );
+                          }).concat(
+                            dates.length > 5 ? [<span key="more" className="text-[12px] text-text-500">+{dates.length - 5}개</span>] : []
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 px-4 py-3 safe-area-bottom">
-        <div className="flex items-center gap-3">
-          {/* 저장 아이콘 */}
+      {/* Bottom Action Bar - 모바일 화면 크기에 맞게 조정 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 px-3 py-2.5 safe-area-bottom z-50 shadow-lg">
+        <div className="flex items-center gap-2 max-w-md mx-auto">
+          {/* 저장 아이콘 - 모바일 크기에 맞게 */}
           <button
             onClick={handleSave}
-            className={`w-12 h-12 rounded-[12px] flex items-center justify-center border-2 transition-all ${
+            className={`w-11 h-11 rounded-[10px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
               isSaved
                 ? 'bg-mint-600 border-mint-600'
                 : 'bg-white border-mint-600'
             }`}
           >
             <svg
-              className={`w-6 h-6 ${isSaved ? 'text-white' : 'text-mint-600'}`}
+              className={`w-5 h-5 ${isSaved ? 'text-white' : 'text-mint-600'}`}
               fill={isSaved ? 'currentColor' : 'none'}
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -303,22 +393,22 @@ export const ApplicantDetail = () => {
             </svg>
           </button>
 
-          {/* 채팅 버튼 */}
+          {/* 채팅 버튼 - 모바일 크기에 맞게 */}
           <button
             onClick={handleStartChat}
-            className="flex-1 h-12 rounded-[12px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[14px] flex items-center justify-center gap-2 hover:bg-mint-50 transition-colors"
+            className="flex-1 h-11 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             채팅
           </button>
 
-          {/* 면접 제안하기 버튼 */}
+          {/* 면접 제안하기 버튼 - 모바일 크기에 맞게 */}
           <button
             onClick={handleHire}
             disabled={hiring}
-            className="flex-1 h-12 rounded-[12px] bg-mint-600 text-white font-medium text-[14px] flex items-center justify-center hover:bg-mint-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 h-11 rounded-[10px] bg-mint-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-mint-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {hiring ? '처리 중...' : '면접 제안하기'}
           </button>

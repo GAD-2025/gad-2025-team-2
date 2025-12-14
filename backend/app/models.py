@@ -94,7 +94,7 @@ class Application(SQLModel, table=True):
     applicationId: str = Field(primary_key=True)
     seekerId: str  # User ID (signup_user_id)
     jobId: str  # Job ID
-    status: str = Field(default="applied")  # applied, hired, rejected
+    status: str = Field(default="applied")  # applied, reviewed, hired, rejected, hold
     appliedAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     updatedAt: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     hiredAt: Optional[str] = None
@@ -164,6 +164,7 @@ class SignupUser(SQLModel, table=True):
     terms_tos_required: bool = Field(default=False)
     terms_privacy_required: bool = Field(default=False)
     terms_sms_optional: bool = Field(default=False)
+    terms_marketing_optional: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

@@ -131,8 +131,13 @@ export const JobDetailForEmployer = () => {
         {/* Title */}
         <div className="bg-white rounded-[16px] p-5 shadow-card">
           <h1 className="text-[22px] font-bold text-text-900 mb-2">{job.title}</h1>
-          <p className="text-[15px] text-text-700">{job.employer?.shopName}</p>
-          <p className="text-[14px] text-text-500 mt-1">{job.location || job.employer?.address}</p>
+          <p className="text-[15px] text-text-700">{job.shop_name || job.employer?.shopName}</p>
+          <p className="text-[14px] text-text-500 mt-1">{job.shop_address || job.location || job.employer?.address}</p>
+          {job.shop_phone && (
+            <p className="text-[14px] text-text-500 mt-1">
+              📞 {job.shop_phone}
+            </p>
+          )}
         </div>
 
         {/* Statistics */}

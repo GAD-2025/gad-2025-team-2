@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
+import { getStores, getStore, type StoreData } from '@/api/endpoints';
+import InfoPopover from '@/components/InfoPopover';
 
 interface JobFormData {
   title: string;
@@ -72,6 +74,8 @@ export const JobCreate = () => {
   const [submitting, setSubmitting] = useState(false);
   const [employerProfileId, setEmployerProfileId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [stores, setStores] = useState<StoreData[]>([]);
+  const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
   
@@ -82,16 +86,12 @@ export const JobCreate = () => {
     shopAddressDetail: '',
     shopPhone: '',
     businessLicense: null,
-<<<<<<< HEAD
     wageType: 'hourly',
     wage: '10320',
     wageCalculationType: 'manual',
     hourlyWage: '10320',
     daysPerWeek: 5,
     workHoursPerDay: 8,
-=======
-    wage: '',
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
     workDays: [],
     workHours: '',
     workStartTime: '09:00',
@@ -136,7 +136,6 @@ export const JobCreate = () => {
         const profile = await response.json();
         setEmployerProfileId(profile.id);
         console.log('Loaded employer profile:', profile);
-<<<<<<< HEAD
 
         // 매장 목록 가져오기
         try {
@@ -165,10 +164,12 @@ export const JobCreate = () => {
         } catch (error) {
           console.error('매장 목록 로드 실패:', error);
         }
-=======
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       } catch (error) {
         console.error('프로필 로드 실패:', error);
+        toast.error('프로필을 불러오는 중 오류가 발생했습니다.');
+        setTimeout(() => {
+          navigate('/employer/home');
+        }, 2000);
       } finally {
         setLoading(false);
       }

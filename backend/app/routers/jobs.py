@@ -162,6 +162,13 @@ async def get_job(job_id: str, session: Session = Depends(get_session)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
+    # 조회수 증가
+    if hasattr(job, 'views'):
+        job.views = (job.views or 0) + 1
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+    
     # Get employer
     employer_stmt = select(Employer).where(Employer.id == job.employerId)
     employer = session.exec(employer_stmt).first()

@@ -33,8 +33,6 @@ declare global {
 export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepProps) {
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
-<<<<<<< HEAD
-=======
 
   const scrollYRef = useRef<number>(0);
   useEffect(() => {
@@ -98,7 +96,6 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
     '교육',
     '기타',
   ];
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 
   const handleAddressSearch = () => {
     setShowAddressSearch(true);
@@ -231,7 +228,6 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
           </div>
         )}
 
-<<<<<<< HEAD
         {/* 가게 전화번호 입력 */}
         <div>
           <label className="mb-2 flex items-center text-[15px] font-medium text-gray-700">
@@ -260,8 +256,6 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
           </p>
         </div>
 
-=======
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
         {/* 업직종 선택 */}
         <div>
           <label className="mb-2 flex items-center text-[15px] font-medium text-gray-700">
@@ -271,7 +265,6 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
             <button
               type="button"
               onClick={() => setShowIndustryDropdown(!showIndustryDropdown)}
-<<<<<<< HEAD
               className="w-full h-[48px] px-4 bg-white rounded-xl border border-gray-300
                        text-[17px] text-left text-gray-900 placeholder:text-gray-500
                        focus:outline-none focus:ring-1 focus:ring-primary-mint focus:border-primary-mint
@@ -291,42 +284,17 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
                     key={option}
                     type="button"
                     onClick={() => {
-                      updateFormData({ industry: option });
+                      updateFormData({ industry: option, industryCustom: '' });
                       setShowIndustryDropdown(false);
                     }}
                     className="w-full px-4 py-3 text-left text-[15px] text-gray-900 hover:bg-mint-50 transition-colors"
                   >
                     {option}
-=======
-              className={`w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200 flex items-center justify-between ${formData.industry ? 'text-text-900' : 'text-text-500'}`}
-            >
-              <span>{formData.industry || '업직종을 선택하세요'}</span>
-              <svg className="w-5 h-5 text-text-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {showIndustryDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-line-200 rounded-[12px] shadow-lg max-h-60 overflow-y-auto">
-                {INDUSTRY_OPTIONS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => {
-                      updateFormData({ industry: opt, industryCustom: '' });
-                      setShowIndustryDropdown(false);
-                    }}
-                    className="w-full px-4 py-3 text-left text-[14px] text-text-900 hover:bg-mint-50 transition-colors"
-                  >
-                    {opt}
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
                   </button>
                 ))}
               </div>
             )}
           </div>
-<<<<<<< HEAD
-=======
 
           {formData.industry === '기타' && (
             <input
@@ -334,10 +302,9 @@ export function CompanyInfoStep({ formData, updateFormData }: CompanyInfoStepPro
               value={formData.industryCustom}
               onChange={(e) => updateFormData({ industryCustom: e.target.value })}
               placeholder="업직종을 직접 입력하세요"
-              className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200 mt-2"
+              className="w-full h-[48px] px-4 bg-white rounded-xl border border-gray-300 mt-2 text-[17px] text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-mint focus:border-primary-mint"
             />
           )}
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
         </div>
       </div>
     </div>

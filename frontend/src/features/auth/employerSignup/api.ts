@@ -10,10 +10,7 @@ export interface EmployerSignupPayload {
   company_name?: string;
   address?: string;
   address_detail?: string;
-<<<<<<< HEAD
   phone?: string;
-  industry?: string;
-=======
   industry?: string;
   industry_custom?: string;
 }
@@ -45,7 +42,6 @@ export interface StoreResponse {
   store_type: string;
   created_at?: string;
   updated_at?: string;
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 }
 
 export interface EmployerSignupResponse {
@@ -76,13 +72,9 @@ export async function signupEmployer(
         company_name: payload.company_name || '',
         address: payload.address || '',
         address_detail: payload.address_detail && payload.address_detail.trim() ? payload.address_detail : undefined,
-<<<<<<< HEAD
         phone: payload.phone || '',
-        industry: payload.industry || '',
-=======
         industry: payload.industry || undefined,
         industry_custom: payload.industry_custom || undefined,
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       }),
     });
 

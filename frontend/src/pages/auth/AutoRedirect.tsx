@@ -8,13 +8,9 @@ export function AutoRedirect() {
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
-<<<<<<< HEAD
-      const userId = localStorage.getItem('signup_user_id');
-      const savedRole = localStorage.getItem('user_role');
-=======
       const signupUserId = useAuthStore.getState().signupUserId;
       const userId = signupUserId || localStorage.getItem('signup_user_id');
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
+      const savedRole = localStorage.getItem('user_role');
       
       // 가입하지 않은 경우 -> 회원가입 페이지
       if (!userId) {

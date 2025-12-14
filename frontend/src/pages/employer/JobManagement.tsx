@@ -59,7 +59,7 @@ export const JobManagement = () => {
         const jobsData = response.data || [];
         const jobsWithStats: JobWithStats[] = jobsData.map((job: any) => ({
           ...job,
-          applicantCount: job.applications || 0,
+          applicantCount: job.applicationsCount || job.applications || 0, // 백엔드에서 반환하는 applicationsCount 사용
           viewCount: job.views || 0,
           store_id: job.store_id,
         }));
@@ -380,14 +380,9 @@ export const JobManagement = () => {
                     <p className="text-[14px] text-text-700 font-medium mb-1">
                       {job.shop_name || job.employer?.shopName}
                     </p>
-                    <p className="text-[13px] text-text-500 mb-1">
+                    <p className="text-[13px] text-text-500">
                       {job.shop_address || job.location || job.employer?.address}
                     </p>
-                    {job.shop_phone && (
-                      <p className="text-[13px] text-text-500">
-                        📞 {job.shop_phone}
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -419,14 +414,14 @@ export const JobManagement = () => {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    <span>지원자 {job.applicantCount}명</span>
+                    <span>지원자 {job.applicantCount || 0}명</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span>조회 {job.viewCount}회</span>
+                    <span>조회 {job.viewCount || job.views || 0}회</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
 interface InterviewProposalModalProps {
@@ -10,9 +10,12 @@ interface InterviewProposalModalProps {
 
 export interface InterviewProposalData {
   selectedDates: string[]; // YYYY-MM-DD format
-  time: string; // HH:mm format
-  duration: number; // minutes
+  time: string; // HH:mm format (모든 날짜 동일할 때, 첫 번째 시간)
+  duration: number; // minutes (모든 날짜 동일할 때, 첫 번째 소요시간)
   message: string;
+  dateSpecificTimes?: Record<string, { time: string; duration: number }[]>; // 날짜별 시간/소요시간 배열
+  allDatesSame: boolean; // 모든 날짜 동일 여부
+  allDatesTimeSlots?: { time: string; duration: number }[]; // 모든 날짜 동일 모드에서 여러 시간 슬롯
 }
 
 export const InterviewProposalModal = ({
@@ -22,6 +25,7 @@ export const InterviewProposalModal = ({
   applicantName = '지원자',
 }: InterviewProposalModalProps) => {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [allDatesSame, setAllDatesSame] = useState<boolean>(true); // 모든 날짜 동일 체크박스
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customTime, setCustomTime] = useState<string>('');
   const [useCustomTime, setUseCustomTime] = useState(false);
@@ -29,6 +33,35 @@ export const InterviewProposalModal = ({
   const [customDuration, setCustomDuration] = useState<string>('');
   const [useCustomDuration, setUseCustomDuration] = useState(false);
   const [message, setMessage] = useState<string>('');
+  
+  // 모든 날짜 동일 모드에서 여러 시간 슬롯
+  const [allDatesTimeSlots, setAllDatesTimeSlots] = useState<Array<{ time: string; duration: number; useCustomTime?: boolean; customTime?: string; useCustomDuration?: boolean; customDuration?: string }>>([
+    { time: '', duration: 30 }
+  ]);
+  
+  // 날짜별 시간/소요시간 저장 (날짜별로 다를 때) - 배열로 변경
+  const [dateSpecificTimes, setDateSpecificTimes] = useState<Record<string, Array<{ time: string; duration: number; useCustomTime?: boolean; customTime?: string; useCustomDuration?: boolean; customDuration?: string }>>>({});
+  
+  // 현재 표시할 월 (0 = 현재 월, 1 = 다음 달, ...)
+  const [currentMonthOffset, setCurrentMonthOffset] = useState<number>(0);
+
+  // 모달이 열릴 때마다 상태 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedDates([]);
+      setAllDatesSame(true);
+      setSelectedTime('');
+      setCustomTime('');
+      setUseCustomTime(false);
+      setDuration(30);
+      setCustomDuration('');
+      setUseCustomDuration(false);
+      setMessage('');
+      setDateSpecificTimes({});
+      setAllDatesTimeSlots([{ time: '', duration: 30 }]);
+      setCurrentMonthOffset(0);
+    }
+  }, [isOpen]);
 
   // 시간 옵션 생성 (30분 단위, 09:00 ~ 20:00)
   const timeOptions = [];
@@ -62,25 +95,41 @@ export const InterviewProposalModal = ({
     return `${year}-${month}-${day}`;
   };
 
+  // 현재 월 기준으로 3달 후까지 선택 가능
+  const maxSelectableDate = new Date(today);
+  maxSelectableDate.setMonth(maxSelectableDate.getMonth() + 3);
+  
   const isDateSelectable = (date: Date): boolean => {
     const dateOnly = new Date(date);
     dateOnly.setHours(0, 0, 0, 0);
     const todayOnly = new Date(today);
     todayOnly.setHours(0, 0, 0, 0);
+    const maxDateOnly = new Date(maxSelectableDate);
+    maxDateOnly.setHours(0, 0, 0, 0);
     
-    const diffTime = dateOnly.getTime() - todayOnly.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays >= 0 && diffDays <= 14;
+    return dateOnly.getTime() >= todayOnly.getTime() && dateOnly.getTime() <= maxDateOnly.getTime();
   };
 
   const toggleDate = (date: Date) => {
     if (!isDateSelectable(date)) return;
     const dateStr = formatDate(date);
-    setSelectedDates((prev) =>
-      prev.includes(dateStr)
+    setSelectedDates((prev) => {
+      const isRemoving = prev.includes(dateStr);
+      const newDates = isRemoving
         ? prev.filter((d) => d !== dateStr)
-        : [...prev, dateStr]
-    );
+        : [...prev, dateStr];
+      
+      // 날짜 제거 시 해당 날짜의 시간 정보도 제거
+      if (isRemoving) {
+        setDateSpecificTimes((prevTimes) => {
+          const newTimes = { ...prevTimes };
+          delete newTimes[dateStr];
+          return newTimes;
+        });
+      }
+      
+      return newDates;
+    });
   };
 
   const isDateSelected = (date: Date): boolean => {
@@ -93,34 +142,109 @@ export const InterviewProposalModal = ({
       return;
     }
 
-    const finalTime = useCustomTime ? customTime : selectedTime;
-    if (!finalTime) {
-      toast.error('면접 시간을 선택해주세요');
-      return;
-    }
+    if (allDatesSame) {
+      // 모든 날짜 동일 모드 - 여러 시간 슬롯 검증
+      const validTimeSlots: { time: string; duration: number }[] = [];
+      
+      for (let i = 0; i < allDatesTimeSlots.length; i++) {
+        const slot = allDatesTimeSlots[i];
+        const finalTime = slot.useCustomTime ? slot.customTime : slot.time;
+        if (!finalTime) {
+          toast.error(`${i + 1}번째 시간 슬롯의 시간을 선택해주세요`);
+          return;
+        }
 
-    const finalDuration = useCustomDuration
-      ? parseInt(customDuration)
-      : duration;
-    if (!finalDuration || finalDuration < 10) {
-      toast.error('면접 소요 시간을 올바르게 입력해주세요 (최소 10분)');
-      return;
-    }
+        const finalDuration = slot.useCustomDuration
+          ? parseInt(slot.customDuration || '0')
+          : slot.duration;
+        if (!finalDuration || finalDuration < 10) {
+          toast.error(`${i + 1}번째 시간 슬롯의 소요 시간을 올바르게 입력해주세요 (최소 10분)`);
+          return;
+        }
 
-    onSubmit({
-      selectedDates,
-      time: finalTime,
-      duration: finalDuration,
-      message,
-    });
+        validTimeSlots.push({
+          time: finalTime,
+          duration: finalDuration,
+        });
+      }
+
+      if (validTimeSlots.length === 0) {
+        toast.error('최소 1개의 시간 슬롯을 입력해주세요');
+        return;
+      }
+
+      onSubmit({
+        selectedDates,
+        time: validTimeSlots[0].time, // 첫 번째 시간 (호환성)
+        duration: validTimeSlots[0].duration, // 첫 번째 소요시간 (호환성)
+        message,
+        allDatesSame: true,
+        allDatesTimeSlots: validTimeSlots,
+      });
+    } else {
+      // 날짜별로 다를 때 - 각 날짜별로 여러 시간 슬롯 검증
+      const dateTimes: Record<string, { time: string; duration: number }[]> = {};
+      let hasError = false;
+
+      for (const date of selectedDates) {
+        const dateTimeSlots = dateSpecificTimes[date] || [];
+        if (dateTimeSlots.length === 0) {
+          const d = new Date(date);
+          toast.error(`${d.getMonth() + 1}월 ${d.getDate()}일의 시간을 선택해주세요`);
+          hasError = true;
+          break;
+        }
+
+        const validSlots: { time: string; duration: number }[] = [];
+        for (let i = 0; i < dateTimeSlots.length; i++) {
+          const slot = dateTimeSlots[i];
+          const finalTime = slot.useCustomTime ? slot.customTime : slot.time;
+          if (!finalTime) {
+            const d = new Date(date);
+            toast.error(`${d.getMonth() + 1}월 ${d.getDate()}일의 ${i + 1}번째 시간 슬롯을 선택해주세요`);
+            hasError = true;
+            break;
+          }
+
+          const finalDuration = slot.useCustomDuration
+            ? parseInt(slot.customDuration || '0')
+            : slot.duration;
+          if (!finalDuration || finalDuration < 10) {
+            const d = new Date(date);
+            toast.error(`${d.getMonth() + 1}월 ${d.getDate()}일의 ${i + 1}번째 소요 시간을 올바르게 입력해주세요 (최소 10분)`);
+            hasError = true;
+            break;
+          }
+
+          validSlots.push({
+            time: finalTime,
+            duration: finalDuration,
+          });
+        }
+
+        if (hasError) break;
+        dateTimes[date] = validSlots;
+      }
+
+      if (hasError) return;
+
+      onSubmit({
+        selectedDates,
+        time: '', // 날짜별로 다를 때는 빈 문자열
+        duration: 0,
+        message,
+        dateSpecificTimes: dateTimes,
+        allDatesSame: false,
+      });
+    }
   };
 
   if (!isOpen) return null;
 
-  // 현재 월의 날짜들 생성
-  const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const daysInMonth = getDaysInMonth(currentMonth);
-  const firstDayOfMonth = currentMonth.getDay();
+  // 현재 표시할 월 계산
+  const displayMonth = new Date(today.getFullYear(), today.getMonth() + currentMonthOffset, 1);
+  const daysInMonth = getDaysInMonth(displayMonth);
+  const firstDayOfMonth = displayMonth.getDay();
   const calendarDays: (Date | null)[] = [];
 
   // 빈 칸 추가
@@ -131,12 +255,66 @@ export const InterviewProposalModal = ({
   // 날짜 추가
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth(),
+      displayMonth.getFullYear(),
+      displayMonth.getMonth(),
       day
     );
     calendarDays.push(date);
   }
+
+  // 월 이동 함수
+  const goToPreviousMonth = () => {
+    if (currentMonthOffset > 0) {
+      setCurrentMonthOffset(currentMonthOffset - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    const maxMonth = 3; // 현재 월 기준 3달 후까지
+    if (currentMonthOffset < maxMonth) {
+      setCurrentMonthOffset(currentMonthOffset + 1);
+    }
+  };
+
+  // 날짜별 시간 슬롯 업데이트 함수
+  const updateDateTimeSlot = (date: string, slotIndex: number, field: 'time' | 'duration' | 'useCustomTime' | 'customTime' | 'useCustomDuration' | 'customDuration', value: any) => {
+    setDateSpecificTimes((prev) => {
+      const currentSlots = prev[date] || [{ time: '', duration: 30 }];
+      const newSlots = [...currentSlots];
+      newSlots[slotIndex] = {
+        ...newSlots[slotIndex],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        [date]: newSlots,
+      };
+    });
+  };
+
+  // 날짜별 시간 슬롯 추가
+  const addDateTimeSlot = (date: string) => {
+    setDateSpecificTimes((prev) => {
+      const currentSlots = prev[date] || [{ time: '', duration: 30 }];
+      return {
+        ...prev,
+        [date]: [...currentSlots, { time: '', duration: 30 }],
+      };
+    });
+  };
+
+  // 날짜별 시간 슬롯 삭제
+  const removeDateTimeSlot = (date: string, slotIndex: number) => {
+    setDateSpecificTimes((prev) => {
+      const currentSlots = prev[date] || [];
+      if (currentSlots.length <= 1) return prev; // 최소 1개는 유지
+      const newSlots = currentSlots.filter((_, i) => i !== slotIndex);
+      return {
+        ...prev,
+        [date]: newSlots,
+      };
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -151,18 +329,41 @@ export const InterviewProposalModal = ({
         {/* 화면 제목 */}
         <div className="mb-6">
           <h2 className="text-[20px] font-bold text-white mb-1">
-            면접 제안하기
-          </h2>
-          <p className="text-[14px] text-white/90">
             면접 가능한 일자와 시간을 선택하세요
-          </p>
+          </h2>
         </div>
 
         {/* 날짜 선택 섹션 (하얀색 배경) */}
         <div className="bg-white rounded-[16px] p-4 mb-4">
-          <h3 className="text-[16px] font-bold text-text-900 mb-3">
-            날짜 선택
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[16px] font-bold text-text-900">
+              날짜 선택
+            </h3>
+            {/* 월 이동 버튼 */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToPreviousMonth}
+                disabled={currentMonthOffset === 0}
+                className="w-7 h-7 rounded-[6px] flex items-center justify-center border border-line-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-mint-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-[13px] font-medium text-text-700 min-w-[80px] text-center">
+                {displayMonth.getFullYear()}년 {displayMonth.getMonth() + 1}월
+              </span>
+              <button
+                onClick={goToNextMonth}
+                disabled={currentMonthOffset >= 3}
+                className="w-7 h-7 rounded-[6px] flex items-center justify-center border border-line-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-mint-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-7 gap-1 mb-2">
             {/* 요일 헤더 */}
             {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
@@ -209,17 +410,23 @@ export const InterviewProposalModal = ({
           </div>
           {selectedDates.length > 0 && (
             <div className="mt-3 pt-3 border-t border-line-200">
-              <p className="text-[12px] text-text-500 mb-1">선택된 날짜:</p>
+              <p className="text-[12px] text-text-500 mb-2">선택된 날짜 ({selectedDates.length}개):</p>
               <div className="flex flex-wrap gap-2">
                 {selectedDates.map((date) => {
                   const d = new Date(date);
+                  const dateTime = !allDatesSame ? dateSpecificTimes[date] : null;
                   return (
-                    <span
+                    <div
                       key={date}
-                      className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[6px] text-[12px] font-medium"
+                      className="px-2.5 py-1.5 bg-mint-100 text-mint-700 rounded-[6px] text-[12px] font-medium"
                     >
-                      {d.getMonth() + 1}/{d.getDate()}
-                    </span>
+                      <span>{d.getMonth() + 1}/{d.getDate()}</span>
+                      {!allDatesSame && dateSpecificTimes[date] && dateSpecificTimes[date].length > 0 && (
+                        <span className="ml-1.5 text-[11px] text-mint-600">
+                          ({dateSpecificTimes[date].length}개 슬롯)
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -229,86 +436,280 @@ export const InterviewProposalModal = ({
 
         {/* 시간대 선택 섹션 (하얀색 배경) */}
         <div className="bg-white rounded-[16px] p-4 mb-4">
-          <h3 className="text-[16px] font-bold text-text-900 mb-3">
-            시간대 선택
-          </h3>
-          <div className="space-y-3">
-            {/* 가능한 시간 */}
-            <div>
-              <label className="block text-[14px] font-medium text-text-700 mb-2">
-                가능한 시간
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={useCustomTime ? 'custom' : selectedTime}
-                  onChange={(e) => {
-                    if (e.target.value === 'custom') {
-                      setUseCustomTime(true);
-                    } else {
-                      setUseCustomTime(false);
-                      setSelectedTime(e.target.value);
-                    }
-                  }}
-                  className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[14px] focus:outline-none focus:ring-2 focus:ring-mint-500"
-                >
-                  <option value="">시간 선택</option>
-                  {timeOptions.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                  <option value="custom">직접 입력</option>
-                </select>
-                {useCustomTime && (
-                  <input
-                    type="time"
-                    value={customTime}
-                    onChange={(e) => setCustomTime(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[14px] focus:outline-none focus:ring-2 focus:ring-mint-500"
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* 면접 진행 소요 시간 */}
-            <div>
-              <label className="block text-[14px] font-medium text-text-700 mb-2">
-                면접 진행 소요 시간
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={useCustomDuration ? 'custom' : duration.toString()}
-                  onChange={(e) => {
-                    if (e.target.value === 'custom') {
-                      setUseCustomDuration(true);
-                    } else {
-                      setUseCustomDuration(false);
-                      setDuration(parseInt(e.target.value));
-                    }
-                  }}
-                  className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[14px] focus:outline-none focus:ring-2 focus:ring-mint-500"
-                >
-                  {durationOptions.map((mins) => (
-                    <option key={mins} value={mins}>
-                      {mins}분
-                    </option>
-                  ))}
-                  <option value="custom">직접 입력</option>
-                </select>
-                {useCustomDuration && (
-                  <input
-                    type="number"
-                    min="10"
-                    step="10"
-                    value={customDuration}
-                    onChange={(e) => setCustomDuration(e.target.value)}
-                    placeholder="분"
-                    className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[14px] focus:outline-none focus:ring-2 focus:ring-mint-500"
-                  />
-                )}
-              </div>
-            </div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[16px] font-bold text-text-900">
+              시간대 선택
+            </h3>
+            {/* 모든 날짜 동일 체크박스 */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allDatesSame}
+                onChange={(e) => {
+                  setAllDatesSame(e.target.checked);
+                  // 체크박스 해제 시 날짜별 시간 초기화
+                  if (!e.target.checked) {
+                    setDateSpecificTimes({});
+                  }
+                }}
+                className="w-4 h-4 rounded border-line-300 text-mint-600 focus:ring-mint-500 focus:ring-2"
+              />
+              <span className="text-[13px] text-text-700 font-medium">모든 날짜 동일</span>
+            </label>
           </div>
+          
+          {allDatesSame ? (
+            // 모든 날짜 동일 모드 - 여러 시간 슬롯
+            <div className="space-y-4">
+              {allDatesTimeSlots.map((slot, slotIndex) => (
+                <div key={slotIndex} className="border border-line-200 rounded-[10px] p-3 bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-[14px] font-semibold text-text-900">
+                      시간 슬롯 {slotIndex + 1}
+                    </h4>
+                    {allDatesTimeSlots.length > 1 && (
+                      <button
+                        onClick={() => {
+                          setAllDatesTimeSlots(prev => prev.filter((_, i) => i !== slotIndex));
+                        }}
+                        className="text-red-500 hover:text-red-700 text-[12px] font-medium"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    {/* 가능한 시간 */}
+                    <div>
+                      <label className="block text-[13px] font-medium text-text-700 mb-1.5">
+                        가능한 시간
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={slot.useCustomTime ? 'custom' : slot.time}
+                          onChange={(e) => {
+                            const newSlots = [...allDatesTimeSlots];
+                            if (e.target.value === 'custom') {
+                              newSlots[slotIndex] = { ...slot, useCustomTime: true };
+                            } else {
+                              newSlots[slotIndex] = { ...slot, useCustomTime: false, time: e.target.value };
+                            }
+                            setAllDatesTimeSlots(newSlots);
+                          }}
+                          className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                        >
+                          <option value="">시간 선택</option>
+                          {timeOptions.map((time) => (
+                            <option key={time} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                          <option value="custom">직접 입력</option>
+                        </select>
+                        {slot.useCustomTime && (
+                          <input
+                            type="time"
+                            value={slot.customTime || ''}
+                            onChange={(e) => {
+                              const newSlots = [...allDatesTimeSlots];
+                              newSlots[slotIndex] = { ...slot, customTime: e.target.value };
+                              setAllDatesTimeSlots(newSlots);
+                            }}
+                            className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 면접 진행 소요 시간 */}
+                    <div>
+                      <label className="block text-[13px] font-medium text-text-700 mb-1.5">
+                        면접 진행 소요 시간
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={slot.useCustomDuration ? 'custom' : slot.duration.toString()}
+                          onChange={(e) => {
+                            const newSlots = [...allDatesTimeSlots];
+                            if (e.target.value === 'custom') {
+                              newSlots[slotIndex] = { ...slot, useCustomDuration: true };
+                            } else {
+                              newSlots[slotIndex] = { ...slot, useCustomDuration: false, duration: parseInt(e.target.value) };
+                            }
+                            setAllDatesTimeSlots(newSlots);
+                          }}
+                          className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                        >
+                          {durationOptions.map((mins) => (
+                            <option key={mins} value={mins}>
+                              {mins}분
+                            </option>
+                          ))}
+                          <option value="custom">직접 입력</option>
+                        </select>
+                        {slot.useCustomDuration && (
+                          <input
+                            type="number"
+                            min="10"
+                            step="10"
+                            value={slot.customDuration || ''}
+                            onChange={(e) => {
+                              const newSlots = [...allDatesTimeSlots];
+                              newSlots[slotIndex] = { ...slot, customDuration: e.target.value };
+                              setAllDatesTimeSlots(newSlots);
+                            }}
+                            placeholder="분"
+                            className="flex-1 px-3 py-2 border border-line-200 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* 시간 슬롯 추가 버튼 */}
+              <button
+                onClick={() => {
+                  setAllDatesTimeSlots(prev => [...prev, { time: '', duration: 30 }]);
+                }}
+                className="w-full py-2.5 border-2 border-dashed border-mint-300 rounded-[10px] text-mint-600 text-[13px] font-medium hover:bg-mint-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                시간 슬롯 추가
+              </button>
+            </div>
+          ) : (
+            // 날짜별로 다를 때 - 각 날짜별로 여러 시간 슬롯
+            <div className="space-y-4">
+              {selectedDates.length === 0 ? (
+                <p className="text-[13px] text-text-500 text-center py-3">
+                  먼저 날짜를 선택해주세요
+                </p>
+              ) : (
+                selectedDates.map((date) => {
+                  const dateTimeSlots = dateSpecificTimes[date] || [{ time: '', duration: 30 }];
+                  const d = new Date(date);
+                  const dateLabel = `${d.getMonth() + 1}월 ${d.getDate()}일`;
+                  
+                  return (
+                    <div key={date} className="border border-line-200 rounded-[10px] p-3 bg-gray-50">
+                      <h4 className="text-[14px] font-semibold text-text-900 mb-3">
+                        {dateLabel}
+                      </h4>
+                      <div className="space-y-3">
+                        {dateTimeSlots.map((slot, slotIndex) => (
+                          <div key={slotIndex} className="border border-line-200 rounded-[8px] p-3 bg-white">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[12px] font-medium text-text-600">시간 슬롯 {slotIndex + 1}</span>
+                              {dateTimeSlots.length > 1 && (
+                                <button
+                                  onClick={() => removeDateTimeSlot(date, slotIndex)}
+                                  className="text-red-500 hover:text-red-700 text-[11px] font-medium"
+                                >
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                            <div className="space-y-2.5">
+                              {/* 가능한 시간 */}
+                              <div>
+                                <label className="block text-[12px] font-medium text-text-700 mb-1">
+                                  가능한 시간
+                                </label>
+                                <div className="flex gap-2">
+                                  <select
+                                    value={slot.useCustomTime ? 'custom' : slot.time}
+                                    onChange={(e) => {
+                                      if (e.target.value === 'custom') {
+                                        updateDateTimeSlot(date, slotIndex, 'useCustomTime', true);
+                                      } else {
+                                        updateDateTimeSlot(date, slotIndex, 'useCustomTime', false);
+                                        updateDateTimeSlot(date, slotIndex, 'time', e.target.value);
+                                      }
+                                    }}
+                                    className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                                  >
+                                    <option value="">시간 선택</option>
+                                    {timeOptions.map((time) => (
+                                      <option key={time} value={time}>
+                                        {time}
+                                      </option>
+                                    ))}
+                                    <option value="custom">직접 입력</option>
+                                  </select>
+                                  {slot.useCustomTime && (
+                                    <input
+                                      type="time"
+                                      value={slot.customTime || ''}
+                                      onChange={(e) => updateDateTimeSlot(date, slotIndex, 'customTime', e.target.value)}
+                                      className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                                    />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* 면접 진행 소요 시간 */}
+                              <div>
+                                <label className="block text-[12px] font-medium text-text-700 mb-1">
+                                  면접 진행 소요 시간
+                                </label>
+                                <div className="flex gap-2">
+                                  <select
+                                    value={slot.useCustomDuration ? 'custom' : slot.duration.toString()}
+                                    onChange={(e) => {
+                                      if (e.target.value === 'custom') {
+                                        updateDateTimeSlot(date, slotIndex, 'useCustomDuration', true);
+                                      } else {
+                                        updateDateTimeSlot(date, slotIndex, 'useCustomDuration', false);
+                                        updateDateTimeSlot(date, slotIndex, 'duration', parseInt(e.target.value));
+                                      }
+                                    }}
+                                    className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                                  >
+                                    {durationOptions.map((mins) => (
+                                      <option key={mins} value={mins}>
+                                        {mins}분
+                                      </option>
+                                    ))}
+                                    <option value="custom">직접 입력</option>
+                                  </select>
+                                  {slot.useCustomDuration && (
+                                    <input
+                                      type="number"
+                                      min="10"
+                                      step="10"
+                                      value={slot.customDuration || ''}
+                                      onChange={(e) => updateDateTimeSlot(date, slotIndex, 'customDuration', e.target.value)}
+                                      placeholder="분"
+                                      className="flex-1 px-2.5 py-1.5 border border-line-200 rounded-[8px] text-[12px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {/* 시간 슬롯 추가 버튼 */}
+                        <button
+                          onClick={() => addDateTimeSlot(date)}
+                          className="w-full py-2 border-2 border-dashed border-mint-300 rounded-[8px] text-mint-600 text-[12px] font-medium hover:bg-mint-50 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          시간 슬롯 추가
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         {/* 전달할 메시지 섹션 (하얀색 배경) */}
@@ -337,9 +738,11 @@ export const InterviewProposalModal = ({
             onClick={handleSubmit}
             disabled={
               selectedDates.length === 0 ||
-              (!useCustomTime && !selectedTime) ||
-              (useCustomTime && !customTime) ||
-              (useCustomDuration && !customDuration)
+              (allDatesSame && (
+                (!useCustomTime && !selectedTime) ||
+                (useCustomTime && !customTime) ||
+                (useCustomDuration && !customDuration)
+              ))
             }
             className="flex-1 px-4 py-3 bg-white text-mint-600 rounded-[12px] font-medium text-[14px] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-2 border-white"
           >

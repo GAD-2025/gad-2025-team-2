@@ -14,13 +14,9 @@ export interface EmployerSignupData {
   address: string;
   addressDetail: string;
   noDetailAddress: boolean;
-<<<<<<< HEAD
   phone: string;
   industry: string;
-=======
-  industry: string;
   industryCustom: string;
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 }
 
 export function useEmployerSignupWizard() {
@@ -40,13 +36,9 @@ export function useEmployerSignupWizard() {
     address: '',
     addressDetail: '',
     noDetailAddress: false,
-<<<<<<< HEAD
     phone: '',
     industry: '',
-=======
-    industry: '',
     industryCustom: '',
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
   });
 
   const updateFormData = (updates: Partial<EmployerSignupData>) => {
@@ -140,12 +132,9 @@ export function useEmployerSignupWizard() {
         company_name: formData.companyName,
         address: formData.address,
         address_detail: addressDetail,
-<<<<<<< HEAD
         phone: formData.phone || '',
-        industry: formData.industry || '',
-=======
-        industry: finalIndustry || undefined,
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
+        industry: finalIndustry || formData.industry || undefined,
+        industry_custom: formData.industry === '기타' ? formData.industryCustom : undefined,
       };
       console.log('회원가입 데이터:', signupPayload);
       
@@ -217,9 +206,6 @@ export function useEmployerSignupWizard() {
         // 사업자 등록증이 등록되어야 함 (businessType이 'business'여야 함)
         return formData.businessType === 'business';
       case 3:
-<<<<<<< HEAD
-        return formData.companyName.length > 0 && formData.address.length > 0 && formData.phone.length > 0 && formData.industry.length > 0 && (formData.addressDetail.length > 0 || formData.noDetailAddress);
-=======
         // require industry selection as well
         const finalIndustry = formData.industry === '기타' ? formData.industryCustom : formData.industry;
         return (
@@ -228,7 +214,6 @@ export function useEmployerSignupWizard() {
           (formData.addressDetail.length > 0 || formData.noDetailAddress) &&
           finalIndustry.trim().length > 0
         );
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       default:
         return false;
     }

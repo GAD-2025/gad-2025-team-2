@@ -19,11 +19,8 @@ export const MyPage = () => {
   const [signupUserData, setSignupUserData] = useState<SignupUserData | null>(null);
   const [profileData, setProfileData] = useState<JobSeekerProfileData | null>(null);
   const [stores, setStores] = useState<StoreData[]>([]);
-<<<<<<< HEAD
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-=======
   const [employerProfileData, setEmployerProfileData] = useState<EmployerProfileData | null>(null);
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 
   // Load user data from database
   useEffect(() => {
@@ -250,7 +247,6 @@ export const MyPage = () => {
               {stores.length > 0 ? (
                 <>
                   {stores.map((store) => (
-<<<<<<< HEAD
                     <div key={store.id}>
                       <div
                         onClick={() => {
@@ -331,17 +327,6 @@ export const MyPage = () => {
                             가게 정보 수정
                           </button>
                         </div>
-=======
-                    <div
-                      key={store.id}
-                      className="relative bg-white rounded-[12px] border border-line-200 p-4 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      {/* 기본 매장 태그 - 오른쪽 상단 */}
-                      {store.is_main && (
-                        <span className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-full">
-                          기본매장
-                        </span>
->>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
                       )}
                     </div>
                   ))}

@@ -131,6 +131,12 @@ async def create_application(
         )
         
         session.add(application)
+        
+        # 공고의 지원자 수 증가
+        if job:
+            job.applications = (job.applications or 0) + 1
+            session.add(job)
+        
         session.commit()
         session.refresh(application)
         
@@ -216,13 +222,7 @@ async def list_applications(
             owned_job_ids = list(dict.fromkeys(owned_job_ids))
             print(f"[DEBUG] list_applications - 최종 owned_job_ids 수: {len(owned_job_ids)}")
             
-            # owned_job_ids를 사용하여 applications 필터링
-            if owned_job_ids:
-                # Use or_ to create IN clause equivalent
-                conditions = [Application.jobId == job_id for job_id in owned_job_ids]
-                statement = statement.where(or_(*conditions))
-                print(f"[DEBUG] list_applications - 공고 필터 적용 완료: {len(owned_job_ids)}개 공고")
-            else:
+            if not owned_job_ids:
                 print(f"[WARNING] list_applications - 이 고용주에게 공고가 없음: userId={userId}")
                 return []
         except Exception as e:
@@ -263,9 +263,13 @@ async def list_applications(
             import traceback
             traceback.print_exc()
             return []
-    # userId로 확보한 owned_job_ids가 있다면 추가 필터 적용
+    
+    # userId로 확보한 owned_job_ids가 있다면 필터 적용
     if userId and owned_job_ids:
-        statement = statement.where(Application.jobId.in_(owned_job_ids))
+        # Use or_ to create IN clause equivalent (more compatible with SQLModel)
+        conditions = [Application.jobId == job_id for job_id in owned_job_ids]
+        statement = statement.where(or_(*conditions))
+        print(f"[DEBUG] list_applications - owned_job_ids 필터 적용 완료: {len(owned_job_ids)}개 공고")
     
     try:
         applications = session.exec(statement).all()
@@ -300,6 +304,7 @@ async def list_applications(
                         'workDays': job_dict['workDays'],
                         'workHours': job_dict['workHours'],
                         'employerId': job_dict['employerId'],
+                        'store_id': job_dict.get('store_id') or job_dict.get('storeId'),  # store_id 추가
                     }
             
             # If filtering by jobId, employerId, or userId, include JobSeeker information
@@ -355,10 +360,12 @@ async def list_applications(
                     if not job or job.employerId != employerId:
                         continue  # Skip if job doesn't belong to this employer
                 if job and 'job' not in app_dict:  # Only add if not already added
+                    job_dict = job.dict()
                     app_dict['job'] = {
                         'id': job.id,
                         'title': job.title,
                         'category': job.category,
+                        'store_id': job_dict.get('store_id') or job_dict.get('storeId'),  # store_id 추가
                     }
             
             results.append(app_dict)
@@ -426,6 +433,13 @@ async def update_application(
         application.hiredAt = datetime.utcnow().isoformat()
     
     session.add(application)
+    
+    # 공고의 지원자 수 증가
+    job = session.get(Job, request.jobId)
+    if job:
+        job.applications = (job.applications or 0) + 1
+        session.add(job)
+    
     session.commit()
     session.refresh(application)
     
