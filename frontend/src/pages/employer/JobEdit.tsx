@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import InfoPopover from '@/components/InfoPopover';
 import { jobsAPI } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
 
 interface JobFormData {
   title: string;
@@ -70,8 +71,9 @@ export const JobEdit = () => {
           preferredSkills: job.benefits || '',
         });
 
-        // Get employer profile ID
-        const userId = localStorage.getItem('signup_user_id');
+        // Get employer profile ID (prefer zustand-migrated value)
+        const signupUserId = useAuthStore.getState().signupUserId;
+        const userId = signupUserId || localStorage.getItem('signup_user_id');
         if (userId) {
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
           const response = await fetch(`${API_BASE_URL}/employer/profile/${userId}`);

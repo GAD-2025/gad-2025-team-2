@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import { applicationsAPI } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
 
 export const ResumeEdit = () => {
   const navigate = useNavigate();
@@ -28,8 +29,9 @@ export const ResumeEdit = () => {
       return;
     }
 
-    // Get user ID from localStorage
-    const userId = localStorage.getItem('signup_user_id');
+    // Get user ID from auth store (migrated) or localStorage fallback
+    const signupUserId = useAuthStore.getState().signupUserId;
+    const userId = signupUserId || localStorage.getItem('signup_user_id');
     if (!userId) {
       toast.error('로그인이 필요합니다');
       navigate('/auth/signin');

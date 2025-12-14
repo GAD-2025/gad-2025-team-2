@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import { ApplyModal } from '@/components/ApplyModal';
-import { jobsAPI, applicationsAPI } from '@/api/endpoints';
-import { formatCurrency, getDaysUntil, formatDate } from '@/utils/date';
+import { jobsAPI, applicationsAPI, getSignupUser } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
+import { getDaysUntil, formatDate } from '@/utils/date';
 import type { Job } from '@/types';
 
 export const JobDetail = () => {
@@ -52,10 +53,24 @@ export const JobDetail = () => {
   const handleApplyWithBasicResume = async () => {
     if (!id) return;
     
-    // Get user ID from localStorage
-    const userId = localStorage.getItem('signup_user_id');
+    // Get user ID from auth store (migrated) or localStorage fallback
+    const signupUserId = useAuthStore.getState().signupUserId;
+    const userId = signupUserId || localStorage.getItem('signup_user_id');
     if (!userId) {
       toast.error('로그인이 필요합니다');
+      navigate('/auth/signin');
+      return;
+    }
+    
+    // 안전 체크: 서버에 이 signup_user_id가 실제로 존재하는지 확인합니다.
+    try {
+      await getSignupUser(userId);
+    } catch (err: any) {
+      console.error('서버에 사용자 정보가 없습니다:', err);
+      toast.error('서버에 사용자 정보가 없습니다. 다시 로그인하거나 회원가입해 주세요.');
+      // remove possibly stale local id/token to avoid repeated errors
+      try { useAuthStore.getState().setSignupUserId(null); } catch (e) { localStorage.removeItem('signup_user_id'); }
+      localStorage.removeItem('token');
       navigate('/auth/signin');
       return;
     }
@@ -83,7 +98,34 @@ export const JobDetail = () => {
       } else if (error.response?.status === 500) {
         toast.error(`지원 중 오류가 발생했습니다: ${error.response?.data?.detail || '서버 오류'}`);
       } else {
-        toast.error(`지원에 실패했습니다: ${error.response?.data?.detail || error.message || '알 수 없는 오류'}`);
+        // If the backend returned a DB foreign-key integrity error (deployed backend may
+        // still reference a signup_user_id that doesn't exist on that DB), attempt a
+        // recovery: check whether the signup_user actually exists on the server. If it
+        // does not, clear stale localStorage and force re-login so the user can sign in
+        // against the deployed backend and obtain a valid id there.
+        const status = error.response?.status;
+        const detail = error.response?.data || error.response?.data?.detail || '';
+        const msg = String(detail).toLowerCase();
+
+        const looksLikeFk = status === 500 && (msg.includes('foreign key') || msg.includes('integrity') || msg.includes('1452'));
+
+        if (looksLikeFk) {
+          console.warn('Detected possible FK IntegrityError from backend. Will verify signup_user on server and clear local cache if missing.');
+            try {
+            // confirm whether the server has the user; if this throws, user not found
+            await getSignupUser(userId);
+            // user exists on server but still got FK 500 — fall back to generic error
+            toast.error('지원에 실패했습니다 (서버 오류). 잠시 후 다시 시도해 주세요.');
+          } catch (e) {
+            console.info('signup_user_id not found on server; clearing local credentials and redirecting to signin.');
+            try { useAuthStore.getState().setSignupUserId(null); } catch (err) { localStorage.removeItem('signup_user_id'); }
+            localStorage.removeItem('token');
+            toast.error('기기 내 저장된 로그인 정보가 서버에 없습니다. 다시 로그인해 주세요.');
+            navigate('/auth/signin');
+          }
+        } else {
+          toast.error(`지원에 실패했습니다: ${error.response?.data?.detail || error.message || '알 수 없는 오류'}`);
+        }
       }
     } finally {
       setApplying(false);

@@ -9,9 +9,11 @@ import { JobCardSkeleton } from '@/components/Skeleton';
 import { jobsAPI } from '@/api/endpoints';
 import { JOB_PRESET_DESCRIPTIONS } from '@/constants/presets';
 import type { Job } from '@/types';
+import { MyApplications } from './MyApplications';
 
 export const JobList = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'jobs' | 'applications'>('jobs'); // 탭 전환: 공고 / 내 지원 내역
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -52,6 +54,7 @@ export const JobList = () => {
     console.log('JobList params:', { sortParam, fromParam, navFrom, hideNewJobs });
 
     const fetchJobs = async () => {
+      if (viewMode !== 'jobs') return; // 내 지원 내역 탭에서는 공고 조회 안 함
       try {
         setLoading(true);
         // Fetch jobs from API
@@ -100,7 +103,7 @@ export const JobList = () => {
     };
 
     fetchJobs();
-  }, [appliedFilters, sortPreset]);
+  }, [appliedFilters, sortPreset, viewMode]);
 
   const handleFilterApply = (filters: FilterState) => {
     setAppliedFilters(filters);
@@ -128,15 +131,49 @@ export const JobList = () => {
         <SearchBar placeholder="직종, 지역으로 검색..." />
       </header>
 
-      {/* Filters */}
-      <div className="bg-white border-b border-line-200">
-        <FilterChips 
-          filters={getSelectedFiltersArray()}
-          title="필터 설정"
-          icon="⚙️"
-          onFilterClick={() => setIsFilterModalOpen(true)}
-        />
+      {/* Tabs: 공고 찾기 / 내 지원 내역 */}
+      <div className="bg-white border-b border-line-200 px-4 py-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('jobs')}
+            className={`flex-1 h-10 rounded-full text-[14px] font-semibold transition-colors ${
+              viewMode === 'jobs'
+                ? 'bg-mint-600 text-white'
+                : 'bg-background text-text-700 border border-line-200 hover:border-mint-600'
+            }`}
+          >
+            공고 찾기
+          </button>
+          <button
+            onClick={() => setViewMode('applications')}
+            className={`flex-1 h-10 rounded-full text-[14px] font-semibold transition-colors ${
+              viewMode === 'applications'
+                ? 'bg-mint-600 text-white'
+                : 'bg-background text-text-700 border border-line-200 hover:border-mint-600'
+            }`}
+          >
+            내 지원 내역
+          </button>
+        </div>
       </div>
+
+      {viewMode === 'applications' && (
+        <div className="bg-background">
+          <MyApplications />
+        </div>
+      )}
+
+      {viewMode === 'jobs' && (
+        <>
+          {/* Filters */}
+          <div className="bg-white border-b border-line-200">
+            <FilterChips 
+              filters={getSelectedFiltersArray()}
+              title="필터 설정"
+              icon="⚙️"
+              onFilterClick={() => setIsFilterModalOpen(true)}
+            />
+          </div>
 
       {/* Filter Modal */}
       <FilterModal
@@ -146,38 +183,40 @@ export const JobList = () => {
         initialFilters={appliedFilters}
       />
 
-      {/* Job Cards Section */}
-      <div className="px-4 py-4">
-        {/* Section header (hidden when navigated from quick menu) */}
-        {!hideNewJobs && (
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[16px]">📄</span>
-            <h2 className="text-[18px] font-semibold text-text-900">새로 올라온 공고</h2>
-          </div>
-        )}
-
-        {/* Job Grid */}
-        <div className="grid grid-cols-1 gap-3">
-          {loading ? (
-            <>
-              <JobCardSkeleton />
-              <JobCardSkeleton />
-              <JobCardSkeleton />
-              <JobCardSkeleton />
-            </>
-          ) : jobs.length > 0 ? (
-            jobs.map((job) => (
-              <div key={job.id} onClick={() => navigate(`/job/${job.id}`)}>
-                <JobCard job={job} variant="default" />
+          {/* Job Cards Section */}
+          <div className="px-4 py-4">
+            {/* Section header (hidden when navigated from quick menu) */}
+            {!hideNewJobs && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[16px]">📄</span>
+                <h2 className="text-[18px] font-semibold text-text-900">새로 올라온 공고</h2>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-text-500 text-[15px]">공고가 없습니다</p>
+            )}
+
+            {/* Job Grid */}
+            <div className="grid grid-cols-1 gap-3">
+              {loading ? (
+                <>
+                  <JobCardSkeleton />
+                  <JobCardSkeleton />
+                  <JobCardSkeleton />
+                  <JobCardSkeleton />
+                </>
+              ) : jobs.length > 0 ? (
+                jobs.map((job) => (
+                  <div key={job.id} onClick={() => navigate(`/job/${job.id}`)}>
+                    <JobCard job={job} variant="default" />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-text-500 text-[15px]">공고가 없습니다</p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

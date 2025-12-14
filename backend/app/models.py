@@ -164,7 +164,6 @@ class SignupUser(SQLModel, table=True):
     terms_tos_required: bool = Field(default=False)
     terms_privacy_required: bool = Field(default=False)
     terms_sms_optional: bool = Field(default=False)
-    terms_marketing_optional: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

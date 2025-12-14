@@ -8,6 +8,27 @@ from app.schemas import LevelTestSubmit
 router = APIRouter(tags=["learning"])
 
 
+def map_topik_to_lv(label: str) -> str:
+    """Map TOPIK-style labels to frontend 'Lv.x' labels.
+
+    Examples:
+      'TOPIK 1급' -> 'Lv.1 기초'
+      'TOPIK 2급' -> 'Lv.2 초급'
+      'TOPIK 3급' -> 'Lv.3 중급'
+      anything else -> 'Lv.4 상급'
+    """
+    if not label:
+        return "Lv.1 기초"
+    l = label.upper()
+    if "TOPIK 1" in l or "1급" in l:
+        return "Lv.1 기초"
+    if "TOPIK 2" in l or "2급" in l:
+        return "Lv.2 초급"
+    if "TOPIK 3" in l or "3급" in l:
+        return "Lv.3 중급"
+    return "Lv.4 상급"
+
+
 @router.get("/learning/summary", response_model=dict)
 async def get_learning_summary(
     seekerId: str = Query(...),
@@ -21,7 +42,8 @@ async def get_learning_summary(
         # Return default
         return {
             "seekerId": seekerId,
-            "currentLevel": "한국어 입문",
+            # Use frontend-consistent labels (Lv.1 기초, Lv.2 초급, ...)
+            "currentLevel": "Lv.1 기초",
             "completedLessons": 3,
             "totalLessons": 6,
             "progressPercent": 65
@@ -43,9 +65,17 @@ async def submit_level_test(
     progress = session.exec(statement).first()
     
     if progress:
-        progress.currentLevel = "TOPIK 2급"
+        # In real implementation, determine TOPIK result from submitted answers.
+        # Placeholder assigns a TOPIK result then maps it to frontend label.
+        raw_result = "TOPIK 2급"
+        mapped = map_topik_to_lv(raw_result)
+        progress.currentLevel = mapped
         session.add(progress)
         session.commit()
-    
-    return {"success": True, "level": "TOPIK 2급"}
+
+        return {"success": True, "level": mapped}
+
+    # If no existing record, still return a mapped placeholder
+    raw_result = "TOPIK 2급"
+    return {"success": True, "level": map_topik_to_lv(raw_result)}
 

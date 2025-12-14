@@ -6,10 +6,12 @@ import { TrustFlipCard } from "@/components/TrustFlipCard";
 import { VerificationList } from "@/components/VerificationList";
 import { ResumeSection } from "@/components/ResumeSection";
 import type { Profile, Verifications, Resume } from "@/types/profile";
-import { getSignupUser, getJobSeekerProfile, getStores, type SignupUserData, type JobSeekerProfileData, type StoreData } from "@/api/endpoints";
+import { getSignupUser, getJobSeekerProfile, getStores, getEmployerProfile, type SignupUserData, type JobSeekerProfileData, type StoreData, type EmployerProfileData } from '@/api/endpoints';
 
 export const MyPage = () => {
   const { userMode, user, clearAuth } = useAuthStore();
+  const mainStoreFromAuth = useAuthStore((s) => s.mainStore);
+  const signupUserId = useAuthStore((s) => s.signupUserId);
   const navigate = useNavigate();
   const [showVerifications, setShowVerifications] = useState(false);
   const [showResume, setShowResume] = useState(false);
@@ -17,19 +19,32 @@ export const MyPage = () => {
   const [signupUserData, setSignupUserData] = useState<SignupUserData | null>(null);
   const [profileData, setProfileData] = useState<JobSeekerProfileData | null>(null);
   const [stores, setStores] = useState<StoreData[]>([]);
+<<<<<<< HEAD
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+=======
+  const [employerProfileData, setEmployerProfileData] = useState<EmployerProfileData | null>(null);
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 
   // Load user data from database
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const userId = localStorage.getItem('signup_user_id') || user?.id;
+  const userId = signupUserId || user?.id || localStorage.getItem('signup_user_id');
         if (!userId) {
           console.error('No user ID found');
           toast.error('로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
           navigate('/signin', { replace: true });
           setLoading(false);
           return;
+        }
+
+        // Prefill immediately from auth store mainStore for instant UX
+        try {
+          if (mainStoreFromAuth) {
+            setStores([mainStoreFromAuth]);
+          }
+        } catch (e) {
+          console.warn('Failed to use mainStore from auth store:', e);
         }
 
         // Fetch signup user data
@@ -45,9 +60,16 @@ export const MyPage = () => {
             console.log('Profile not found yet (user might not have completed onboarding)');
           }
         }
-        // 고용주인 경우 매장 목록 가져오기
+        // 고용주인 경우 프로필과 매장 목록 가져오기
         if (userData.role === 'employer') {
           try {
+            try {
+              const ep = await getEmployerProfile(userId);
+              setEmployerProfileData(ep);
+            } catch (e) {
+              console.info('Failed to load employer profile (fallback):', e);
+            }
+
             console.log(`Fetching stores for employer user_id: ${userId}`);
             const storesData = await getStores(userId);
             console.log(`Loaded ${storesData.length} stores:`, storesData);
@@ -171,7 +193,11 @@ export const MyPage = () => {
     clearAuth();
     
     // 추가 localStorage 항목 클리어
-    localStorage.removeItem('signup_user_id');
+    try {
+      useAuthStore.getState().setSignupUserId(null);
+    } catch (e) {
+      localStorage.removeItem('signup_user_id');
+    }
     localStorage.removeItem('profile_photo');
     localStorage.removeItem('user_role');
     
@@ -224,6 +250,7 @@ export const MyPage = () => {
               {stores.length > 0 ? (
                 <>
                   {stores.map((store) => (
+<<<<<<< HEAD
                     <div key={store.id}>
                       <div
                         onClick={() => {
@@ -304,14 +331,34 @@ export const MyPage = () => {
                             가게 정보 수정
                           </button>
                         </div>
+=======
+                    <div
+                      key={store.id}
+                      className="relative bg-white rounded-[12px] border border-line-200 p-4 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      {/* 기본 매장 태그 - 오른쪽 상단 */}
+                      {store.is_main && (
+                        <span className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-full">
+                          기본매장
+                        </span>
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
                       )}
                     </div>
                   ))}
                 </>
               ) : (
-                <p className="text-[14px] text-text-500 text-center py-4">
-                  등록된 매장이 없습니다
-                </p>
+                // If no stores but we have employer profile data (from onboarding), show it as a fallback
+                employerProfileData ? (
+                  <div className="text-[14px] text-text-500 py-4">
+                    <div className="text-center font-semibold text-text-900">{employerProfileData.company_name}</div>
+                    <div className="text-center text-text-700 mt-1">{employerProfileData.address}{employerProfileData.address_detail ? ` ${employerProfileData.address_detail}` : ''}</div>
+                    <p className="text-[13px] text-text-500 text-center mt-2">(온보딩에서 입력한 회사 정보입니다 — 매장 레코드가 생성되지 않아 기본 매장이 표시되지 않습니다)</p>
+                  </div>
+                ) : (
+                  <p className="text-[14px] text-text-500 text-center py-4">
+                    등록된 매장이 없습니다
+                  </p>
+                )
               )}
               <button
                 onClick={() => navigate('/employer/store-add')}
@@ -426,9 +473,9 @@ export const MyPage = () => {
           <button
             onClick={() => {
               if (isEmployer) {
-                navigate("/employer/coming-soon", { state: { message: "새로운 메시지 기능을 준비 중입니다.", iconType: "message" } });
+                navigate("/employer/coming-soon", { state: { message: "기능을 준비 중입니다.", iconType: "message" } });
               } else {
-                navigate("/employer/coming-soon", { state: { message: "새로운 메시지 기능을 준비 중입니다.", iconType: "message" } });
+                navigate("/employer/coming-soon", { state: { message: "기능을 준비 중입니다.", iconType: "message" } });
               }
             }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-line-200"

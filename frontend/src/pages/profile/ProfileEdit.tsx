@@ -1,88 +1,73 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
-
-interface ProfileData {
-  name: string;
-  email: string;
-  phone: string;
-  nationality: string;
-  visaType: string;
-  languageLevel: string;
-  location: string;
-  skills: string[];
-  bio: string;
-}
+import { profileAPI, ProfileData } from '@/api/endpoints';
 
 export const ProfileEdit = () => {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  // Mock current user data
-  const [profile, setProfile] = useState<ProfileData>({
-    name: '김수정',
-    email: 'sujung.kim@example.com',
-    phone: '010-1234-5678',
-    nationality: '우즈베키스탄',
-    visaType: 'E-9',
-    languageLevel: 'Lv.3 중급',
-    location: '종로구',
-    skills: ['한국어', '영어', '컴퓨터'],
-    bio: '안녕하세요! 성실하고 책임감 있는 사람입니다.',
-  });
-
   const [newSkill, setNewSkill] = useState('');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await profileAPI.get();
+        setProfile(response.data);
+      } catch (err: any) {
+        setError(err.message);
+        toast.error('프로필을 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const languageOptions = ['Lv.1 기초', 'Lv.2 초급', 'Lv.3 중급', 'Lv.4 상급'];
   const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
   const locationOptions = ['종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구'];
 
   const handleChange = (field: keyof ProfileData, value: string | string[]) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+    if (profile) {
+      setProfile({ ...profile, [field]: value });
+    }
   };
 
   const addSkill = () => {
-    if (newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
-      setProfile(prev => ({
-        ...prev,
-        skills: [...prev.skills, newSkill.trim()]
-      }));
+    if (profile && newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
+      setProfile({
+        ...profile,
+        skills: [...profile.skills, newSkill.trim()]
+      });
       setNewSkill('');
     }
   };
 
   const removeSkill = (skill: string) => {
-    setProfile(prev => ({
-      ...prev,
-      skills: prev.skills.filter(s => s !== skill)
-    }));
+    if (profile) {
+      setProfile({
+        ...profile,
+        skills: profile.skills.filter(s => s !== skill)
+      });
+    }
   };
 
   const handleSubmit = async () => {
-    // Validation
+    if (!profile) return;
+
     if (!profile.name.trim()) {
       toast.error('이름을 입력해주세요');
-      return;
-    }
-    if (!profile.email.trim()) {
-      toast.error('이메일을 입력해주세요');
-      return;
-    }
-    if (!profile.phone.trim()) {
-      toast.error('전화번호를 입력해주세요');
       return;
     }
 
     try {
       setSubmitting(true);
-      
-      // TODO: API call to update profile
-      // await usersAPI.updateProfile(profile);
-      
-      // Mock success
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await profileAPI.update(profile);
       toast.success('프로필이 업데이트되었습니다');
       navigate(-1);
     } catch (error) {
@@ -91,6 +76,14 @@ export const ProfileEdit = () => {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">로딩 중...</div>;
+  }
+
+  if (error || !profile) {
+    return <div className="min-h-screen bg-background flex items-center justify-center text-red-500">오류: {error || '프로필을 찾을 수 없습니다.'}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -143,7 +136,7 @@ export const ProfileEdit = () => {
               </label>
               <input
                 type="email"
-                value={profile.email}
+                value={profile.email || ''}
                 onChange={(e) => handleChange('email', e.target.value)}
                 className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                          text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
@@ -156,7 +149,7 @@ export const ProfileEdit = () => {
               </label>
               <input
                 type="tel"
-                value={profile.phone}
+                value={profile.phone || ''}
                 onChange={(e) => handleChange('phone', e.target.value)}
                 className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                          text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
@@ -169,8 +162,8 @@ export const ProfileEdit = () => {
               </label>
               <input
                 type="text"
-                value={profile.nationality}
-                onChange={(e) => handleChange('nationality', e.target.value)}
+                value={profile.nationality_code || ''}
+                onChange={(e) => handleChange('nationality_code', e.target.value)}
                 className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                          text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
               />
@@ -188,7 +181,7 @@ export const ProfileEdit = () => {
                 비자 종류
               </label>
               <select
-                value={profile.visaType}
+                value={profile.visaType || ''}
                 onChange={(e) => handleChange('visaType', e.target.value)}
                 className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                          text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
@@ -204,7 +197,7 @@ export const ProfileEdit = () => {
                 한국어 능력
               </label>
               <select
-                value={profile.languageLevel}
+                value={profile.languageLevel || ''}
                 onChange={(e) => handleChange('languageLevel', e.target.value)}
                 className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                          text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
@@ -220,7 +213,7 @@ export const ProfileEdit = () => {
                 거주 지역
               </label>
               <select
-                value={profile.location}
+                value={profile.location || ''}
                 onChange={(e) => handleChange('location', e.target.value)}
                 className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                          text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
@@ -285,7 +278,7 @@ export const ProfileEdit = () => {
           <h3 className="text-[16px] font-bold text-text-900 mb-4">자기소개</h3>
           
           <textarea
-            value={profile.bio}
+            value={profile.bio || ''}
             onChange={(e) => handleChange('bio', e.target.value)}
             placeholder="자신을 소개하는 글을 작성해주세요"
             rows={4}

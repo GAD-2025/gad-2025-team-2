@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { InterviewProposalModal, type InterviewProposalData } from '@/components/InterviewProposalModal';
+import { useAuthStore } from '@/store/useAuth';
 
 // localStorage 변경 감지를 위한 커스텀 훅
 const useLocalStorage = (key: string) => {
@@ -38,6 +39,7 @@ const useLocalStorage = (key: string) => {
 interface Applicant {
   id: string;
   userId?: string; // 지원자의 user_id (지원자 상세 페이지에서 필요)
+  applicationId?: string; // 지원서 ID
   name: string;
   age: number;
   nationality: string;
@@ -67,8 +69,9 @@ export const Recruitment = () => {
     try {
       setLoading(true);
       
-      // Get user ID
-      const userId = localStorage.getItem('signup_user_id');
+      // Get user ID (prefer zustand-migrated value)
+      const signupUserId = useAuthStore.getState().signupUserId;
+      const userId = signupUserId || localStorage.getItem('signup_user_id');
       if (!userId) {
         toast.error('로그인이 필요합니다');
         return;
@@ -159,8 +162,13 @@ export const Recruitment = () => {
           } catch {}
 
           return {
+<<<<<<< HEAD
             id: app.applicationId,
             userId: userId, // 지원자의 user_id (지원자 상세 페이지에서 필요) - app.seekerId는 signup_user_id
+=======
+            id: app.seekerId, // seekerId로 상세 조회
+            applicationId: app.applicationId,
+>>>>>>> e5c33d8f8b7c07384e40a5420badb0ca631b7f1b
             name: seeker.name || '이름 없음',
             age: 28, // Default age, can be calculated from birthdate if available
             nationality: seeker.nationality || '국적 없음',
@@ -358,12 +366,17 @@ export const Recruitment = () => {
             const statusBadge = getStatusBadge(applicant.status);
             return (
               <div
+<<<<<<< HEAD
                 key={applicant.id}
                 onClick={() => {
                   // 지원자 상세 페이지는 user_id가 필요하므로 userId를 우선 사용
                   const targetId = applicant.userId || applicant.id;
                   navigate(`/employer/applicant/${targetId}`);
                 }}
+=======
+                key={applicant.applicationId}
+                onClick={() => navigate(`/employer/applicant/${applicant.id}`)}
+>>>>>>> e5c33d8f8b7c07384e40a5420badb0ca631b7f1b
                 className="bg-white rounded-[16px] p-4 border border-line-200 
                          hover:border-mint-600/30 hover:shadow-soft transition-all cursor-pointer"
               >

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import { applicationsAPI, jobsAPI } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
 import type { Job } from '@/types';
 
 interface Application {
@@ -44,8 +45,9 @@ export const MyApplications = () => {
     try {
       setLoading(true);
       
-      // Get current user ID
-      const userId = localStorage.getItem('signup_user_id');
+      // Get current user ID (prefer zustand-migrated value)
+      const signupUserId = useAuthStore.getState().signupUserId;
+      const userId = signupUserId || localStorage.getItem('signup_user_id');
       if (!userId) {
         console.error('No user ID found');
         toast.error('로그인이 필요합니다');

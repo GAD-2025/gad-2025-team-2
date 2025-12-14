@@ -60,6 +60,12 @@ export function SignIn() {
         data?.user?.id;
 
       if (resolvedUserId) {
+        try {
+          const setSignupUserId = useAuthStore.getState().setSignupUserId;
+          if (setSignupUserId) setSignupUserId(resolvedUserId);
+        } catch (e) {
+          // fallback
+        }
         localStorage.setItem('signup_user_id', resolvedUserId);
       } else {
         console.warn('로그인 응답에 user_id/id 필드가 없습니다. MyPage 로딩에 영향을 줄 수 있습니다.', data);

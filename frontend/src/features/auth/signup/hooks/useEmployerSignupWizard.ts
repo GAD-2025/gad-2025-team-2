@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuth';
 import { signupEmployer } from '@/features/auth/employerSignup/api';
+import type { EmployerSignupPayload } from '@/features/auth/employerSignup/api';
+import { getStores } from '@/api/endpoints';
 
 export interface EmployerSignupData {
   name: string;
@@ -12,8 +14,13 @@ export interface EmployerSignupData {
   address: string;
   addressDetail: string;
   noDetailAddress: boolean;
+<<<<<<< HEAD
   phone: string;
   industry: string;
+=======
+  industry: string;
+  industryCustom: string;
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 }
 
 export function useEmployerSignupWizard() {
@@ -33,8 +40,13 @@ export function useEmployerSignupWizard() {
     address: '',
     addressDetail: '',
     noDetailAddress: false,
+<<<<<<< HEAD
     phone: '',
     industry: '',
+=======
+    industry: '',
+    industryCustom: '',
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
   });
 
   const updateFormData = (updates: Partial<EmployerSignupData>) => {
@@ -119,8 +131,8 @@ export function useEmployerSignupWizard() {
         : undefined;
       
       // 회원가입 데이터 확인
-      const signupPayload = {
-        role: 'employer',
+      const finalIndustry = formData.industry === '기타' ? formData.industryCustom : formData.industry;
+      const signupPayload: EmployerSignupPayload = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -128,8 +140,12 @@ export function useEmployerSignupWizard() {
         company_name: formData.companyName,
         address: formData.address,
         address_detail: addressDetail,
+<<<<<<< HEAD
         phone: formData.phone || '',
         industry: formData.industry || '',
+=======
+        industry: finalIndustry || undefined,
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       };
       console.log('회원가입 데이터:', signupPayload);
       
@@ -138,8 +154,48 @@ export function useEmployerSignupWizard() {
       
       // Store user ID for later use
       if (data?.id) {
-        localStorage.setItem('signup_user_id', data.id);
-        console.log('User ID saved to localStorage:', data.id);
+        try {
+          const setSignupUserId = useAuthStore.getState().setSignupUserId;
+          if (setSignupUserId) setSignupUserId(data.id);
+          // keep localStorage as fallback for older code paths
+          localStorage.setItem('signup_user_id', data.id);
+        } catch (e) {
+          // best-effort: if zustand isn't available for some reason, still write localStorage
+          try { localStorage.setItem('signup_user_id', data.id); } catch {}
+        }
+        console.log('User ID saved to auth store and localStorage:', data.id);
+      }
+
+      // Prefer server-provided stores in signup response. If backend returned stores,
+      // save main store into the auth zustand store for quick UI prefill. If not,
+      // try to fetch stores (read-only) and store main if available. We DO NOT create
+      // stores from the frontend here (server should be authoritative).
+      try {
+        const setMainStore = useAuthStore.getState().setMainStore;
+
+        if (data?.stores && Array.isArray(data.stores) && data.stores.length > 0) {
+          const main = data.stores.find((s: any) => s.is_main) || data.stores[0];
+          if (main) {
+            const mainNormalized = { ...main, address_detail: main.address_detail ?? null };
+            setMainStore(mainNormalized as any);
+            console.log('Saved main_store from signup response into auth store:', mainNormalized);
+          }
+        } else if (data?.id) {
+          // Read-only check: if backend didn't return stores, try to fetch them.
+          const existingStores = await getStores(data.id);
+          if (existingStores && existingStores.length > 0) {
+            const main = existingStores.find((s: any) => s.is_main) || existingStores[0];
+            if (main) {
+              const mainNormalized = { ...main, address_detail: main.address_detail ?? null };
+              setMainStore(mainNormalized as any);
+              console.log('Saved main_store from getStores into auth store:', mainNormalized);
+            }
+          } else {
+            console.log('No stores found for user after signup; server did not create one.');
+          }
+        }
+      } catch (err) {
+        console.warn('기본 매장 조회/저장 중 오류 발생:', err);
       }
       
       // 고용주 모드로 설정
@@ -161,7 +217,18 @@ export function useEmployerSignupWizard() {
         // 사업자 등록증이 등록되어야 함 (businessType이 'business'여야 함)
         return formData.businessType === 'business';
       case 3:
+<<<<<<< HEAD
         return formData.companyName.length > 0 && formData.address.length > 0 && formData.phone.length > 0 && formData.industry.length > 0 && (formData.addressDetail.length > 0 || formData.noDetailAddress);
+=======
+        // require industry selection as well
+        const finalIndustry = formData.industry === '기타' ? formData.industryCustom : formData.industry;
+        return (
+          formData.companyName.length > 0 &&
+          formData.address.length > 0 &&
+          (formData.addressDetail.length > 0 || formData.noDetailAddress) &&
+          finalIndustry.trim().length > 0
+        );
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       default:
         return false;
     }

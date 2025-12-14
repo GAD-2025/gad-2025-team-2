@@ -157,14 +157,21 @@ class EmployerSignupPayload(BaseModel):
     company_name: str
     address: str
     address_detail: Optional[str] = None
+<<<<<<< HEAD
     phone: Optional[str] = None  # 전화번호
     industry: Optional[str] = None  # 업직종
+=======
+    industry: Optional[str] = None
+    industry_custom: Optional[str] = None
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 
 
 class EmployerSignupResponse(BaseModel):
     id: str
     name: str
-    company_name: str
+    company_name: Optional[str] = None
+    employer_profile: Optional[EmployerProfileResponse] = None
+    stores: List[StoreResponse] = []
     message: str = "고용주 회원가입이 완료되었습니다."
 
 
@@ -272,3 +279,15 @@ class PostRead(BaseModel):
     title: str
     body: str
     created_at: datetime
+
+class ProfileData(BaseModel):
+    name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    nationality_code: Optional[str] = None
+    birthdate: Optional[str] = None
+    visaType: Optional[str] = None
+    languageLevel: Optional[str] = None
+    location: Optional[str] = None
+    skills: List[str] = []
+    bio: Optional[str] = None

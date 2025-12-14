@@ -17,6 +17,7 @@ from app.routers import (
     job_seeker,
     employer,
     posts,
+    profile,
 )
 from app.ws import websocket_endpoint
 
@@ -63,6 +64,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+
 
 # CORS - 개발 환경용 설정 (미들웨어 순서 중요: CORS는 가장 먼저)
 app.add_middleware(
@@ -151,6 +154,7 @@ app.include_router(messages.router)
 app.include_router(translate.router)
 app.include_router(learning.router)
 app.include_router(posts.router)
+app.include_router(profile.router)
 
 
 # WebSocket endpoint

@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
-import { getStores, getStore, type StoreData } from '@/api/endpoints';
-import InfoPopover from '@/components/InfoPopover';
 
 interface JobFormData {
   title: string;
@@ -74,8 +72,6 @@ export const JobCreate = () => {
   const [submitting, setSubmitting] = useState(false);
   const [employerProfileId, setEmployerProfileId] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [stores, setStores] = useState<StoreData[]>([]);
-  const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
   
@@ -86,12 +82,16 @@ export const JobCreate = () => {
     shopAddressDetail: '',
     shopPhone: '',
     businessLicense: null,
+<<<<<<< HEAD
     wageType: 'hourly',
     wage: '10320',
     wageCalculationType: 'manual',
     hourlyWage: '10320',
     daysPerWeek: 5,
     workHoursPerDay: 8,
+=======
+    wage: '',
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
     workDays: [],
     workHours: '',
     workStartTime: '09:00',
@@ -123,31 +123,20 @@ export const JobCreate = () => {
         }
 
         // Fetch employer profile
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const response = await fetch(`${API_BASE_URL}/employer/profile/${userId}`);
+        const response = await fetch(`http://localhost:8000/employer/profile/${userId}`);
         if (!response.ok) {
           if (response.status === 404) {
-            // 프로필이 없으면 공고 등록 불가 - 사용자에게 안내
-            console.warn('고용주 프로필을 찾을 수 없습니다.');
-            toast.error('고용주 프로필이 없습니다. 먼저 프로필을 생성해주세요.');
-            // 홈으로 리다이렉트하거나 프로필 생성 페이지로 이동
-            setTimeout(() => {
-              navigate('/employer/home');
-            }, 2000);
-            return;
+            toast.error('고용주 프로필을 찾을 수 없습니다. 테스트 데이터를 실행해주세요.');
           } else {
-            console.error('프로필 정보를 가져오는데 실패했습니다');
-            toast.error('프로필 정보를 불러올 수 없습니다.');
-            setTimeout(() => {
-              navigate('/employer/home');
-            }, 2000);
-            return;
+            toast.error('프로필 정보를 가져오는데 실패했습니다');
           }
+          throw new Error('프로필 정보를 가져올 수 없습니다');
         }
 
         const profile = await response.json();
         setEmployerProfileId(profile.id);
         console.log('Loaded employer profile:', profile);
+<<<<<<< HEAD
 
         // 매장 목록 가져오기
         try {
@@ -176,12 +165,10 @@ export const JobCreate = () => {
         } catch (error) {
           console.error('매장 목록 로드 실패:', error);
         }
+=======
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       } catch (error) {
         console.error('프로필 로드 실패:', error);
-        toast.error('프로필을 불러오는 중 오류가 발생했습니다.');
-        setTimeout(() => {
-          navigate('/employer/home');
-        }, 2000);
       } finally {
         setLoading(false);
       }
@@ -217,19 +204,6 @@ export const JobCreate = () => {
       
       return updated;
     });
-  };
-
-  const handleStoreSelect = async (store: StoreData) => {
-    setSelectedStore(store);
-    // 매장 정보를 폼에 자동 입력 (수정 불가)
-    setFormData(prev => ({
-      ...prev,
-      shopName: store.store_name,
-      shopAddress: store.address,
-      shopAddressDetail: store.address_detail || '',
-      shopPhone: store.phone,
-      industry: store.industry,
-    }));
   };
 
   const handleAddressSearch = () => {
