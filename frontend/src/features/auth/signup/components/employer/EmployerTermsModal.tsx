@@ -20,11 +20,8 @@ export function EmployerTermsModal({ isOpen, onClose, onAgree }: EmployerTermsMo
         </div>
 
         {/* 제목 */}
-        <h2 className="mb-2 text-center text-[22px] font-bold text-gray-900">
-          잠깐! 본격적인 이용자는
-        </h2>
         <h2 className="mb-4 text-center text-[22px] font-bold text-red-500">
-          신고 및 영구정지됩니다
+          잠깐 ! 불법 사업자는 신고 및 활동 영구정지 됩니다 !
         </h2>
 
         {/* 내용 */}
@@ -38,10 +35,7 @@ export function EmployerTermsModal({ isOpen, onClose, onAgree }: EmployerTermsMo
         </div>
 
         <p className="mb-6 text-center text-[13px] leading-relaxed text-gray-600">
-          유흥업소, 유흥주점, 불건전 마사지, 토킹바, 대화카페, 인터넷 방송,
-          신체노출모델, 단란제, 선불차 부업, 금전 거래, 구매대행, 기분
-          금여가 없는 등의 공고를 올리거나 타 대화 채널로 유도하는 경우
-          경고 없이 이용 제한합니다
+          유흥업소, 유흥주점, 불건전 마사지, 인터넷 방송, 신체노출모델, 금전 거래, 구매대행, 기본 급여가 없는 등의 공고를 올리거나 타 대화 채널로 유도하는 경우 경고 없이 이용 제한합니다.
         </p>
 
         {/* 버튼 영역 */}

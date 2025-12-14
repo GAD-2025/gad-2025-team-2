@@ -46,9 +46,9 @@ export function useEmployerSignupWizard() {
   };
 
   const goNext = () => {
-    // Step 1: 이름, 이메일 입력 후 알림 권한 팝업 표시
+    // Step 1: 이름, 이메일 입력 후 약관 동의 팝업 표시 (알림 팝업 제거)
     if (step === 1 && !termsAgreed) {
-      setShowNotificationModal(true);
+      setShowTermsModal(true);
       return;
     }
     
@@ -65,7 +65,7 @@ export function useEmployerSignupWizard() {
       // 임시로 기본값 설정
       if (!formData.name) updateFormData({ name: 'Test' });
       if (!formData.email) updateFormData({ email: 'test@test.com' });
-      setShowNotificationModal(true);
+      setShowTermsModal(true);
       return;
     }
     

@@ -652,7 +652,7 @@ export const ApplicantDetail = () => {
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* 면접 제안 모달 */}
       <InterviewProposalModal
@@ -670,8 +670,42 @@ export const ApplicantDetail = () => {
           if (!applicationId) return;
           try {
             await applicationsAPI.update(applicationId, 'accepted');
-            // 합격 안내 데이터 저장 (나중에 사용 가능)
+            
+            // 합격 안내 데이터 저장
             localStorage.setItem(`acceptance_guide_${applicationId}`, JSON.stringify(data));
+            
+            // 조율 메시지가 있으면 면접 제안 데이터에 추가
+            if (data.coordinationMessage && data.coordinationMessage.trim()) {
+              const interviewProposalKey = `interview_proposal_${applicationId}`;
+              const proposalData = localStorage.getItem(interviewProposalKey);
+              if (proposalData) {
+                const proposal = JSON.parse(proposalData);
+                if (!proposal.coordinationMessages) {
+                  proposal.coordinationMessages = [];
+                }
+                proposal.coordinationMessages.push({
+                  message: data.coordinationMessage,
+                  sentAt: new Date().toISOString(),
+                  from: 'employer',
+                });
+                localStorage.setItem(interviewProposalKey, JSON.stringify(proposal));
+              } else {
+                // 면접 제안 데이터가 없으면 새로 생성
+                const newProposal = {
+                  dates: [],
+                  time: '',
+                  duration: 0,
+                  message: '',
+                  coordinationMessages: [{
+                    message: data.coordinationMessage,
+                    sentAt: new Date().toISOString(),
+                    from: 'employer',
+                  }],
+                };
+                localStorage.setItem(interviewProposalKey, JSON.stringify(newProposal));
+              }
+            }
+            
             toast.success('합격 처리되었습니다');
             setApplicationStatus('accepted');
             setShowAcceptanceGuideModal(false);

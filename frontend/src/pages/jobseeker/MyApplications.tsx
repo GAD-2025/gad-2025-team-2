@@ -313,6 +313,7 @@ export const MyApplications = () => {
         proposal.coordinationMessages.push({
           message: coordinationMessage,
           sentAt: new Date().toISOString(),
+          from: 'jobseeker',
         });
         localStorage.setItem(interviewProposalKey, JSON.stringify(proposal));
       }

@@ -106,18 +106,18 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       className={`
         bg-white rounded-card cursor-pointer snap-start relative
         transition-all duration-120 hover:shadow-card active:scale-[0.98]
-        ${isFeatured ? 'min-w-[340px] w-[340px] border border-mint-600/35 p-[14px] flex flex-col' : 'border border-border p-4'}
+        ${isFeatured ? 'min-w-[340px] w-[340px] border border-mint-600/35 p-2 flex flex-col' : 'border border-border p-4'}
       `}
     >
       {/* 저장 버튼 (우측 상단) */}
       {isFeatured && (
         <button
           onClick={handleSave}
-          className="absolute top-[14px] right-[14px] w-10 h-10 bg-mint-600 rounded-full 
+          className="absolute top-2 right-2 w-7 h-7 bg-mint-600 rounded-full 
                    flex items-center justify-center hover:bg-mint-700 transition-colors z-10"
         >
           <svg 
-            className="w-5 h-5 text-white" 
+            className="w-3 h-3 text-white" 
             fill={isBookmarked ? "currentColor" : "none"} 
             viewBox="0 0 24 24" 
             stroke="currentColor"
@@ -128,16 +128,16 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       )}
 
       {/* Profile */}
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-[60px] h-[60px] bg-gradient-to-br from-mint-100 to-mint-200 rounded-full 
+      <div className="flex items-start gap-2 mb-1">
+        <div className="w-[40px] h-[40px] bg-gradient-to-br from-mint-100 to-mint-200 rounded-full 
                       flex items-center justify-center overflow-hidden flex-shrink-0">
-          <span className="text-3xl">👤</span>
+          <span className="text-lg">👤</span>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-[16px] font-semibold text-text-900 mb-1">
+          <h3 className="text-[14px] font-semibold text-text-900 mb-0 leading-tight">
             {applicant.name} {ageLabel}
           </h3>
-          <div className="flex items-center gap-1 text-[13px] text-text-700">
+          <div className="flex items-center gap-1 text-[11px] text-text-700">
             <span>{flagEmoji(applicant.nationalityCode || applicant.nationality)}</span>
             <span>{applicant.nationality || applicant.nationalityCode || '국적 미상'}</span>
           </div>
@@ -145,90 +145,196 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       </div>
 
       {/* Info */}
-      <div className="space-y-2 mb-3">
+      <div className="space-y-0.5 mb-1">
         {/* 능력/스킬 섹션 */}
-        {(skills.workSkills.length > 0 || skills.strengths.length > 0 || skills.mbti.length > 0) ? (
-          <div className="space-y-1.5">
-            {skills.workSkills.length > 0 && (
-              <div>
-                <p className="text-[11px] text-text-500 mb-1">업무 스킬</p>
-                <div className="flex flex-wrap gap-1">
-                  {skills.workSkills.map((skill: string, idx: number) => (
-                    <span key={idx} className="px-2 py-0.5 bg-mint-100 text-mint-700 rounded-[6px] text-[11px] font-medium">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+        <div className="flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            {(skills.workSkills.length > 0 || skills.strengths.length > 0 || skills.mbti.length > 0) ? (
+              <div className="space-y-0.5">
+                {skills.workSkills.length > 0 && (
+                  <div>
+                    <p className="text-[9px] text-text-500 mb-0.5">업무 스킬</p>
+                    <div className="flex flex-wrap gap-0.5">
+                      {skills.workSkills.map((skill: string, idx: number) => (
+                        <span key={idx} className="px-1 py-0.5 bg-mint-100 text-mint-700 rounded-[4px] text-[9px] font-medium">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {skills.strengths.length > 0 && (
+                  <div>
+                    <p className="text-[9px] text-text-500 mb-0.5">강점</p>
+                    <div className="flex flex-wrap gap-0.5">
+                      {skills.strengths.map((strength: string, idx: number) => (
+                        <span key={idx} className="px-1 py-0.5 bg-blue-100 text-blue-700 rounded-[4px] text-[9px] font-medium">
+                          {strength}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {skills.mbti.length > 0 && (
+                  <div>
+                    <p className="text-[9px] text-text-500 mb-0.5">성격 유형</p>
+                    <div className="flex flex-wrap gap-0.5">
+                      {skills.mbti.map((mbti: string, idx: number) => (
+                        <span key={idx} className="px-1 py-0.5 bg-purple-100 text-purple-700 rounded-[4px] text-[9px] font-medium">
+                          {mbti}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+            ) : (
+              <p className="text-[11px] text-text-500">능력/스킬: 미입력</p>
             )}
-            {skills.strengths.length > 0 && (
-              <div>
-                <p className="text-[11px] text-text-500 mb-1">강점</p>
-                <div className="flex flex-wrap gap-1">
-                  {skills.strengths.map((strength: string, idx: number) => (
-                    <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-[6px] text-[11px] font-medium">
-                      {strength}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {skills.mbti.length > 0 && (
-              <div>
-                <p className="text-[11px] text-text-500 mb-1">성격 유형</p>
-                <div className="flex flex-wrap gap-1">
-                  {skills.mbti.map((mbti: string, idx: number) => (
-                    <span key={idx} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-[6px] text-[11px] font-medium">
-                      {mbti}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            
+            <div className="space-y-0 text-[11px] mt-0.5">
+              <p className="text-text-900">
+                <span className="text-text-700">비자:</span> {applicant.visaType || '미입력'}
+              </p>
+              {experience && (
+                <p className="text-mint-600 font-medium">
+                  경력: {experience.role} {experience.years}년 근무
+                </p>
+              )}
+            </div>
           </div>
-        ) : (
-          <p className="text-[13px] text-text-500">능력/스킬: 미입력</p>
-        )}
-        
-        <div className="space-y-[2px] text-[13px]">
-          <p className="text-text-900">
-            <span className="text-text-700">비자:</span> {applicant.visaType || '미입력'}
-          </p>
-          {experience && (
-            <p className="text-mint-600 font-medium">
-              경력: {experience.role} {experience.years}년 근무
-            </p>
-          )}
+          
+          {/* 태그를 오른쪽에 배치 */}
+          <div className="flex flex-col gap-1 flex-shrink-0">
+            {(() => {
+              const preferDays = applicant.preferences.preferDays || [];
+              const allDays = ['월', '화', '수', '목', '금', '토', '일'];
+              const hasAllDays = allDays.every(day => preferDays.includes(day));
+              
+              if (hasAllDays && preferDays.length >= 7) {
+                return (
+                  <>
+                    <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
+                      모든 요일 출근 가능
+                    </span>
+                    {applicant.preferences.area && (
+                      <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
+                        {applicant.preferences.area} 거주
+                      </span>
+                    )}
+                  </>
+                );
+              } else if (preferDays.length > 0) {
+                return (
+                  <>
+                    {preferDays.slice(0, 2).map((day) => (
+                      <span key={day} className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
+                        {day} 근무 가능
+                      </span>
+                    ))}
+                    {preferDays.length > 2 && (
+                      <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
+                        +{preferDays.length - 2}
+                      </span>
+                    )}
+                    {applicant.preferences.area && (
+                      <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
+                        {applicant.preferences.area} 거주
+                      </span>
+                    )}
+                  </>
+                );
+              } else {
+                return applicant.preferences.area ? (
+                  <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
+                    {applicant.preferences.area} 거주
+                  </span>
+                ) : null;
+              }
+            })()}
+          </div>
         </div>
       </div>
 
       {/* Tags and CTA Row */}
       {isFeatured ? (
         <div className="flex flex-col gap-3 mt-auto">
-          <div className="flex gap-2 flex-wrap">
-            {applicant.preferences.preferDays?.map((day) => (
-              <span key={day} className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
-                {day} 근무 가능
-              </span>
-            ))}
-            {applicant.preferences.area && (
-              <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
-                {applicant.preferences.area} 거주
-              </span>
-            )}
+          {/* 근무 가능 요일 - 통일된 레이아웃 */}
+          <div className="min-h-[48px] flex flex-col gap-1.5">
+            {(() => {
+              const preferDays = applicant.preferences.preferDays || [];
+              const allDays = ['월', '화', '수', '목', '금', '토', '일'];
+              const hasAllDays = allDays.every(day => preferDays.includes(day));
+              
+              if (hasAllDays && preferDays.length >= 7) {
+                // 모든 요일 출근 가능
+                return (
+                  <div className="flex gap-1">
+                    <span className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[8px] text-[11px] font-medium border border-mint-300">
+                      모든 요일 출근 가능
+                    </span>
+                    {applicant.preferences.area && (
+                      <span className="px-2 py-1 bg-white border border-line-200 text-text-700 rounded-[8px] text-[11px] font-medium">
+                        {applicant.preferences.area} 거주
+                      </span>
+                    )}
+                  </div>
+                );
+              } else if (preferDays.length > 0) {
+                // 요일별로 표시 (2줄 고정 레이아웃)
+                const firstRow = preferDays.slice(0, 4);
+                const secondRow = preferDays.slice(4);
+                return (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-1 flex-wrap">
+                      {firstRow.map((day) => (
+                        <span key={day} className="px-2 py-1 bg-white border border-line-200 text-text-700 rounded-[8px] text-[11px] font-medium whitespace-nowrap">
+                          {day} 근무 가능
+                        </span>
+                      ))}
+                    </div>
+                    {(secondRow.length > 0 || applicant.preferences.area) && (
+                      <div className="flex gap-1 flex-wrap">
+                        {secondRow.map((day) => (
+                          <span key={day} className="px-2 py-1 bg-white border border-line-200 text-text-700 rounded-[8px] text-[11px] font-medium whitespace-nowrap">
+                            {day} 근무 가능
+                          </span>
+                        ))}
+                        {applicant.preferences.area && (
+                          <span className="px-2 py-1 bg-white border border-line-200 text-text-700 rounded-[8px] text-[11px] font-medium whitespace-nowrap">
+                            {applicant.preferences.area} 거주
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              } else {
+                // 근무 가능 요일이 없는 경우
+                return (
+                  <div className="flex gap-1">
+                    {applicant.preferences.area && (
+                      <span className="px-2 py-1 bg-white border border-line-200 text-text-700 rounded-[8px] text-[11px] font-medium">
+                        {applicant.preferences.area} 거주
+                      </span>
+                    )}
+                  </div>
+                );
+              }
+            })()}
           </div>
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={handleSave}
-              className={`w-11 h-11 rounded-[10px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
+              className={`w-9 h-9 rounded-[8px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
                 isBookmarked
                   ? 'bg-mint-600 border-mint-600'
                   : 'bg-white border-mint-600'
               }`}
             >
               <svg
-                className={`w-5 h-5 ${isBookmarked ? 'text-white' : 'text-mint-600'}`}
+                className={`w-3.5 h-3.5 ${isBookmarked ? 'text-white' : 'text-mint-600'}`}
                 fill={isBookmarked ? 'currentColor' : 'none'}
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -243,16 +349,16 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
             </button>
             <button
               onClick={handleChat}
-              className="flex-1 h-11 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
+              className="flex-1 h-9 rounded-[8px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[11px] flex items-center justify-center gap-1 hover:bg-mint-50 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               채팅
             </button>
             <button
               onClick={handleInterviewProposal}
-              className="flex-1 h-11 rounded-[10px] bg-mint-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-mint-700 transition-colors"
+              className="flex-1 h-9 rounded-[8px] bg-mint-600 text-white font-medium text-[11px] flex items-center justify-center hover:bg-mint-700 transition-colors"
             >
               면접 제안하기
             </button>
@@ -260,18 +366,69 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
         </div>
       ) : (
         <>
-          {/* Tags */}
-          <div className="flex gap-2 mb-3 flex-wrap">
-            {applicant.preferences.preferDays?.map((day) => (
-              <span key={day} className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[12px] text-[12px] font-medium">
-                {day} 근무 가능
-              </span>
-            ))}
-            {applicant.preferences.area && (
-              <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
-                {applicant.preferences.area} 거주
-              </span>
-            )}
+          {/* Tags - 통일된 레이아웃 */}
+          <div className="flex flex-col gap-1 mb-2">
+            {(() => {
+              const preferDays = applicant.preferences.preferDays || [];
+              const allDays = ['월', '화', '수', '목', '금', '토', '일'];
+              const hasAllDays = allDays.every(day => preferDays.includes(day));
+              
+              if (hasAllDays && preferDays.length >= 7) {
+                // 모든 요일 출근 가능
+                return (
+                  <div className="flex gap-2">
+                    <span className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[12px] text-[12px] font-medium">
+                      모든 요일 출근 가능
+                    </span>
+                    {applicant.preferences.area && (
+                      <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
+                        {applicant.preferences.area} 거주
+                      </span>
+                    )}
+                  </div>
+                );
+              } else if (preferDays.length > 0) {
+                // 요일별로 표시 (2줄 고정 레이아웃)
+                const firstRow = preferDays.slice(0, 4);
+                const secondRow = preferDays.slice(4);
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex gap-1.5 flex-wrap">
+                      {firstRow.map((day) => (
+                        <span key={day} className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[12px] text-[12px] font-medium whitespace-nowrap">
+                          {day} 근무 가능
+                        </span>
+                      ))}
+                    </div>
+                    {(secondRow.length > 0 || applicant.preferences.area) && (
+                      <div className="flex gap-1.5 flex-wrap">
+                        {secondRow.map((day) => (
+                          <span key={day} className="px-[10px] py-[4px] bg-mint-100 text-mint-600 rounded-[12px] text-[12px] font-medium whitespace-nowrap">
+                            {day} 근무 가능
+                          </span>
+                        ))}
+                        {applicant.preferences.area && (
+                          <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium whitespace-nowrap">
+                            {applicant.preferences.area} 거주
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              } else {
+                // 근무 가능 요일이 없는 경우
+                return (
+                  <div className="flex gap-2">
+                    {applicant.preferences.area && (
+                      <span className="px-[10px] py-[4px] bg-white border border-line-200 text-text-700 rounded-[12px] text-[12px] font-medium">
+                        {applicant.preferences.area} 거주
+                      </span>
+                    )}
+                  </div>
+                );
+              }
+            })()}
           </div>
           {/* CTA */}
           <button

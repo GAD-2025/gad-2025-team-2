@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
 interface AcceptanceGuideModalProps {
@@ -13,6 +13,9 @@ export interface AcceptanceGuideData {
   workAttire: string[];
   workNotes: string[];
   message: string;
+  firstWorkDate?: string; // YYYY-MM-DD format
+  firstWorkTime?: string; // HH:mm format
+  coordinationMessage?: string; // 조율 메시지
 }
 
 const defaultDocuments = ['통장 사본', '주민등록 사본', '보건증'];
@@ -34,6 +37,32 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
   const [documentInput, setDocumentInput] = useState('');
   const [attireInput, setAttireInput] = useState('');
   const [noteInput, setNoteInput] = useState('');
+  
+  // 첫 출근 날짜/시간
+  const [firstWorkDate, setFirstWorkDate] = useState<string>('');
+  const [firstWorkTime, setFirstWorkTime] = useState<string>('');
+  const [customTime, setCustomTime] = useState<string>('');
+  const [useCustomTime, setUseCustomTime] = useState(false);
+  const [currentMonthOffset, setCurrentMonthOffset] = useState<number>(0);
+  
+  // 조율 메시지
+  const [coordinationMessage, setCoordinationMessage] = useState('');
+
+  // 모달이 열릴 때 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setDocuments(defaultDocuments);
+      setWorkAttire([]);
+      setWorkNotes([]);
+      setMessage('');
+      setFirstWorkDate('');
+      setFirstWorkTime('');
+      setCustomTime('');
+      setUseCustomTime(false);
+      setCoordinationMessage('');
+      setCurrentMonthOffset(0);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -88,12 +117,64 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
     }
   };
 
+  // 시간 옵션 생성 (30분 단위, 09:00 ~ 20:00)
+  const timeOptions = [];
+  for (let hour = 9; hour <= 20; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      timeOptions.push(timeStr);
+    }
+  }
+
+  // 날짜 선택 핸들러
+  const handleDateSelect = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    setFirstWorkDate(dateStr);
+  };
+
+  // 캘린더 관련 함수들
+  const today = new Date();
+  const displayDate = new Date(today.getFullYear(), today.getMonth() + currentMonthOffset, 1);
+  const firstDayOfMonth = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1).getDay();
+  const daysInMonth = new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0).getDate();
+  
+  const getDaysArray = () => {
+    const days = [];
+    // 빈 칸 (첫 주 시작 전)
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(null);
+    }
+    // 날짜들
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(displayDate.getFullYear(), displayDate.getMonth(), day);
+      days.push(date);
+    }
+    return days;
+  };
+
+  const isDateSelectable = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today;
+  };
+
   const handleConfirm = () => {
     if (documents.length === 0) {
       toast.error('제출 서류를 최소 1개 이상 선택해주세요');
       return;
     }
-    onConfirm({ documents, workAttire, workNotes, message });
+    
+    const finalTime = useCustomTime && customTime.trim() ? customTime.trim() : firstWorkTime;
+    
+    onConfirm({ 
+      documents, 
+      workAttire, 
+      workNotes, 
+      message,
+      firstWorkDate: firstWorkDate || undefined,
+      firstWorkTime: finalTime || undefined,
+      coordinationMessage: coordinationMessage.trim() || undefined,
+    });
   };
 
   return (
@@ -305,6 +386,151 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
             />
           </div>
 
+          {/* 📅 첫 출근 날짜 */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[16px]">📅</span>
+              <h3 className="text-[15px] font-semibold text-text-900">첫 출근 날짜</h3>
+            </div>
+            
+            {/* 월 네비게이션 */}
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => setCurrentMonthOffset(Math.max(0, currentMonthOffset - 1))}
+                disabled={currentMonthOffset === 0}
+                className="p-1.5 rounded-[6px] hover:bg-mint-100 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5 text-mint-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-[14px] font-semibold text-text-900">
+                {displayDate.getFullYear()}년 {displayDate.getMonth() + 1}월
+              </span>
+              <button
+                onClick={() => setCurrentMonthOffset(currentMonthOffset + 1)}
+                className="p-1.5 rounded-[6px] hover:bg-mint-100"
+              >
+                <svg className="w-5 h-5 text-mint-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 캘린더 */}
+            <div className="bg-white border border-mint-300 rounded-[8px] p-3 mb-2">
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+                  <div key={day} className="text-center text-[11px] font-medium text-text-500 py-1">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {getDaysArray().map((date, idx) => {
+                  if (!date) {
+                    return <div key={idx} className="aspect-square" />;
+                  }
+                  const dateStr = date.toISOString().split('T')[0];
+                  const isSelected = firstWorkDate === dateStr;
+                  const isSelectable = isDateSelectable(date);
+                  const isToday = dateStr === new Date().toISOString().split('T')[0];
+                  
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => isSelectable && handleDateSelect(date)}
+                      disabled={!isSelectable}
+                      className={`aspect-square rounded-[6px] text-[12px] font-medium transition-colors ${
+                        isSelected
+                          ? 'bg-mint-600 text-white'
+                          : isToday
+                          ? 'bg-mint-100 text-mint-700 border border-mint-300'
+                          : isSelectable
+                          ? 'bg-white text-text-700 hover:bg-mint-50 border border-mint-200'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {firstWorkDate && (
+              <div className="mb-2">
+                <span className="px-3 py-1.5 bg-mint-600 text-white rounded-full text-[12px] font-medium inline-flex items-center gap-1.5">
+                  {new Date(firstWorkDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                  <button
+                    onClick={() => setFirstWorkDate('')}
+                    className="hover:bg-mint-700 rounded-full p-0.5"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* ⏰ 첫 출근 시간 */}
+          {firstWorkDate && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[16px]">⏰</span>
+                <h3 className="text-[15px] font-semibold text-text-900">첫 출근 시간</h3>
+              </div>
+              
+              <div className="mb-2">
+                <select
+                  value={useCustomTime ? '' : firstWorkTime}
+                  onChange={(e) => {
+                    setFirstWorkTime(e.target.value);
+                    setUseCustomTime(false);
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-mint-300 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                >
+                  <option value="">시간 선택</option>
+                  {timeOptions.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  id="customTime"
+                  checked={useCustomTime}
+                  onChange={(e) => {
+                    setUseCustomTime(e.target.checked);
+                    if (e.target.checked) {
+                      setFirstWorkTime('');
+                    }
+                  }}
+                  className="w-4 h-4 text-mint-600 border-mint-300 rounded focus:ring-mint-500"
+                />
+                <label htmlFor="customTime" className="text-[12px] text-text-700">
+                  직접 입력
+                </label>
+              </div>
+              
+              {useCustomTime && (
+                <input
+                  type="text"
+                  value={customTime}
+                  onChange={(e) => setCustomTime(e.target.value)}
+                  placeholder="예) 09:30"
+                  className="w-full px-3 py-2 bg-white border border-mint-300 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500"
+                />
+              )}
+            </div>
+          )}
+
           {/* 📝 전달 메시지 */}
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -315,6 +541,21 @@ export const AcceptanceGuideModal = ({ isOpen, onClose, onConfirm, applicantName
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="예) 첫 출근 시 준비물과 복장을 꼭 확인해주세요."
+              rows={2}
+              className="w-full px-3 py-2 bg-white border border-mint-300 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500 resize-none"
+            />
+          </div>
+
+          {/* 💬 조율 메시지 */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[16px]">💬</span>
+              <h3 className="text-[15px] font-semibold text-text-900">조율 메시지</h3>
+            </div>
+            <textarea
+              value={coordinationMessage}
+              onChange={(e) => setCoordinationMessage(e.target.value)}
+              placeholder="구직자에게 전달할 조율 메시지를 입력하세요"
               rows={2}
               className="w-full px-3 py-2 bg-white border border-mint-300 rounded-[8px] text-[13px] focus:outline-none focus:ring-2 focus:ring-mint-500 resize-none"
             />

@@ -16,6 +16,8 @@ export const JobDetail = () => {
   const [applying, setApplying] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -25,6 +27,22 @@ export const JobDetail = () => {
         const res = await jobsAPI.get(id);
         setJob(res.data);
         console.log('Loaded job detail:', res.data);
+        
+        // 지원 여부 확인 (대기중 상태인지 확인)
+        const signupUserId = useAuthStore.getState().signupUserId;
+        const userId = signupUserId || localStorage.getItem('signup_user_id');
+        if (userId) {
+          try {
+            const applicationsRes = await applicationsAPI.list(userId);
+            const application = applicationsRes.data.find((app: any) => app.jobId === id && (app.status === 'applied' || app.status === 'pending'));
+            if (application) {
+              setHasApplied(true);
+              setApplicationId(application.applicationId);
+            }
+          } catch (err) {
+            console.error('지원 내역 확인 실패:', err);
+          }
+        }
       } catch (error: any) {
         console.error('공고 로딩 오류:', error);
         if (error.response?.status === 404) {
@@ -81,6 +99,8 @@ export const JobDetail = () => {
       console.log('[DEBUG] 지원하기 시작:', { userId, jobId: id });
       const response = await applicationsAPI.create(userId, id);
       console.log('[DEBUG] 지원 성공:', response.data);
+      setHasApplied(true);
+      setApplicationId(response.data.applicationId);
       toast.success('지원이 완료되었습니다');
       navigate('/jobseeker/apply-done');
     } catch (error: any) {
@@ -228,48 +248,90 @@ export const JobDetail = () => {
 
       {/* Bottom Action Buttons - 메뉴바 위에 위치 */}
       <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 p-4 z-40">
-        <div className="flex gap-2 w-full">
-          <button
-            onClick={handleSave}
-            className={`w-[52px] h-[52px] flex-shrink-0 rounded-[12px] flex items-center justify-center transition-colors ${
-              isSaved
-                ? 'bg-mint-600 text-white'
-                : 'bg-transparent text-gray-600 hover:bg-gray-50 border border-line-200'
-            }`}
-          >
-            <svg className="w-6 h-6" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={isSaved ? 0 : 2}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-          </button>
-          
-          <button
-            onClick={() => {
-              const phone = job.shop_phone || job.employer.phone;
-              if (phone) {
-                window.location.href = `tel:${phone}`;
-              } else {
-                toast.info('전화번호 정보가 없습니다');
-              }
-            }}
-            className="flex-1 h-[52px] bg-mint-100 text-mint-600 
-                     rounded-[12px] text-[15px] font-semibold hover:bg-mint-200 
-                     transition-colors flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-            전화
-          </button>
-          
-          <button
-            onClick={handleApplyClick}
-            disabled={applying}
-            className="flex-1 h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
-                     font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50"
-          >
-            지원하기
-          </button>
-        </div>
+        {hasApplied ? (
+          // 대기중 섹션: 채팅과 지원취소만 표시
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={() => {
+                navigate(`/messages/chat/${id}`);
+              }}
+              className="flex-1 h-[52px] border-2 border-mint-600 bg-white text-mint-600 
+                       rounded-[12px] text-[15px] font-semibold hover:bg-mint-50 
+                       transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              채팅
+            </button>
+            
+            <button
+              onClick={async () => {
+                if (!applicationId) return;
+                if (confirm('정말 지원을 취소하시겠습니까?')) {
+                  try {
+                    await applicationsAPI.update(applicationId, 'rejected');
+                    toast.success('지원이 취소되었습니다');
+                    setHasApplied(false);
+                    setApplicationId(null);
+                    navigate('/jobseeker/my-applications');
+                  } catch (error: any) {
+                    console.error('지원 취소 실패:', error);
+                    toast.error('지원 취소에 실패했습니다');
+                  }
+                }
+              }}
+              className="flex-1 h-[52px] bg-red-500 text-white rounded-[12px] text-[15px] 
+                       font-semibold hover:bg-red-600 transition-colors"
+            >
+              지원취소
+            </button>
+          </div>
+        ) : (
+          // 미지원 상태: 저장, 전화, 지원하기 버튼
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={handleSave}
+              className={`w-[52px] h-[52px] flex-shrink-0 rounded-[12px] flex items-center justify-center transition-colors ${
+                isSaved
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-transparent text-gray-600 hover:bg-gray-50 border border-line-200'
+              }`}
+            >
+              <svg className="w-6 h-6" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={isSaved ? 0 : 2}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+            </button>
+            
+            <button
+              onClick={() => {
+                const phone = job.shop_phone || job.employer.phone;
+                if (phone) {
+                  window.location.href = `tel:${phone}`;
+                } else {
+                  toast.info('전화번호 정보가 없습니다');
+                }
+              }}
+              className="flex-1 h-[52px] bg-mint-100 text-mint-600 
+                       rounded-[12px] text-[15px] font-semibold hover:bg-mint-200 
+                       transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              전화
+            </button>
+            
+            <button
+              onClick={handleApplyClick}
+              disabled={applying}
+              className="flex-1 h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
+                       font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50"
+            >
+              지원하기
+            </button>
+          </div>
+        )}
       </div>
 
       <ApplyModal

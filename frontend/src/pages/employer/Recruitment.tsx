@@ -735,7 +735,7 @@ export const Recruitment = () => {
                             )}
                             {hasCoordinationMessage && (
                               <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium bg-blue-100 text-blue-700 border border-blue-300">
                                     💬 조율 메시지 {proposal.coordinationMessages.length}개
                                   </span>
@@ -744,10 +744,20 @@ export const Recruitment = () => {
                                       {new Date(proposal.coordinationMessages[proposal.coordinationMessages.length - 1].sentAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
                                     </span>
                                   )}
+                                  {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.from === 'employer' && (
+                                    <span className="px-1.5 py-0.5 rounded-[4px] text-[9px] font-medium bg-mint-100 text-mint-700">
+                                      고용주
+                                    </span>
+                                  )}
+                                  {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.from === 'jobseeker' && (
+                                    <span className="px-1.5 py-0.5 rounded-[4px] text-[9px] font-medium bg-blue-100 text-blue-700">
+                                      구직자
+                                    </span>
+                                  )}
                                 </div>
                                 {/* 최근 메시지 미리보기 */}
                                 <div className="bg-blue-50 border border-blue-200 rounded-[6px] p-2">
-                                  <p className="text-[11px] text-blue-800 line-clamp-2">
+                                  <p className="text-[11px] text-blue-800 line-clamp-2 whitespace-pre-wrap">
                                     {proposal.coordinationMessages[proposal.coordinationMessages.length - 1]?.message}
                                   </p>
                                 </div>
