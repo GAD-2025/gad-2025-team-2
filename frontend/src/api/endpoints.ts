@@ -141,6 +141,28 @@ export async function getJobSeekerProfile(userId: string): Promise<JobSeekerProf
   return response.json();
 }
 
+// Employer profile (used by MyPage fallback when stores are not available)
+export interface EmployerProfileData {
+  id: string;
+  user_id: string;
+  business_type: string | null;
+  company_name: string | null;
+  address: string | null;
+  address_detail: string | null;
+  business_license?: string | null;
+  is_verified?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getEmployerProfile(userId: string): Promise<EmployerProfileData> {
+  const response = await fetch(`${API_BASE_URL}/employer/profile/${userId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch employer profile');
+  }
+  return response.json();
+}
+
 export interface JobSeekerListItem {
   id: string;
   user_id: string;

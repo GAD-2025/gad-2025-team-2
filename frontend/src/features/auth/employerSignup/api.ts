@@ -3,7 +3,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export interface EmployerSignupPayload {
-  role: 'employer';
   name: string;
   email: string;
   password: string;
@@ -11,15 +10,50 @@ export interface EmployerSignupPayload {
   company_name?: string;
   address?: string;
   address_detail?: string;
+<<<<<<< HEAD
   phone?: string;
   industry?: string;
+=======
+  industry?: string;
+  industry_custom?: string;
+}
+
+export interface EmployerProfileResponse {
+  id: string;
+  user_id: string;
+  business_type: string;
+  company_name: string;
+  address: string;
+  address_detail?: string | null;
+  business_license?: string | null;
+  is_verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StoreResponse {
+  id: string;
+  user_id: string;
+  is_main: boolean;
+  store_name: string;
+  address: string;
+  address_detail?: string | null;
+  phone: string;
+  industry: string;
+  business_license?: string | null;
+  management_role: string;
+  store_type: string;
+  created_at?: string;
+  updated_at?: string;
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
 }
 
 export interface EmployerSignupResponse {
   id: string;
-  role: string;
   name: string;
-  email: string;
+  company_name?: string;
+  employer_profile?: EmployerProfileResponse | null;
+  stores?: StoreResponse[];
   message?: string;
 }
 
@@ -42,8 +76,13 @@ export async function signupEmployer(
         company_name: payload.company_name || '',
         address: payload.address || '',
         address_detail: payload.address_detail && payload.address_detail.trim() ? payload.address_detail : undefined,
+<<<<<<< HEAD
         phone: payload.phone || '',
         industry: payload.industry || '',
+=======
+        industry: payload.industry || undefined,
+        industry_custom: payload.industry_custom || undefined,
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       }),
     });
 

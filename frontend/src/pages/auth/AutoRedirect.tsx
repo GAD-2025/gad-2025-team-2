@@ -8,8 +8,13 @@ export function AutoRedirect() {
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
+<<<<<<< HEAD
       const userId = localStorage.getItem('signup_user_id');
       const savedRole = localStorage.getItem('user_role');
+=======
+      const signupUserId = useAuthStore.getState().signupUserId;
+      const userId = signupUserId || localStorage.getItem('signup_user_id');
+>>>>>>> e7a5e19 (WIP: save local changes before pulling origin/main)
       
       // 가입하지 않은 경우 -> 회원가입 페이지
       if (!userId) {
@@ -23,8 +28,8 @@ export function AutoRedirect() {
         const response = await fetch(`${API_BASE_URL}/auth/signup-user/${userId}`);
         if (!response.ok) {
           // 사용자 정보 없으면 회원가입으로
-          localStorage.removeItem('signup_user_id');
-          navigate('/signup', { replace: true });
+            try { useAuthStore.getState().setSignupUserId(null); } catch (e) { localStorage.removeItem('signup_user_id'); }
+            navigate('/signup', { replace: true });
           return;
         }
 

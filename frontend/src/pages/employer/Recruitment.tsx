@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useAuthStore } from '@/store/useAuth';
 
 interface Applicant {
   id: string; // seekerId
@@ -31,8 +32,9 @@ export const Recruitment = () => {
     try {
       setLoading(true);
       
-      // Get user ID
-      const userId = localStorage.getItem('signup_user_id');
+      // Get user ID (prefer zustand-migrated value)
+      const signupUserId = useAuthStore.getState().signupUserId;
+      const userId = signupUserId || localStorage.getItem('signup_user_id');
       if (!userId) {
         toast.error('로그인이 필요합니다');
         return;

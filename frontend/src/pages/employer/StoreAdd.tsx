@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import { createStore, type StoreCreatePayload } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
 
 const INDUSTRY_OPTIONS = [
   '외식업',
@@ -134,7 +135,8 @@ export const StoreAdd = () => {
     try {
       setSubmitting(true);
       
-      const userId = localStorage.getItem('signup_user_id');
+      const signupUserId = useAuthStore.getState().signupUserId;
+      const userId = signupUserId || localStorage.getItem('signup_user_id');
       if (!userId) {
         toast.error('로그인이 필요합니다');
         navigate('/auth/signin');

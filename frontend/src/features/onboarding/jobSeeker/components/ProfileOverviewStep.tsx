@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSignupUser, type SignupUserData } from '@/api/endpoints';
+import { useAuthStore } from '@/store/useAuth';
 
 interface ProfileOverviewStepProps {
   onStart: () => void;
@@ -31,7 +32,8 @@ export function ProfileOverviewStep({ onStart, onPrev }: ProfileOverviewStepProp
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const userId = localStorage.getItem('signup_user_id');
+        const signupUserId = useAuthStore.getState().signupUserId;
+        const userId = signupUserId || localStorage.getItem('signup_user_id');
         if (userId) {
           const data = await getSignupUser(userId);
           setUserData(data);

@@ -371,41 +371,100 @@ async def signup_employer(request: EmployerSignupPayload, session: Session = Dep
     # Create main store (기본매장) from signup data
     # 회사 정보가 있는 경우에만 매장 생성
     print(f"Creating store for user {user_id}, company_name: {request.company_name}, address: {request.address}")
+    # determine final industry: if industry == '기타' use industry_custom when provided
+    final_industry = None
+    try:
+        if hasattr(request, 'industry') and request.industry:
+            if request.industry == '기타' and getattr(request, 'industry_custom', None):
+                final_industry = request.industry_custom
+            else:
+                final_industry = request.industry
+    except Exception:
+        final_industry = None
+
+    stores_response = []
+    main_store = None
     if request.company_name and request.company_name.strip() and request.address and request.address.strip():
-        store_id = f"store-{uuid.uuid4().hex[:8]}"
-        # address_detail이 빈 문자열이면 None으로 변환
-        address_detail = request.address_detail if request.address_detail and request.address_detail.strip() else None
-        # industry가 있으면 사용, 없으면 기본값 "기타"
-        industry = request.industry if request.industry and request.industry.strip() else "기타"
-        # 전화번호 처리 (하이픈 제거)
-        phone = ""
-        if request.phone and request.phone.strip():
-            phone = request.phone.replace('-', '').strip()
-        
-        main_store = Store(
-            id=store_id,
-            user_id=user_id,
-            is_main=True,  # 기본매장
-            store_name=request.company_name.strip(),
-            address=request.address.strip(),
-            address_detail=address_detail,
-            phone=phone,
-            industry=industry,
-            business_license=None,
-            management_role="본사 관리자",  # 기본값
-            store_type="직영점",  # 기본값
-        )
-        session.add(main_store)
-        session.commit()
-        session.refresh(main_store)
-        print(f"Store created successfully: {store_id}, is_main: {main_store.is_main}")
+        # Prevent duplicate stores: if a store already exists for this user, skip creation
+        try:
+            existing_stmt = select(Store).where(Store.user_id == user_id)
+            existing_store = session.exec(existing_stmt).first()
+            if existing_store:
+                print(f"Existing store found for user {user_id}, skipping creation: {existing_store.id}")
+                main_store = existing_store
+            else:
+                # proceed to create store
+                store_id = f"store-{uuid.uuid4().hex[:8]}"
+                # address_detail이 빈 문자열이면 None으로 변환
+                address_detail = request.address_detail if request.address_detail and request.address_detail.strip() else None
+                # determine phone
+                phone = ""
+                if getattr(request, 'phone', None) and request.phone.strip():
+                    phone = request.phone.replace('-', '').strip()
+
+                main_store = Store(
+                    id=store_id,
+                    user_id=user_id,
+                    is_main=True,  # 기본매장
+                    store_name=request.company_name.strip(),
+                    address=request.address.strip(),
+                    address_detail=address_detail,
+                    phone=phone,
+                    industry=final_industry or "기타",  # use submitted industry if provided
+                    business_license=None,
+                    management_role="본사 관리자",  # 기본값
+                    store_type="직영점",  # 기본값
+                )
+                session.add(main_store)
+                session.commit()
+                session.refresh(main_store)
+                print(f"Store created successfully: {store_id}, is_main: {main_store.is_main}")
+        except Exception as e:
+            print(f"Error checking/creating store for user {user_id}: {e}")
+
+        if main_store:
+            stores_response.append({
+                "id": main_store.id,
+                "user_id": main_store.user_id,
+                "is_main": main_store.is_main,
+                "store_name": main_store.store_name,
+                "address": main_store.address,
+                "address_detail": main_store.address_detail,
+                "phone": main_store.phone,
+                "industry": main_store.industry,
+                "business_license": main_store.business_license,
+                "management_role": main_store.management_role,
+                "store_type": main_store.store_type,
+                "created_at": main_store.created_at.isoformat() if hasattr(main_store, 'created_at') else None,
+                "updated_at": main_store.updated_at.isoformat() if hasattr(main_store, 'updated_at') else None,
+            })
     else:
         print(f"Store not created: company_name={request.company_name}, address={request.address}")
-    
+
+    employer_profile_resp = None
+    try:
+        if employer_profile:
+            employer_profile_resp = {
+                "id": employer_profile.id,
+                "user_id": employer_profile.user_id,
+                "business_type": employer_profile.business_type,
+                "company_name": employer_profile.company_name,
+                "address": employer_profile.address,
+                "address_detail": employer_profile.address_detail,
+                "business_license": employer_profile.business_license,
+                "is_verified": employer_profile.is_verified,
+                "created_at": employer_profile.created_at.isoformat() if hasattr(employer_profile, 'created_at') else None,
+                "updated_at": employer_profile.updated_at.isoformat() if hasattr(employer_profile, 'updated_at') else None,
+            }
+    except Exception:
+        employer_profile_resp = None
+
     return EmployerSignupResponse(
         id=signup_user.id,
         name=signup_user.name,
-        company_name=employer_profile.company_name,
+        company_name=employer_profile.company_name if employer_profile else None,
+        employer_profile=employer_profile_resp,
+        stores=stores_response,
         message="고용주 회원가입이 완료되었습니다."
     )
 

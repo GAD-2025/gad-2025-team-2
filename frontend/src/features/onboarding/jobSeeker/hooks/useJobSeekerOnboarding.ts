@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingStep, OnboardingFormValues } from '../types';
 import { createJobSeekerProfile } from '../api';
+import { useAuthStore } from '@/store/useAuth';
 
 const INITIAL_VALUES: OnboardingFormValues = {
   uploadedFiles: [],
@@ -168,8 +169,9 @@ export function useJobSeekerOnboarding() {
     setError(null);
 
     try {
-      // Get user_id from localStorage (set during signup)
-      const userId = localStorage.getItem('signup_user_id');
+      // Get user_id from auth store (migrated) or localStorage fallback
+      const signupUserId = useAuthStore.getState().signupUserId;
+      const userId = signupUserId || localStorage.getItem('signup_user_id');
       if (!userId) {
         throw new Error('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
       }
