@@ -67,7 +67,7 @@ export const EmployerHome = () => {
             nationalityCode: s.nationality || s.nationality_code,
             birthdate: s.birthdate,
             phone: s.phone || '',
-            languageLevel: s.language_level || s.experience_skills || '언어 능력 미입력',
+            languageLevel: s.language_level || '언어 능력 미입력',
             visaType: s.visa_type || (appliedFilters.visas || '미입력'),
             availability: s.availability || '즉시',
             location: s.location ? { lat: s.location.lat, lng: s.location.lng } : undefined,
@@ -81,7 +81,9 @@ export const EmployerHome = () => {
             },
             // store derived age inside experience tags if needed later
             age,
-          } as JobSeeker;
+            // experience_skills를 JobSeeker 타입에 추가 (타입 확장 필요할 수 있음)
+            experience_skills: s.experience_skills || null,
+          } as JobSeeker & { experience_skills?: string | null };
         });
 
         setApplicants(formattedApplicants);

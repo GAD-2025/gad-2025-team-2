@@ -37,6 +37,7 @@ export interface JobSeeker {
   age?: number | null;
   experience: Experience[];
   preferences: Preferences;
+  experience_skills?: string | null; // JSON string for skills data
 }
 
 export interface Employer {

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { JobSeeker } from '@/types';
 
 interface ApplicantCardProps {
@@ -11,6 +11,13 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
   const navigate = useNavigate();
   const isFeatured = variant === 'featured';
   const [isBookmarked, setIsBookmarked] = useState(false);
+
+  // 저장 상태 확인
+  useEffect(() => {
+    const savedApplicants = JSON.parse(localStorage.getItem('saved_applicants') || '[]');
+    const applicantId = applicant.userId || applicant.id;
+    setIsBookmarked(savedApplicants.includes(applicantId));
+  }, [applicant.userId, applicant.id]);
 
   const experience = applicant.experience?.[0];
   const ageLabel = applicant.age ? `${applicant.age}세` : '';
@@ -37,6 +44,61 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
 
   // 백엔드 엔드포인트는 user_id를 기대하므로 userId를 우선 사용
   const applicantId = applicant.userId || applicant.id;
+
+  // 저장 버튼 핸들러
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const savedApplicants = JSON.parse(localStorage.getItem('saved_applicants') || '[]');
+    if (isBookmarked) {
+      const updated = savedApplicants.filter((id: string) => id !== applicantId);
+      localStorage.setItem('saved_applicants', JSON.stringify(updated));
+      setIsBookmarked(false);
+    } else {
+      savedApplicants.push(applicantId);
+      localStorage.setItem('saved_applicants', JSON.stringify(savedApplicants));
+      setIsBookmarked(true);
+    }
+  };
+
+  // 채팅 핸들러
+  const handleChat = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/chat/${applicantId}`);
+  };
+
+  // 면접 제안 핸들러
+  const handleInterviewProposal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/employer/applicant/${applicantId}`);
+  };
+
+  // experience_skills 파싱 함수
+  const parseSkills = (skillsData: any) => {
+    if (!skillsData) return { workSkills: [], strengths: [], mbti: [] };
+    
+    try {
+      if (typeof skillsData === 'string') {
+        const parsed = JSON.parse(skillsData);
+        return {
+          workSkills: parsed.workSkills || [],
+          strengths: parsed.strengths || [],
+          mbti: parsed.mbti || []
+        };
+      }
+      if (typeof skillsData === 'object') {
+        return {
+          workSkills: skillsData.workSkills || [],
+          strengths: skillsData.strengths || [],
+          mbti: skillsData.mbti || []
+        };
+      }
+    } catch (e) {
+      console.error('Failed to parse skills:', e);
+    }
+    return { workSkills: [], strengths: [], mbti: [] };
+  };
+
+  const skills = parseSkills((applicant as any).experience_skills || (applicant as any).experienceSkills);
   
   return (
     <div
@@ -47,13 +109,10 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
         ${isFeatured ? 'min-w-[340px] w-[340px] border border-mint-600/35 p-[14px] flex flex-col' : 'border border-border p-4'}
       `}
     >
-      {/* Bookmark button (featured only) */}
+      {/* 저장 버튼 (우측 상단) */}
       {isFeatured && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsBookmarked(!isBookmarked);
-          }}
+          onClick={handleSave}
           className="absolute top-[14px] right-[14px] w-10 h-10 bg-mint-600 rounded-full 
                    flex items-center justify-center hover:bg-mint-700 transition-colors z-10"
         >
@@ -86,18 +145,61 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       </div>
 
       {/* Info */}
-      <div className="space-y-[2px] mb-3 text-[13px]">
-        <p className="text-text-900">
-          <span className="text-text-700">언어 능력:</span> {applicant.languageLevel || '미입력'}
-        </p>
-        <p className="text-text-900">
-          <span className="text-text-700">비자:</span> {applicant.visaType || '미입력'}
-        </p>
-        {experience && (
-          <p className="text-mint-600 font-medium">
-            경력: {experience.role} {experience.years}년 근무
-          </p>
+      <div className="space-y-2 mb-3">
+        {/* 능력/스킬 섹션 */}
+        {(skills.workSkills.length > 0 || skills.strengths.length > 0 || skills.mbti.length > 0) ? (
+          <div className="space-y-1.5">
+            {skills.workSkills.length > 0 && (
+              <div>
+                <p className="text-[11px] text-text-500 mb-1">업무 스킬</p>
+                <div className="flex flex-wrap gap-1">
+                  {skills.workSkills.map((skill: string, idx: number) => (
+                    <span key={idx} className="px-2 py-0.5 bg-mint-100 text-mint-700 rounded-[6px] text-[11px] font-medium">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {skills.strengths.length > 0 && (
+              <div>
+                <p className="text-[11px] text-text-500 mb-1">강점</p>
+                <div className="flex flex-wrap gap-1">
+                  {skills.strengths.map((strength: string, idx: number) => (
+                    <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-[6px] text-[11px] font-medium">
+                      {strength}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {skills.mbti.length > 0 && (
+              <div>
+                <p className="text-[11px] text-text-500 mb-1">성격 유형</p>
+                <div className="flex flex-wrap gap-1">
+                  {skills.mbti.map((mbti: string, idx: number) => (
+                    <span key={idx} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-[6px] text-[11px] font-medium">
+                      {mbti}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-[13px] text-text-500">능력/스킬: 미입력</p>
         )}
+        
+        <div className="space-y-[2px] text-[13px]">
+          <p className="text-text-900">
+            <span className="text-text-700">비자:</span> {applicant.visaType || '미입력'}
+          </p>
+          {experience && (
+            <p className="text-mint-600 font-medium">
+              경력: {experience.role} {experience.years}년 근무
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Tags and CTA Row */}
@@ -115,16 +217,46 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
               </span>
             )}
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/applicant/${applicantId}`);
-            }}
-            className="w-full h-[44px] bg-mint-600 text-white rounded-[12px] 
-                     text-[15px] font-semibold hover:bg-mint-700 transition-colors"
-          >
-            연락하기
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              className={`w-11 h-11 rounded-[10px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
+                isBookmarked
+                  ? 'bg-mint-600 border-mint-600'
+                  : 'bg-white border-mint-600'
+              }`}
+            >
+              <svg
+                className={`w-5 h-5 ${isBookmarked ? 'text-white' : 'text-mint-600'}`}
+                fill={isBookmarked ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={handleChat}
+              className="flex-1 h-11 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              채팅
+            </button>
+            <button
+              onClick={handleInterviewProposal}
+              className="flex-1 h-11 rounded-[10px] bg-mint-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-mint-700 transition-colors"
+            >
+              면접 제안하기
+            </button>
+          </div>
         </div>
       ) : (
         <>

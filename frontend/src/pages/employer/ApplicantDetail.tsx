@@ -603,7 +603,7 @@ export const ApplicantDetail = () => {
             </button>
           </div>
         </div>
-      ) : (
+      ) : applicationStatus === 'pending' || !applicationStatus ? (
         // 신규/기타: 저장/채팅/면접제안하기 버튼
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-line-200 px-3 py-3 safe-area-bottom z-50 shadow-lg">
           <div className="flex items-center gap-2">
