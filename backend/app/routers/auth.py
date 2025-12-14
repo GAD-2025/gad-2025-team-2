@@ -178,7 +178,8 @@ async def signup_legacy(request: SignUpRequest, session: Session = Depends(get_s
             name="New User",
             nationality="KR",
             phone="",
-            languageLevel="TOPIK 1급",
+            # Use frontend-consistent label
+            languageLevel="Lv.1 기초",
             visaType="D-2",
             availability="주말",
         )
@@ -192,7 +193,8 @@ async def signup_legacy(request: SignUpRequest, session: Session = Depends(get_s
             address="",
             openHours="",
             contact="",
-            minLanguageLevel="TOPIK 1급",
+            # Use frontend-consistent label for minimum language requirement
+            minLanguageLevel="Lv.1 기초",
             baseWage=10000,
             schedule="",
         )
