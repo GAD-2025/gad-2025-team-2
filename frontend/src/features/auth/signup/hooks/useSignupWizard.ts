@@ -64,6 +64,9 @@ const INITIAL_VALUES: SignupFormValues = {
   birthdate: '',
   gender: null,
   nationalityCode: null,
+  visaType: '',
+  visaExpiry: '',
+  visaImageBase64: null,
   terms: INITIAL_TERMS,
 };
 
@@ -126,6 +129,11 @@ export function useSignupWizard() {
     values.gender !== null &&
     Boolean(values.nationalityCode);
 
+  const isStep3Complete =
+    values.role === 'job_seeker'
+      ? Boolean(values.visaType) && Boolean(values.visaExpiry)
+      : true; // employer는 비자 정보 불필요
+
   const isStep4Complete = values.terms.tosRequired && values.terms.privacyRequired;
 
   const selectRole = (role: UserRole) => {
@@ -151,6 +159,26 @@ export function useSignupWizard() {
 
   const handleNationalitySelect = (code: string) => {
     setValues((prev) => ({ ...prev, nationalityCode: code }));
+  };
+
+  const handleVisaTypeSelect = (visa: string) => {
+    setValues((prev) => ({ ...prev, visaType: visa }));
+  };
+
+  const handleVisaExpiryChange = (expiry: string) => {
+    setValues((prev) => ({ ...prev, visaExpiry: expiry }));
+  };
+
+  const handleVisaImageChange = (file: File | null) => {
+    if (!file) {
+      setValues((prev) => ({ ...prev, visaImageBase64: null }));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setValues((prev) => ({ ...prev, visaImageBase64: (reader.result as string) || null }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const openBirthdateSheet = () => setBirthdateSheetOpen(true);
@@ -201,7 +229,15 @@ export function useSignupWizard() {
       console.log('Step 1 → Step 2 이동');
       setStep(2);
     } else if (step === 2 && isStep2Complete) {
-      console.log('Step 2 → Step 4 이동');
+      if (values.role === 'job_seeker') {
+        console.log('Step 2 → Step 3 (비자 정보)');
+        setStep(3);
+      } else {
+        console.log('고용주: Step 2 → Step 4');
+        setStep(4);
+      }
+    } else if (step === 3 && isStep3Complete) {
+      console.log('Step 3 → Step 4 (약관)');
       setStep(4);
     } else if (step === 4 && isStep4Complete) {
       setSubmitting(true);
@@ -209,6 +245,10 @@ export function useSignupWizard() {
         console.log('회원가입 시작:', values);
         const response = await signup(values);
         console.log('회원가입 성공:', response);
+        // 비자 정보 로컬 저장 (향후 업로드/인증용)
+        if (values.visaType) localStorage.setItem('signup_visa_type', values.visaType);
+        if (values.visaExpiry) localStorage.setItem('signup_visa_expiry', values.visaExpiry);
+        if (values.visaImageBase64) localStorage.setItem('signup_visa_image_base64', values.visaImageBase64);
         // 회원가입 완료 후 user_id와 이름을 localStorage에 저장
         localStorage.setItem('signup_user_id', response.id);
         localStorage.setItem('signup_user_name', values.name);
@@ -249,19 +289,18 @@ export function useSignupWizard() {
   };
 
   const goPrev = () => {
-    if (step === 2) {
-      setStep(1);
-    } else if (step === 4) {
-      setStep(2);
-    }
+    if (step === 2) setStep(1);
+    else if (step === 3) setStep(2);
+    else if (step === 4) setStep(values.role === 'job_seeker' ? 3 : 2);
   };
 
   const canProceed = useMemo(() => {
     if (step === 1) return isStep1Complete;
     if (step === 2) return isStep2Complete;
+    if (step === 3) return isStep3Complete;
     if (step === 4) return isStep4Complete;
     return true;
-  }, [isStep1Complete, isStep2Complete, isStep4Complete, step]);
+  }, [isStep1Complete, isStep2Complete, isStep3Complete, isStep4Complete, step]);
 
   const birthdateDisplay = values.birthdate
     ? values.birthdate.replace(/-/g, '.')
@@ -280,6 +319,9 @@ export function useSignupWizard() {
     handlePhoneChange,
     handleGenderSelect,
     handleNationalitySelect,
+    handleVisaTypeSelect,
+    handleVisaExpiryChange,
+    handleVisaImageChange,
     goNext,
     goPrev,
     canProceed,

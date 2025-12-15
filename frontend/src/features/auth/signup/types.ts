@@ -20,6 +20,9 @@ export interface SignupFormValues {
   birthdate: string; // YYYY-MM-DD
   gender: Gender | null;
   nationalityCode: string | null;
+  visaType: string;
+  visaExpiry: string; // YYYY-MM-DD
+  visaImageBase64?: string | null;
   terms: TermsState;
 }
 

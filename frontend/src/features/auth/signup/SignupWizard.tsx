@@ -2,6 +2,7 @@ import { BirthdateBottomSheet } from './components/BirthdateBottomSheet';
 import { RoleSelectStep } from './components/RoleSelectStep';
 import { TermsStep } from './components/TermsStep';
 import { UserInfoStep } from './components/UserInfoStep';
+import { VisaStep } from './components/VisaStep';
 import { ProgressBar } from './components/ProgressBar';
 import { useSignupWizard } from './hooks/useSignupWizard';
 import { EmployerSignupWizard } from './EmployerSignupWizard';
@@ -15,6 +16,9 @@ export default function SignupWizard() {
     handlePhoneChange,
     handleGenderSelect,
     handleNationalitySelect,
+    handleVisaTypeSelect,
+    handleVisaExpiryChange,
+    handleVisaImageChange,
     nationalities,
     goNext,
     goPrev,
@@ -40,7 +44,8 @@ export default function SignupWizard() {
   // 전체 프로그레스 바 단계 (회원가입 2단계 + 온보딩 7단계 = 총 9단계)
   const getProgressStep = () => {
     if (step === 2) return 1; // 회원정보 입력
-    if (step === 4) return 2; // 약관 동의
+    if (step === 3) return 2; // 비자 정보
+    if (step === 4) return 3; // 약관 동의
     return 0;
   };
 
@@ -62,6 +67,17 @@ export default function SignupWizard() {
           onGenderSelect={handleGenderSelect}
           onNationalitySelect={handleNationalitySelect}
           nationalities={nationalities}
+          onNext={goNext}
+          onPrev={goPrev}
+          canProceed={canProceed}
+        />
+      )}
+      {step === 3 && (
+        <VisaStep
+          values={values}
+          onVisaTypeSelect={handleVisaTypeSelect}
+          onVisaExpiryChange={handleVisaExpiryChange}
+          onVisaImageChange={handleVisaImageChange}
           onNext={goNext}
           onPrev={goPrev}
           canProceed={canProceed}
