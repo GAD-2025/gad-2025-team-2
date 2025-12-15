@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlmodel import Session, select
 from typing import List, Optional
 import json
+from datetime import date, datetime
 
 from app.db import get_session
 from app.models import SignupUser, JobSeeker, JobSeekerProfile, Nationality
@@ -89,7 +90,16 @@ async def update_my_profile(
     
     # Create profiles if they don't exist
     if not jobseeker:
-        jobseeker = JobSeeker(id=user_id, name=signup_user.name)
+        jobseeker = JobSeeker(
+            id=user_id,
+            name=profile_update.name,
+            nationality=signup_user.nationality_code or "Unknown",
+            phone=profile_update.phone or "Not Provided",
+            languageLevel=profile_update.languageLevel or "Basic",
+            visaType=profile_update.visaType or "Unknown",
+            availability="Not specified",
+            location=profile_update.location
+        )
         session.add(jobseeker)
     if not job_seeker_profile:
         job_seeker_profile = JobSeekerProfile(id=f"profile-{user_id}", user_id=user_id)
@@ -116,11 +126,16 @@ async def update_my_profile(
     else:
         signup_user.nationality_code = None
     if profile_update.birthdate:
-        signup_user.birthdate = profile_update.birthdate
+        try:
+            signup_user.birthdate = datetime.strptime(profile_update.birthdate, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            signup_user.birthdate = None
+    else:
+        signup_user.birthdate = None
 
     # 2. jobseekers table
-    jobseeker.visaType = profile_update.visaType
-    jobseeker.languageLevel = profile_update.languageLevel
+    jobseeker.visaType = profile_update.visaType or "E-9"
+    jobseeker.languageLevel = profile_update.languageLevel or "Lv.1 기초"
     jobseeker.location = profile_update.location
     jobseeker.name = profile_update.name # Sync name
 

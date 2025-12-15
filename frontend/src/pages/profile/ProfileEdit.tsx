@@ -287,18 +287,18 @@ export const ProfileEdit = () => {
                      focus:outline-none focus:ring-2 focus:ring-mint-600"
           />
         </div>
-      </div>
 
-      {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 p-4">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
-                   font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50"
-        >
-          {submitting ? '저장 중...' : '저장하기'}
-        </button>
+        {/* Save Button */}
+        <div className="p-4">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
+                     font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50"
+          >
+            {submitting ? '저장 중...' : '저장하기'}
+          </button>
+        </div>
       </div>
     </div>
   );
