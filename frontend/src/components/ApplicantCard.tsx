@@ -19,8 +19,27 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
     setIsBookmarked(savedApplicants.includes(applicantId));
   }, [applicant.userId, applicant.id]);
 
-  const experience = applicant.experience?.[0];
   const ageLabel = applicant.age ? `${applicant.age}세` : '';
+
+  // 미리보기용 태그: workSkills/strengths/mbti에서 최대 2개만 노출
+  const skillPreview = (() => {
+    const tags: string[] = [];
+    const raw = (applicant as any).experience_skills;
+    try {
+      if (raw) {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed)) tags.push(...parsed);
+        else if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.workSkills)) tags.push(...parsed.workSkills);
+          if (Array.isArray(parsed.strengths)) tags.push(...parsed.strengths);
+          if (Array.isArray(parsed.mbti)) tags.push(...parsed.mbti);
+        }
+      }
+    } catch (_e) {
+      if (typeof raw === 'string' && raw.trim()) tags.push(raw.trim());
+    }
+    return tags.filter(Boolean).slice(0, 2);
+  })();
 
   const flagEmoji = (codeOrName?: string) => {
     if (!codeOrName) return '🌏';
@@ -106,7 +125,11 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       className={`
         bg-white rounded-card cursor-pointer snap-start relative
         transition-all duration-120 hover:shadow-card active:scale-[0.98]
-        ${isFeatured ? 'min-w-[340px] w-[340px] border border-mint-600/35 p-1.5 flex flex-col' : 'border border-border p-4'}
+        ${
+          isFeatured
+            ? 'min-w-[300px] w-[300px] border border-mint-600/40 px-3 pt-2 pb-1.5 flex flex-col gap-1.5 h-[175px]'
+            : 'border border-border px-3 py-3 flex flex-col gap-2 h-[190px]'
+        }
       `}
     >
       {/* 저장 버튼 (우측 상단) */}
@@ -128,7 +151,7 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
       )}
 
       {/* Profile */}
-      <div className="flex items-start gap-2 mb-1">
+      <div className="flex items-start gap-3 mb-0.5">
         <div className="w-[40px] h-[40px] bg-gradient-to-br from-mint-100 to-mint-200 rounded-full 
                       flex items-center justify-center overflow-hidden flex-shrink-0">
           <span className="text-lg">👤</span>
@@ -144,122 +167,55 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
         </div>
       </div>
 
-      {/* Info - 좌우 배치 */}
-      <div className="flex items-start gap-2 mb-1">
-        {/* 왼쪽: 능력/스킬, 비자 정보 */}
-        <div className="flex-1 min-w-0">
-          {(skills.workSkills.length > 0 || skills.strengths.length > 0 || skills.mbti.length > 0) ? (
-            <div className="space-y-0.5 mb-0.5">
-              {skills.workSkills.length > 0 && (
-                <div>
-                  <p className="text-[9px] text-text-500 mb-0.5">업무 스킬</p>
-                  <div className="flex flex-wrap gap-0.5">
-                    {skills.workSkills.map((skill: string, idx: number) => (
-                      <span key={idx} className="px-1 py-0.5 bg-mint-100 text-mint-700 rounded-[4px] text-[9px] font-medium">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {skills.strengths.length > 0 && (
-                <div>
-                  <p className="text-[9px] text-text-500 mb-0.5">강점</p>
-                  <div className="flex flex-wrap gap-0.5">
-                    {skills.strengths.map((strength: string, idx: number) => (
-                      <span key={idx} className="px-1 py-0.5 bg-blue-100 text-blue-700 rounded-[4px] text-[9px] font-medium">
-                        {strength}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {skills.mbti.length > 0 && (
-                <div>
-                  <p className="text-[9px] text-text-500 mb-0.5">성격 유형</p>
-                  <div className="flex flex-wrap gap-0.5">
-                    {skills.mbti.map((mbti: string, idx: number) => (
-                      <span key={idx} className="px-1 py-0.5 bg-purple-100 text-purple-700 rounded-[4px] text-[9px] font-medium">
-                        {mbti}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+      {/* Info - 간략 표시 */}
+      <div className="flex items-start gap-3 mb-1">
+        <div className="flex-1 min-w-0 space-y-1">
+          {skillPreview.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {skillPreview.map((skill, idx) => (
+                <span
+                  key={idx}
+                  className="px-2 py-1 bg-mint-100 text-mint-700 rounded-[10px] text-[11px] font-medium"
+                >
+                  {skill}
+                </span>
+              ))}
             </div>
           ) : (
-            <p className="text-[11px] text-text-500 mb-0.5">능력/스킬: 미입력</p>
+            <p className="text-[11px] text-text-500 mb-0">능력/스킬: 미입력</p>
           )}
-          
-          <div className="space-y-0 text-[10px]">
-            <p className="text-text-900 leading-tight">
-              <span className="text-text-700">비자:</span> {applicant.visaType || '미입력'}
-            </p>
-            {experience && (
-              <p className="text-mint-600 font-medium leading-tight">
-                경력: {experience.role} {experience.years}년 근무
-              </p>
-            )}
-          </div>
+          <p className="text-[11px] text-text-700 leading-tight">
+            비자: <span className="font-semibold">{applicant.visaType || '미입력'}</span>
+          </p>
         </div>
-        
-        {/* 오른쪽: 태그 세로 배치 */}
+
         <div className="flex flex-col gap-0.5 flex-shrink-0">
           {(() => {
             const preferDays = applicant.preferences.preferDays || [];
-            const allDays = ['월', '화', '수', '목', '금', '토', '일'];
-            const hasAllDays = allDays.every(day => preferDays.includes(day));
-            
-            if (hasAllDays && preferDays.length >= 7) {
-              return (
-                <>
-                  <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
-                    모든 요일 출근 가능
-                  </span>
-                  {applicant.preferences.area && (
-                    <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
-                      {applicant.preferences.area} 거주
-                    </span>
-                  )}
-                </>
-              );
-            } else if (preferDays.length > 0) {
-              return (
-                <>
-                  {preferDays.slice(0, 2).map((day) => (
-                    <span key={day} className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
-                      {day} 근무 가능
-                    </span>
-                  ))}
-                  {preferDays.length > 2 && (
-                    <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
-                      +{preferDays.length - 2}
-                    </span>
-                  )}
-                  {applicant.preferences.area && (
-                    <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
-                      {applicant.preferences.area} 거주
-                    </span>
-                  )}
-                </>
-              );
-            } else {
-              return applicant.preferences.area ? (
-                <span className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap">
-                  {applicant.preferences.area} 거주
-                </span>
-              ) : null;
+            const tags: string[] = [];
+            if (preferDays.length) {
+              tags.push(...preferDays.slice(0, 2).map((d) => `${d} 근무 가능`));
+              if (preferDays.length > 2) tags.push(`+${preferDays.length - 2}`);
             }
+            if (applicant.preferences.area) tags.push(`${applicant.preferences.area} 거주`);
+            return tags.slice(0, 2).map((tag, idx) => (
+              <span
+                key={idx}
+                className="px-1.5 py-0.5 bg-white border border-line-200 text-text-700 rounded-[6px] text-[10px] font-medium whitespace-nowrap"
+              >
+                {tag}
+              </span>
+            ));
           })()}
         </div>
       </div>
 
       {/* Action Buttons */}
       {isFeatured ? (
-        <div className="flex items-center gap-1 mt-0.5">
+        <div className="flex items-center gap-2 mt-auto">
           <button
             onClick={handleSave}
-            className={`w-7 h-7 rounded-[5px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
+            className={`w-10 h-10 rounded-[8px] flex items-center justify-center border-2 transition-all flex-shrink-0 ${
               isBookmarked
                 ? 'bg-mint-600 border-mint-600'
                 : 'bg-white border-mint-600'
@@ -281,16 +237,16 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
           </button>
           <button
             onClick={handleChat}
-            className="flex-1 h-7 rounded-[5px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[9px] flex items-center justify-center gap-0.5 hover:bg-mint-50 transition-colors"
+            className="flex-1 h-10 rounded-[8px] border-2 border-mint-600 bg-white text-mint-600 font-semibold text-[12px] flex items-center justify-center gap-1 hover:bg-mint-50 transition-colors"
           >
-            <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             채팅
           </button>
           <button
             onClick={handleInterviewProposal}
-            className="flex-1 h-7 rounded-[5px] bg-mint-600 text-white font-medium text-[9px] flex items-center justify-center hover:bg-mint-700 transition-colors"
+            className="flex-1 h-10 rounded-[8px] bg-mint-600 text-white font-semibold text-[12px] flex items-center justify-center hover:bg-mint-700 transition-colors"
           >
             면접 제안하기
           </button>
@@ -362,16 +318,18 @@ export const ApplicantCard = ({ applicant, variant = 'default' }: ApplicantCardP
             })()}
           </div>
           {/* CTA */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/applicant/${applicantId}`);
-            }}
-            className="w-full h-[44px] bg-mint-600 text-white rounded-[12px] 
-                     text-[15px] font-semibold hover:bg-mint-700 transition-colors"
-          >
-            연락하기
-          </button>
+          <div className="mt-auto">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/applicant/${applicantId}`);
+              }}
+              className="w-full h-[44px] bg-mint-600 text-white rounded-[12px] 
+                       text-[15px] font-semibold hover:bg-mint-700 transition-colors"
+            >
+              연락하기
+            </button>
+          </div>
         </>
       )}
     </div>

@@ -170,7 +170,7 @@ export const EmployerHome = () => {
             <span className="text-[16px]">🚀</span>
             <h2 className="text-[18px] font-semibold text-text-900">고용주님을 위한 AI 맞춤 인재 추천</h2>
           </div>
-          <button className="text-text-700">
+          <button className="text-text-700" onClick={() => navigate('/employer/applicants')}>
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>

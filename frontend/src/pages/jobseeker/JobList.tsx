@@ -6,21 +6,23 @@ import { FilterChips } from '@/components/FilterChips';
 import { FilterModal, type FilterState } from '@/components/FilterModal';
 import { JobCard } from '@/components/JobCard';
 import { JobCardSkeleton } from '@/components/Skeleton';
-import { jobsAPI } from '@/api/endpoints';
+import { jobsAPI, applicationsAPI } from '@/api/endpoints';
 import { JOB_PRESET_DESCRIPTIONS } from '@/constants/presets';
 import type { Job } from '@/types';
 import { MyApplications } from './MyApplications';
+import { useAuthStore } from '@/store/useAuth';
 
 export const JobList = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'jobs' | 'applications'>('jobs'); // 탭 전환: 공고 / 내 지원 내역
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({
-    languageLevel: ['Lv.3 중급'],
-    locations: ['종로구'],
-    experience: ['1-2년'],
+    languageLevel: [],
+    locations: [],
+    experience: [],
     visas: null,
   });
   const [searchParams] = useSearchParams();
@@ -104,6 +106,26 @@ export const JobList = () => {
 
     fetchJobs();
   }, [appliedFilters, sortPreset, viewMode]);
+
+  // 이미 지원한 공고 목록 조회
+  useEffect(() => {
+    const fetchApplied = async () => {
+      if (viewMode !== 'jobs') return;
+      const userId = useAuthStore.getState().signupUserId || localStorage.getItem('signup_user_id');
+      if (!userId) {
+        setAppliedJobIds(new Set());
+        return;
+      }
+      try {
+        const res = await applicationsAPI.list(userId);
+        const ids = (res.data || []).map((a: any) => a.jobId).filter(Boolean);
+        setAppliedJobIds(new Set(ids));
+      } catch (error) {
+        console.error('지원 내역 로딩 실패:', error);
+      }
+    };
+    fetchApplied();
+  }, [viewMode]);
 
   const handleFilterApply = (filters: FilterState) => {
     setAppliedFilters(filters);
@@ -205,7 +227,7 @@ export const JobList = () => {
               ) : jobs.length > 0 ? (
                 jobs.map((job) => (
                   <div key={job.id} onClick={() => navigate(`/job/${job.id}`)}>
-                    <JobCard job={job} variant="default" />
+                    <JobCard job={job} variant="default" applied={appliedJobIds.has(job.id)} />
                   </div>
                 ))
               ) : (

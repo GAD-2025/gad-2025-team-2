@@ -9,6 +9,7 @@ import { MyApplications } from './pages/jobseeker/MyApplications';
 import { TalentFilter } from './pages/filters/TalentFilter';
 import { ApplicantFilter } from './pages/filters/ApplicantFilter';
 import { EmployerHome } from './pages/employer/EmployerHome';
+import { ApplicantsList } from './pages/employer/ApplicantsList';
 import { ApplicantDetail } from './pages/employer/ApplicantDetail';
 import { HireDone } from './pages/employer/HireDone';
 import { InterviewProposed } from './pages/employer/InterviewProposed';
@@ -104,6 +105,10 @@ export const router = createBrowserRouter([
       {
         path: 'employer/home',
         element: <EmployerHome />,
+      },
+      {
+        path: 'employer/applicants',
+        element: <ApplicantsList />,
       },
       {
         path: 'employer/help',

@@ -8,9 +8,10 @@ import { formatCurrency, getDaysUntil } from '@/utils/date';
 interface JobCardProps {
   job: Job;
   variant?: 'default' | 'featured';
+  applied?: boolean;
 }
 
-export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
+export const JobCard = ({ job, variant = 'default', applied = false }: JobCardProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   
@@ -83,10 +84,13 @@ export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
               e.stopPropagation();
               navigate(`/job/${job.id}`);
             }}
-            className="px-3 py-1.5 bg-mint-600 text-white rounded-[16px] 
-                     text-[13px] font-semibold hover:bg-mint-700 transition-colors flex-shrink-0"
+            className={`px-3 py-1.5 rounded-[16px] text-[13px] font-semibold flex-shrink-0 transition-colors ${
+              applied
+                ? 'bg-white text-mint-600 border-2 border-mint-600 hover:bg-mint-50'
+                : 'bg-mint-600 text-white hover:bg-mint-700'
+            }`}
           >
-            지원하기
+            {applied ? '이미 지원한 공고입니다' : '지원하기'}
           </button>
         </div>
       ) : (
@@ -105,14 +109,14 @@ export const JobCard = ({ job, variant = 'default' }: JobCardProps) => {
 
           {/* Apply button */}
           <CTAButton
-            variant="primary"
+            variant={applied ? 'outline' : 'primary'}
             fullWidth
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/job/${job.id}`);
             }}
           >
-            {t('job.apply')}
+            {applied ? '이미 지원한 공고입니다' : t('job.apply')}
           </CTAButton>
         </>
       )}

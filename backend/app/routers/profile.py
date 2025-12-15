@@ -4,7 +4,7 @@ from typing import List, Optional
 import json
 
 from app.db import get_session
-from app.models import SignupUser, JobSeeker, JobSeekerProfile
+from app.models import SignupUser, JobSeeker, JobSeekerProfile, Nationality
 from app.schemas import ProfileData
 from app.routers.auth import get_current_user
 
@@ -101,7 +101,20 @@ async def update_my_profile(
     signup_user.name = profile_update.name
     signup_user.email = profile_update.email
     signup_user.phone = profile_update.phone
-    signup_user.nationality_code = profile_update.nationality_code
+    # 국적 코드가 DB에 없으면 새로 추가 후 연결 (없는 값 때문에 FK 에러가 나던 문제 방지)
+    if profile_update.nationality_code:
+        nationality = session.get(Nationality, profile_update.nationality_code)
+        if not nationality:
+            nationality = Nationality(
+                code=profile_update.nationality_code,
+                name=profile_update.nationality_code,
+                phone_code=""
+            )
+            session.add(nationality)
+            session.commit()
+        signup_user.nationality_code = nationality.code
+    else:
+        signup_user.nationality_code = None
     if profile_update.birthdate:
         signup_user.birthdate = profile_update.birthdate
 

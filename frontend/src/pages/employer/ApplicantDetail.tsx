@@ -416,6 +416,38 @@ export const ApplicantDetail = () => {
     return [];
   })();
 
+  // 경력(경험) 필드를 보기 좋게 변환
+  const careerText = (() => {
+    const raw = (applicant as any).experience_career;
+    if (!raw) return '';
+    if (typeof raw !== 'string') return String(raw);
+    try {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object') {
+        const parts: string[] = [];
+        if (Array.isArray(obj.workSkills) && obj.workSkills.length) {
+          parts.push(`스킬: ${obj.workSkills.join(', ')}`);
+        }
+        if (Array.isArray(obj.strengths) && obj.strengths.length) {
+          parts.push(`강점: ${obj.strengths.join(', ')}`);
+        }
+        if (Array.isArray(obj.mbti) && obj.mbti.length) {
+          parts.push(`MBTI: ${obj.mbti.join(', ')}`);
+        }
+        const plainValues = Object.values(obj).filter(
+          (v) => typeof v === 'string' && v.trim().length > 0
+        ) as string[];
+        if (parts.length === 0 && plainValues.length > 0) {
+          return plainValues.join(', ');
+        }
+        return parts.join(' · ');
+      }
+    } catch (_e) {
+      // fall through
+    }
+    return raw;
+  })();
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header showBack title="지원자 상세 정보" />
@@ -439,9 +471,9 @@ export const ApplicantDetail = () => {
                 <p className="text-[13px] text-text-700">
                   비자: <span className="font-medium">{(applicant as any).visa_type ?? (applicant as any).visaType ?? '미입력'}</span>
                 </p>
-                {applicant.experience_career && (
+                {careerText && (
                   <p className="text-[13px] text-mint-700 font-semibold">
-                    경력: {applicant.experience_career}
+                    경력: {careerText}
                   </p>
                 )}
               </div>

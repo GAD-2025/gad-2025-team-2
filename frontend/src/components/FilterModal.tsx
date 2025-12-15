@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -23,6 +23,13 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
       visas: null,
     }
   );
+
+  // 초기 필터값이 바뀌면 모달 상태도 동기화
+  useEffect(() => {
+    if (initialFilters) {
+      setSelectedFilters(initialFilters);
+    }
+  }, [initialFilters]);
 
   if (!isOpen) return null;
 
@@ -64,7 +71,7 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
                     animate-slide-up max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-line-200 px-4 py-4 flex items-center rounded-t-[24px]">
-          <button onClick={onClose} className="p-2 -ml-2">
+          <button onClick={onClose} className="p-3 -ml-3 flex items-center justify-center">
             <svg className="w-6 h-6 text-text-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
