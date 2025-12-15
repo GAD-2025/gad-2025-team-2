@@ -495,6 +495,14 @@ async def update_interview_proposal(
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
     
+    # 기존 interviewData가 있으면 유지 (coordinationMessages 등)
+    existing_interview_data = {}
+    if application.interviewData:
+        try:
+            existing_interview_data = json.loads(application.interviewData)
+        except:
+            existing_interview_data = {}
+    
     interview_data = {
         "selectedDates": request.selectedDates,
         "time": request.time,
@@ -505,6 +513,13 @@ async def update_interview_proposal(
         "dateSpecificTimes": request.dateSpecificTimes,
         "isConfirmed": request.isConfirmed,
         "confirmedAt": datetime.utcnow().isoformat() if request.isConfirmed else None,
+        # 기존 coordinationMessages 유지
+        "coordinationMessages": existing_interview_data.get("coordinationMessages", []),
+        # coordinationStatus: 확정되면 'confirmed', 아니면 기존 값 유지
+        "coordinationStatus": "confirmed" if request.isConfirmed else existing_interview_data.get("coordinationStatus"),
+        # 기존 response 상태 유지 (면접 수락/거절/보류) - 프론트엔드에서 업데이트하도록 함
+        "response": existing_interview_data.get("response"),
+        "responseAt": existing_interview_data.get("responseAt"),
     }
     
     application.interviewData = json.dumps(interview_data)
@@ -638,14 +653,38 @@ async def add_coordination_message(
         except:
             messages = []
     
+    # 메시지 추가 (from 필드: type에 따라 구분)
+    # interview_coordination: 구직자가 면접 조율 메시지 전송
+    # work_date_coordination: 구직자가 출근 날짜 조율 메시지 전송
+    # 기타: 고용주가 전송 (또는 type이 없으면 기본값 jobseeker)
+    if request.type:
+        if "interview" in request.type or "work_date" in request.type:
+            message_from = "jobseeker"
+        else:
+            message_from = "employer"
+    else:
+        message_from = "jobseeker"  # 기본값
+    
     messages.append({
         "message": request.message,
         "sentAt": datetime.utcnow().isoformat(),
-        "from": "jobseeker",
+        "from": message_from,
         "type": request.type,
     })
     
     application.coordinationMessages = json.dumps(messages)
+    
+    # interviewData가 있으면 coordinationStatus 업데이트 (면접 조율인 경우)
+    if request.type and "interview" in request.type and application.interviewData:
+        try:
+            interview_data = json.loads(application.interviewData)
+            # 조율 메시지가 추가되면 coordinationStatus를 'in_progress'로 설정 (이미 확정되지 않은 경우)
+            if not interview_data.get("isConfirmed", False):
+                interview_data["coordinationStatus"] = "in_progress"
+                application.interviewData = json.dumps(interview_data)
+        except:
+            pass  # interviewData 파싱 실패 시 무시
+    
     application.updatedAt = datetime.utcnow().isoformat()
     
     session.add(application)

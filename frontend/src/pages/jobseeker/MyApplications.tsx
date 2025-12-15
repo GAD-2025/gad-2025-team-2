@@ -355,17 +355,28 @@ export const MyApplications = () => {
           response: response,
           respondedAt: new Date().toISOString(),
         }));
+        
+        // 백엔드 interviewData 업데이트 (응답 상태 포함)
+        try {
+          await applicationsAPI.updateInterviewProposal(app.id, {
+            selectedDates: proposal.dates || proposal.selectedDates || [],
+            time: proposal.time || '',
+            duration: proposal.duration || 30,
+            message: proposal.message || '',
+            allDatesSame: proposal.allDatesSame !== undefined ? proposal.allDatesSame : true,
+            allDatesTimeSlots: proposal.allDatesTimeSlots,
+            dateSpecificTimes: proposal.dateSpecificTimes,
+            isConfirmed: proposal.isConfirmed || false, // 기존 확정 상태 유지
+          });
+        } catch (apiError) {
+          console.error('면접 응답 API 업데이트 실패:', apiError);
+        }
       }
       
-      // 불합격인 경우 백엔드 상태도 업데이트
+      // 불합격인 경우 백엔드 상태도 'rejected'로 업데이트
       if (response === 'rejected') {
         try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-          await fetch(`${API_BASE_URL}/applications/${app.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'rejected' }),
-          });
+          await applicationsAPI.update(app.id, 'rejected');
         } catch (error) {
           console.error('백엔드 상태 업데이트 실패:', error);
         }
@@ -676,9 +687,10 @@ export const MyApplications = () => {
                     const message = prompt('조율 메시지를 입력하세요:');
                     if (message && message.trim()) {
                       try {
-                        // API로 조율 메시지 전송
+                        // API로 조율 메시지 전송 (출근 날짜 조율)
                         await applicationsAPI.addCoordinationMessage(selectedAcceptedApp.id, {
                           message: message.trim(),
+                          type: 'work_date_coordination',
                         });
                         
                         // localStorage에도 저장 (fallback)
@@ -689,6 +701,7 @@ export const MyApplications = () => {
                           message: message.trim(),
                           sentAt: new Date().toISOString(),
                           from: 'jobseeker',
+                          type: 'work_date_coordination',
                         });
                         localStorage.setItem(coordinationKey, JSON.stringify(messages));
                         
@@ -994,12 +1007,13 @@ export const MyApplications = () => {
                     }
                     
                     try {
-                      // API로 조율 메시지 전송
+                      // API로 조율 메시지 전송 (면접 조율)
                       await applicationsAPI.addCoordinationMessage(selectedInterviewApp.id, {
                         message: coordinationMessage.trim(),
+                        type: 'interview_coordination',
                       });
                       
-                      // localStorage도 업데이트 (fallback)
+                      // 면접 제안 업데이트 (coordinationStatus를 in_progress로 설정)
                       const interviewProposalKey = `interview_proposal_${selectedInterviewApp.id}`;
                       const currentProposal = localStorage.getItem(interviewProposalKey);
                       if (currentProposal) {
@@ -1014,6 +1028,23 @@ export const MyApplications = () => {
                         });
                         proposal.coordinationStatus = 'in_progress';
                         proposal.coordinationStartedAt = new Date().toISOString();
+                        
+                        // API에 isConfirmed=false, coordinationStatus를 반영하기 위해 updateInterviewProposal 호출
+                        try {
+                          await applicationsAPI.updateInterviewProposal(selectedInterviewApp.id, {
+                            selectedDates: proposal.dates || proposal.selectedDates || [],
+                            time: proposal.time || '',
+                            duration: proposal.duration || 30,
+                            message: proposal.message || '',
+                            allDatesSame: proposal.allDatesSame !== undefined ? proposal.allDatesSame : true,
+                            allDatesTimeSlots: proposal.allDatesTimeSlots,
+                            dateSpecificTimes: proposal.dateSpecificTimes,
+                            isConfirmed: false, // 조율 중이므로 아직 확정 아님
+                          });
+                        } catch (updateError) {
+                          console.error('면접 제안 업데이트 실패:', updateError);
+                        }
+                        
                         localStorage.setItem(interviewProposalKey, JSON.stringify(proposal));
                       }
                       
@@ -1039,44 +1070,56 @@ export const MyApplications = () => {
 
       {/* 합격 섹션 - 합격 공고 목록 + 채용 확정된 경우 캘린더 UI */}
       {activeFilter === 'accepted' && (() => {
-        // 채용 확정되지 않은 합격 공고
-        const pendingAcceptedApps = filteredApplications.filter(app => {
-          // 채용 확정 여부 확인 (API 우선)
-          if (app.firstWorkDateConfirmed) {
-            return false; // 채용 확정된 것은 제외
-          }
-          
-          // localStorage fallback
-          const confirmationKey = `first_work_date_confirmed_${app.id}`;
-          const isConfirmed = localStorage.getItem(confirmationKey) === 'true';
-          return !isConfirmed;
-        });
-        
-        // 채용 확정된 지원서 (첫 출근 날짜가 확정되고 출근 확정된 경우)
-        const hiredApplications = filteredApplications.filter(app => {
-          // API 데이터 우선 확인: firstWorkDateConfirmed가 있으면 채용 확정
+        // 채용 확정 여부를 확인하는 헬퍼 함수
+        const isHired = (app: Application): boolean => {
+          // 1. API의 firstWorkDateConfirmed 확인 (최우선)
           if (app.firstWorkDateConfirmed) {
             return true;
           }
           
-          // localStorage fallback
-          const acceptanceKey = `acceptance_guide_${app.id}`;
-          const acceptanceData = localStorage.getItem(acceptanceKey);
-          if (!acceptanceData) return false;
-          
-          try {
-            const acceptance = JSON.parse(acceptanceData);
-            if (!acceptance.firstWorkDate) return false;
-            
-            const confirmationKey = `first_work_date_confirmed_${app.id}`;
-            const isConfirmed = localStorage.getItem(confirmationKey) === 'true';
-            return isConfirmed && acceptance.isHired;
-          } catch {
-            return false;
+          // 2. localStorage의 first_work_date_confirmed 키 확인
+          const confirmationKey = `first_work_date_confirmed_${app.id}`;
+          const isConfirmed = localStorage.getItem(confirmationKey) === 'true';
+          if (isConfirmed) {
+            return true;
           }
+          
+          // 3. acceptanceData에서 isHired/hiredAt 확인 (localStorage)
+          const acceptanceKey = `acceptance_guide_${app.id}`;
+          const acceptanceDataStr = localStorage.getItem(acceptanceKey);
+          if (acceptanceDataStr) {
+            try {
+              const data = JSON.parse(acceptanceDataStr);
+              if (data.isHired === true || data.hiredAt) {
+                return true;
+              }
+            } catch {}
+          }
+          
+          // 4. API의 acceptanceData 확인
+          if (app.acceptanceData) {
+            const apiAcceptanceData = typeof app.acceptanceData === 'string' 
+              ? (() => { try { return JSON.parse(app.acceptanceData); } catch { return null; } })()
+              : app.acceptanceData;
+            if (apiAcceptanceData && (apiAcceptanceData.isHired === true || apiAcceptanceData.hiredAt)) {
+              return true;
+            }
+          }
+          
+          return false;
+        };
+        
+        // 채용 확정되지 않은 합격 공고 (출근 확정을 누르지 않은 것만)
+        const pendingAcceptedApps = filteredApplications.filter(app => {
+          return !isHired(app);
         });
         
-        // 채용 확정된 지원서가 있으면 캘린더 표시
+        // 채용 확정된 지원서 (첫 출근 날짜가 확정되고 출근 확정된 경우)
+        const hiredApplications = filteredApplications.filter(app => {
+          return isHired(app);
+        });
+        
+        // 채용 확정된 지원서가 있으면 캘린더만 표시 (pendingAcceptedApps는 표시하지 않음)
         if (hiredApplications.length > 0) {
           // 첫 출근 날짜별로 그룹화 (API 데이터 우선)
           const groupedByDate: Record<string, Application[]> = {};
@@ -1219,20 +1262,10 @@ export const MyApplications = () => {
           );
         }
         
-        // 채용 확정되지 않은 합격 공고 목록 표시
-        if (pendingAcceptedApps.length > 0) {
+        // 채용 확정되지 않은 합격 공고 목록 표시 (채용 확정된 공고가 없을 때만)
+        if (pendingAcceptedApps.length > 0 && hiredApplications.length === 0) {
           return (
             <div className="p-4">
-              {/* 채용 확정된 공고가 있으면 구분선 표시 */}
-              {hiredApplications.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex-1 h-px bg-line-200"></div>
-                    <span className="text-[13px] text-text-500 px-2">출근 확정 대기 중</span>
-                    <div className="flex-1 h-px bg-line-200"></div>
-                  </div>
-                </div>
-              )}
               
               <div className="space-y-3">
                 {pendingAcceptedApps.map((app) => (
@@ -1253,22 +1286,27 @@ export const MyApplications = () => {
                         {(() => {
                           // 조율 상태 확인
                           const hasCoordinationMessages = app.coordinationMessages && app.coordinationMessages.length > 0;
+                          const hasJobseekerMessages = app.coordinationMessages?.some((msg: any) => msg.from === 'jobseeker') || false;
                           const isConfirmed = !!app.firstWorkDateConfirmed;
                           
-                          // 조율중: 조율 메시지가 있고 아직 확정되지 않은 경우
-                          if (hasCoordinationMessages && !isConfirmed) {
+                          // 조율중: 구직자가 조율 메시지를 보냈고 아직 확정되지 않은 경우
+                          if (hasJobseekerMessages && !isConfirmed) {
                             return (
                               <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-[6px] text-[10px] font-medium">
                                 조율중
                               </span>
                             );
                           }
-                          // 확정: 출근 확정되었거나 조율 없이 바로 확정된 경우
-                          return (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-[6px] text-[10px] font-medium">
-                              확정
-                            </span>
-                          );
+                          // 확정: 출근 확정된 경우
+                          if (isConfirmed) {
+                            return (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-[6px] text-[10px] font-medium">
+                                확정됨
+                              </span>
+                            );
+                          }
+                          // 기본: 확정 대기 (조율 없이 바로 확정 가능한 상태)
+                          return null;
                         })()}
                       </div>
                     </div>
@@ -1324,8 +1362,9 @@ export const MyApplications = () => {
         </div>
       )}
 
-      {/* Applications List */}
-      <div className="p-4">
+      {/* Applications List - 합격 섹션이 아닐 때만 표시 */}
+      {activeFilter !== 'accepted' && (
+        <div className="p-4">
         {loading ? (
           <div className="text-center py-12">
             <p className="text-text-500">불러오는 중...</p>
@@ -1381,8 +1420,8 @@ export const MyApplications = () => {
               >
                 {/* 상태 배지 및 알림 - 카드 상단에 별도 배치 */}
                 <div className="flex items-center justify-between mb-2">
-                  {/* 조율중 또는 면접 확정 상태 표시 */}
-                  {app.interviewProposal && (
+                  {/* 면접제안 섹션에서만 면접 관련 배지 표시 (합격 상태가 아닐 때만) */}
+                  {app.interviewProposal && app.status !== 'accepted' && (
                     <div>
                       {app.interviewProposal.coordinationStatus === 'in_progress' && !app.interviewProposal.isConfirmed && (
                         <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-[6px] text-[10px] font-medium">
@@ -1396,7 +1435,7 @@ export const MyApplications = () => {
                       )}
                     </div>
                   )}
-                  {!app.interviewProposal && <div></div>}
+                  {(!app.interviewProposal || app.status === 'accepted') && <div></div>}
                   {/* 읽지 않은 면접제안 빨간 동그라미 */}
                   {app.interviewProposal && !app.interviewProposal.isRead && (
                     <span className="w-3 h-3 bg-red-500 rounded-full"></span>
@@ -1487,7 +1526,8 @@ export const MyApplications = () => {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
