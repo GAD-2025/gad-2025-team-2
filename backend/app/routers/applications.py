@@ -15,8 +15,8 @@ from app.models import (
     SignupUser,
     JobSeekerProfile,
     EmployerProfile,
+    Store,  # 매장 정보로 공고 소유주 조회
 )
-from app.models import Store  # 매장 정보로 공고 소유주 조회
 from app.schemas import (
     ApplicationCreate, 
     ApplicationUpdate,
@@ -28,6 +28,61 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/applications", tags=["applications"])
+@router.post("/invite", response_model=dict, status_code=201)
+async def invite_application(
+    seekerId: str,
+    jobId: str,
+    session: Session = Depends(get_session),
+):
+    """
+    Create an invited application for a seeker that has not applied yet.
+    If an application already exists for the job/seekers, return its id/status.
+    """
+    try:
+        ensure_jobseeker_exists(session, seekerId)
+
+        # If already exists (applied or invited), just return it
+        statement = select(Application).where(
+            Application.seekerId == seekerId,
+            Application.jobId == jobId
+        )
+        existing = session.exec(statement).first()
+        if existing:
+            return {
+                "applicationId": existing.applicationId,
+                "status": existing.status,
+            }
+
+        job = session.get(Job, jobId)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        application = Application(
+            applicationId=f"app-{uuid.uuid4().hex[:12]}",
+            seekerId=seekerId,
+            jobId=jobId,
+            status="invited",
+            interviewData=json.dumps({
+                "employerInitiated": True,
+                "isRead": False,
+            })
+        )
+        session.add(application)
+        session.commit()
+        session.refresh(application)
+
+        return {
+            "applicationId": application.applicationId,
+            "status": application.status,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] invite_application - unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"초대 생성 중 오류 발생: {str(e)}")
+
 
 
 def ensure_jobseeker_exists(session: Session, seeker_id: str):

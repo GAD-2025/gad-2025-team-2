@@ -108,6 +108,29 @@ export const Recruitment = () => {
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [applicantToReject, setApplicantToReject] = useState<Applicant | null>(null);
 
+  const addEmployeeToSchedule = (applicant: Applicant) => {
+    const targetId = applicant.userId || applicant.id;
+    if (!targetId) return;
+    const key = 'schedule_employees';
+    try {
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      const exists = existing.some((e: any) => e.id === targetId);
+      if (exists) return;
+      const newEmployee = {
+        id: targetId,
+        name: applicant.name || '직원',
+        nationality: applicant.nationality || '',
+        position: applicant.jobTitle || '',
+        totalShifts: 0,
+        completedShifts: 0,
+        upcomingShifts: 0,
+      };
+      localStorage.setItem(key, JSON.stringify([...existing, newEmployee]));
+    } catch {
+      // ignore errors; best effort only
+    }
+  };
+
   useEffect(() => {
     const loadStores = async () => {
       const signupUserId = useAuthStore.getState().signupUserId;
@@ -1206,79 +1229,92 @@ export const Recruitment = () => {
                         </button>
                       </>
                     ) : (
-                      // 기본: 저장/채팅/면접 제안하기 버튼
-                      <>
-                        {/* 저장 버튼 */}
+                      // 기본: 저장/채팅/면접 제안하기 버튼 (합격/채용 확정 시에는 일정 관리 버튼)
+                      (applicant.status === 'accepted' || isHired(applicant)) ? (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const applicantId = applicant.userId || applicant.id;
-                            const savedApplicants = JSON.parse(localStorage.getItem('saved_applicants') || '[]');
-                            
-                            if (savedApplicants.includes(applicantId)) {
-                              const updated = savedApplicants.filter((id: string) => id !== applicantId);
-                              localStorage.setItem('saved_applicants', JSON.stringify(updated));
-                              toast.success('저장이 해제되었습니다');
-                            } else {
-                              savedApplicants.push(applicantId);
-                              localStorage.setItem('saved_applicants', JSON.stringify(savedApplicants));
-                              toast.success('저장되었습니다');
-                            }
-                            // localStorage 변경을 감지하기 위해 페이지 새로고침 또는 상태 업데이트
-                            window.dispatchEvent(new Event('storage'));
+                            addEmployeeToSchedule(applicant);
+                            navigate('/employer/schedule');
                           }}
-                          className={`w-10 h-10 rounded-[10px] flex items-center justify-center border-2 transition-all ${
-                            savedApplicantIds.includes(applicant.userId || applicant.id)
-                              ? 'bg-mint-600 border-mint-600'
-                              : 'bg-white border-mint-600'
-                          }`}
+                          className="flex-1 h-10 rounded-[10px] bg-emerald-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-emerald-700 transition-colors"
                         >
-                          <svg
-                            className={`w-5 h-5 ${
+                          일정 관리하기
+                        </button>
+                      ) : (
+                        <>
+                          {/* 저장 버튼 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const applicantId = applicant.userId || applicant.id;
+                              const savedApplicants = JSON.parse(localStorage.getItem('saved_applicants') || '[]');
+                              
+                              if (savedApplicants.includes(applicantId)) {
+                                const updated = savedApplicants.filter((id: string) => id !== applicantId);
+                                localStorage.setItem('saved_applicants', JSON.stringify(updated));
+                                toast.success('저장이 해제되었습니다');
+                              } else {
+                                savedApplicants.push(applicantId);
+                                localStorage.setItem('saved_applicants', JSON.stringify(savedApplicants));
+                                toast.success('저장되었습니다');
+                              }
+                              // localStorage 변경을 감지하기 위해 페이지 새로고침 또는 상태 업데이트
+                              window.dispatchEvent(new Event('storage'));
+                            }}
+                            className={`w-10 h-10 rounded-[10px] flex items-center justify-center border-2 transition-all ${
                               savedApplicantIds.includes(applicant.userId || applicant.id)
-                                ? 'text-white'
-                                : 'text-mint-600'
+                                ? 'bg-mint-600 border-mint-600'
+                                : 'bg-white border-mint-600'
                             }`}
-                            fill={savedApplicantIds.includes(applicant.userId || applicant.id) ? 'currentColor' : 'none'}
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                            />
-                          </svg>
-                        </button>
+                            <svg
+                              className={`w-5 h-5 ${
+                                savedApplicantIds.includes(applicant.userId || applicant.id)
+                                  ? 'text-white'
+                                  : 'text-mint-600'
+                              }`}
+                              fill={savedApplicantIds.includes(applicant.userId || applicant.id) ? 'currentColor' : 'none'}
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                              />
+                            </svg>
+                          </button>
 
-                        {/* 채팅 버튼 */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate('/employer/coming-soon');
-                          }}
-                          className="flex-1 h-10 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          채팅
-                        </button>
+                          {/* 채팅 버튼 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate('/employer/coming-soon');
+                            }}
+                            className="flex-1 h-10 rounded-[10px] border-2 border-mint-600 bg-white text-mint-600 font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-mint-50 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            채팅
+                          </button>
 
-                        {/* 면접 제안하기 버튼 */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const applicantId = applicant.userId || applicant.id;
-                            setSelectedApplicantId(applicantId);
-                            setShowInterviewModal(true);
-                          }}
-                          className="flex-1 h-10 rounded-[10px] bg-mint-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-mint-700 transition-colors"
-                        >
-                          면접 제안하기
-                        </button>
-                      </>
+                          {/* 면접 제안하기 버튼 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const applicantId = applicant.userId || applicant.id;
+                              setSelectedApplicantId(applicantId);
+                              setShowInterviewModal(true);
+                            }}
+                            className="flex-1 h-10 rounded-[10px] bg-mint-600 text-white font-medium text-[13px] flex items-center justify-center hover:bg-mint-700 transition-colors"
+                          >
+                            면접 제안하기
+                          </button>
+                        </>
+                      )
                     )}
                   </div>
                 </div>
@@ -1460,6 +1496,8 @@ export const Recruitment = () => {
                   ? { ...a, status: 'accepted' as const }
                   : a
               ));
+              // 일정 관리용 직원 추가
+              addEmployeeToSchedule(selectedApplicantForAcceptance);
               // 면접결과 섹션의 합격 필터로 자동 이동
               setActiveFilter('interview_result');
               setInterviewResultFilter('accepted');

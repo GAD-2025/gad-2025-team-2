@@ -18,6 +18,7 @@ export const JobList = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+  const [unreadInterviewCount, setUnreadInterviewCount] = useState(0);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({
     languageLevel: [],
@@ -127,6 +128,32 @@ export const JobList = () => {
     fetchApplied();
   }, [viewMode]);
 
+  // 면접 제안 미확인 건수 조회 (탭 뱃지용)
+  useEffect(() => {
+    const fetchUnreadInterviews = async () => {
+      const userId = useAuthStore.getState().signupUserId || localStorage.getItem('signup_user_id');
+      if (!userId) {
+        setUnreadInterviewCount(0);
+        return;
+      }
+      try {
+        const res = await applicationsAPI.list(userId);
+        const apps = res.data || [];
+        const count = apps.filter((app: any) => {
+          const proposal = app.interviewData || app.interviewProposal;
+          if (!proposal) return false;
+          if (app.status === 'accepted') return false;
+          return proposal.isRead === false;
+        }).length;
+        setUnreadInterviewCount(count);
+      } catch (e) {
+        console.error('면접 제안 카운트 조회 실패:', e);
+        setUnreadInterviewCount(0);
+      }
+    };
+    fetchUnreadInterviews();
+  }, []);
+
   const handleFilterApply = (filters: FilterState) => {
     setAppliedFilters(filters);
     console.log('Applied filters:', filters);
@@ -144,44 +171,52 @@ export const JobList = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header with search */}
-      <header className="bg-white border-b border-line-200 px-4 pt-4 pb-3 sticky top-0 z-10">
-        <h1 className={`${headerSizeClass} font-bold text-text-900 mb-2`}>{headerTitle}</h1>
-        {sortParam && JOB_PRESET_DESCRIPTIONS[sortParam] && (
-          <p className={`${subtitleSizeClass} text-text-600 mb-3`}>{JOB_PRESET_DESCRIPTIONS[sortParam]}</p>
-        )}
-        <SearchBar placeholder="직종, 지역으로 검색..." />
-      </header>
+      {/* Header + Tabs sticky */}
+      <div className="sticky top-0 z-20 bg-white">
+        {/* Header with search */}
+        <header className="bg-white border-b border-line-200 px-4 pt-4 pb-3">
+          <h1 className={`${headerSizeClass} font-bold text-text-900 mb-2`}>{headerTitle}</h1>
+          {sortParam && JOB_PRESET_DESCRIPTIONS[sortParam] && (
+            <p className={`${subtitleSizeClass} text-text-600 mb-3`}>{JOB_PRESET_DESCRIPTIONS[sortParam]}</p>
+          )}
+          <SearchBar placeholder="직종, 지역으로 검색..." />
+        </header>
 
-      {/* Tabs: 공고 찾기 / 내 지원 내역 */}
-      <div className="bg-white border-b border-line-200 px-4 py-3">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setViewMode('jobs')}
-            className={`flex-1 h-10 rounded-full text-[14px] font-semibold transition-colors ${
-              viewMode === 'jobs'
-                ? 'bg-mint-600 text-white'
-                : 'bg-background text-text-700 border border-line-200 hover:border-mint-600'
-            }`}
-          >
-            공고 찾기
-          </button>
-          <button
-            onClick={() => setViewMode('applications')}
-            className={`flex-1 h-10 rounded-full text-[14px] font-semibold transition-colors ${
-              viewMode === 'applications'
-                ? 'bg-mint-600 text-white'
-                : 'bg-background text-text-700 border border-line-200 hover:border-mint-600'
-            }`}
-          >
-            내 지원 내역
-          </button>
+        {/* Tabs: 공고 찾기 / 내 지원 내역 */}
+        <div className="bg-white border-b border-line-200 px-4 py-3">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('jobs')}
+              className={`flex-1 h-10 rounded-full text-[14px] font-semibold transition-colors ${
+                viewMode === 'jobs'
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-background text-text-700 border border-line-200 hover:border-mint-600'
+              }`}
+            >
+              공고 찾기
+            </button>
+            <button
+              onClick={() => setViewMode('applications')}
+              className={`relative flex-1 h-10 rounded-full text-[14px] font-semibold transition-colors ${
+                viewMode === 'applications'
+                  ? 'bg-mint-600 text-white'
+                  : 'bg-background text-text-700 border border-line-200 hover:border-mint-600'
+              }`}
+            >
+              내 지원 내역
+              {unreadInterviewCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center">
+                  {unreadInterviewCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {viewMode === 'applications' && (
         <div className="bg-background">
-          <MyApplications />
+          <MyApplications onUnreadCountChange={setUnreadInterviewCount} />
         </div>
       )}
 

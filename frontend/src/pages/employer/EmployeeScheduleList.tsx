@@ -21,8 +21,14 @@ export const EmployeeScheduleList = () => {
       // const response = await fetch('/api/schedule/employees');
       // const data = await response.json();
       // setEmployees(data);
-      
-      setEmployees([]);
+
+      // 임시: 로컬에 저장된 채용 확정 직원 목록 로드
+      try {
+        const local = JSON.parse(localStorage.getItem('schedule_employees') || '[]');
+        setEmployees(local);
+      } catch {
+        setEmployees([]);
+      }
     } catch (error) {
       console.error('Failed to fetch employees:', error);
       setEmployees([]);

@@ -55,7 +55,7 @@ const mapStatus = (backendStatus: string): Application['status'] => {
   }
 };
 
-export const MyApplications = () => {
+export const MyApplications = ({ onUnreadCountChange }: { onUnreadCountChange?: (count: number) => void }) => {
   const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,13 +149,14 @@ export const MyApplications = () => {
               acceptanceData = acceptanceDataStr ? JSON.parse(acceptanceDataStr) : null;
             }
             const hasAcceptanceGuide = !!acceptanceData;
+            const interviewAccepted = interviewProposal?.status === 'accepted' || interviewProposal?.isConfirmed;
             
             // 불합격 상태 확인
             const isRejected = app.status === 'rejected';
             
             // 상태 우선순위: 합격 > 불합격 > 면접제안 > 기타
             let finalStatus = mapStatus(app.status);
-            if (hasAcceptanceGuide) {
+            if (hasAcceptanceGuide || interviewAccepted) {
               finalStatus = 'accepted';
             } else if (isRejected) {
               finalStatus = 'rejected';
@@ -214,13 +215,14 @@ export const MyApplications = () => {
               acceptanceData = acceptanceDataStr ? JSON.parse(acceptanceDataStr) : null;
             }
             const hasAcceptanceGuide = !!acceptanceData;
+            const interviewAccepted = interviewProposal?.status === 'accepted' || interviewProposal?.isConfirmed;
             
             // 불합격 상태 확인
             const isRejected = app.status === 'rejected';
             
             // 상태 우선순위: 합격 > 불합격 > 면접제안 > 기타
             let finalStatus = fallbackStatus;
-            if (hasAcceptanceGuide) {
+            if (hasAcceptanceGuide || interviewAccepted) {
               finalStatus = 'accepted';
             } else if (isRejected) {
               finalStatus = 'rejected';
@@ -318,12 +320,18 @@ export const MyApplications = () => {
     }
   })();
   
+  const computeUnread = (apps: Application[]) =>
+    apps.filter(
+      app =>
+        (app.status === 'interview' || !!app.interviewProposal) &&
+        app.status !== 'accepted' &&
+        app.interviewProposal &&
+        app.interviewProposal.status !== 'accepted' &&
+        !app.interviewProposal.isRead
+    ).length;
+
   // 면접 제안이 있고 읽지 않은 지원서 개수 (합격된 것은 제외)
-  const unreadInterviewCount = applications.filter(
-    app => (app.status === 'interview' || !!app.interviewProposal) && 
-           app.status !== 'accepted' &&
-           app.interviewProposal && !app.interviewProposal.isRead
-  ).length;
+  const unreadInterviewCount = computeUnread(applications);
 
   const statusCounts = {
     all: applications.length,
@@ -392,9 +400,8 @@ export const MyApplications = () => {
                 status: response,
                 isRead: true
               },
-              // 면접 수락해도 상태는 'interview'로 유지 (사장님이 합격 버튼을 눌러야 'accepted'로 변경)
-              // 불합격인 경우 'rejected'로 변경
-              status: response === 'rejected' ? 'rejected' : a.status
+              // 수락 시 면접제안 배너 제거를 위해 accepted로 전환
+              status: response === 'accepted' ? 'accepted' : response === 'rejected' ? 'rejected' : a.status
             }
           : a
       ));
@@ -1383,7 +1390,7 @@ export const MyApplications = () => {
                 key={app.id}
                 onClick={() => {
                   // 면접제안 섹션이거나 면접 제안이 있는 경우 상세 모달 표시
-                  if ((activeFilter === 'interview' || app.status === 'interview' || app.interviewProposal) && app.interviewProposal) {
+                  if ((activeFilter === 'interview' || app.status === 'interview' || app.interviewProposal) && app.interviewProposal && app.interviewProposal.status !== 'accepted') {
                     setSelectedInterviewApp(app);
                     setShowInterviewDetail(true);
                     setCoordinationMessage('');
@@ -1402,15 +1409,10 @@ export const MyApplications = () => {
                           : a
                       ));
                     }
-                  } else if (app.status === 'accepted') {
-                    // 합격 섹션: 채용 확정된 것은 제외 (캘린더에서 클릭 가능)
-                    const isHired = app.firstWorkDateConfirmed || 
-                                   localStorage.getItem(`first_work_date_confirmed_${app.id}`) === 'true';
-                    if (!isHired) {
-                      // 채용 확정되지 않은 합격 공고만 팝업 표시
-                      setSelectedAcceptedApp(app);
-                      setShowAcceptanceDetail(true);
-                    }
+                  } else if (app.status === 'accepted' || app.interviewProposal?.status === 'accepted' || app.acceptanceData || app.firstWorkDateConfirmed) {
+                    // 합격/출근 확정 건은 합격 안내 모달 표시
+                    setSelectedAcceptedApp(app);
+                    setShowAcceptanceDetail(true);
                   } else {
                     navigate(`/jobs/${app.jobId}`);
                   }
@@ -1421,7 +1423,7 @@ export const MyApplications = () => {
                 {/* 상태 배지 및 알림 - 카드 상단에 별도 배치 */}
                 <div className="flex items-center justify-between mb-2">
                   {/* 면접제안 섹션에서만 면접 관련 배지 표시 (합격 상태가 아닐 때만) */}
-                  {app.interviewProposal && app.status !== 'accepted' && (
+                  {app.interviewProposal && app.status !== 'accepted' && app.interviewProposal.status !== 'accepted' && (
                     <div>
                       {app.interviewProposal.coordinationStatus === 'in_progress' && !app.interviewProposal.isConfirmed && (
                         <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-[6px] text-[10px] font-medium">
@@ -1437,7 +1439,7 @@ export const MyApplications = () => {
                   )}
                   {(!app.interviewProposal || app.status === 'accepted') && <div></div>}
                   {/* 읽지 않은 면접제안 빨간 동그라미 */}
-                  {app.interviewProposal && !app.interviewProposal.isRead && (
+                  {app.interviewProposal && app.interviewProposal.status !== 'accepted' && !app.interviewProposal.isRead && (
                     <span className="w-3 h-3 bg-red-500 rounded-full"></span>
                   )}
                   {!app.interviewProposal && <div></div>}
