@@ -158,6 +158,24 @@ export interface JobSeekerProfileData {
   updated_at: string;
 }
 
+export interface JobSeekerProfileUpsertPayload {
+  user_id: string;
+  basic_info_file_name?: string | null;
+  preferred_regions: string[];
+  preferred_jobs: string[];
+  work_schedule?: {
+    available_dates: string[];
+    start_time?: string | null;
+    end_time?: string | null;
+    days_of_week: string[];
+  } | null;
+  experience?: {
+    sections: string[];
+    data: Record<string, any>;
+  } | null;
+  visa_type?: string | null;
+}
+
 export async function getSignupUser(userId: string): Promise<SignupUserData> {
   const response = await fetch(`${API_BASE_URL}/auth/signup-user/${userId}`);
   if (!response.ok) {
@@ -181,6 +199,11 @@ export async function getJobSeekerProfile(userId: string): Promise<JobSeekerProf
     throw error;
   }
 }
+
+export const jobSeekerProfileAPI = {
+  upsert: (payload: JobSeekerProfileUpsertPayload) =>
+    apiClient.post<JobSeekerProfileData>('/job-seeker/profile', payload),
+};
 
 // Employer profile (used by MyPage fallback when stores are not available)
 export interface EmployerProfileData {
