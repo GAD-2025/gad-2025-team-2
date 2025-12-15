@@ -10,8 +10,10 @@ import { QuickMenuGrid } from "@/components/QuickMenuGrid";
 import { GuideCard } from "@/components/GuideCard";
 import { JobCardSkeleton } from "@/components/Skeleton";
 import { SafetyNoticeModal } from "@/components/SafetyNoticeModal";
-import { jobsAPI, learningAPI } from "@/api/endpoints";
+import { jobsAPI, learningAPI, getSignupUser, getJobSeekerProfile } from "@/api/endpoints";
+import { KOREA_REGIONS } from "@/constants/locations";
 import type { Job, LearningProgress } from "@/types";
+import type { SignupUserData, JobSeekerProfileData } from "@/api/endpoints";
 import { useAuthStore } from "@/store/useAuth";
 
 export const JobSeekerHome = () => {
@@ -20,15 +22,14 @@ export const JobSeekerHome = () => {
   const [searchParams] = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [learningProgress, setLearningProgress] =
-    useState<LearningProgress | null>(null);
+  const [learningProgress, setLearningProgress] = useState<LearningProgress | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [showSafetyNotice, setShowSafetyNotice] = useState(false);
-  // 기본 필터 설정 - 사용자의 실제 언어 레벨만 설정
+  const [userName, setUserName] = useState<string>("사용자");
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({
-    languageLevel: ["Lv.3 중급"], // 수정님의 실제 언어 레벨
-    locations: ["종로구"],
-    experience: ["주말"],
+    languageLevel: [],
+    locations: [],
+    experience: [],
     visas: null,
   });
 
@@ -42,9 +43,14 @@ export const JobSeekerHome = () => {
       try {
         setLoading(true);
 
-        const [jobsRes, progressRes] = await Promise.all([
+        const signupUserId = localStorage.getItem("signup_user_id");
+
+        // 기본 데이터 호출
+        const [jobsRes, progressRes, signupUser, jobProfile] = await Promise.all([
           jobsAPI.list({ limit: 10 }),
           learningAPI.getSummary("seeker-test-001").catch(() => null),
+          signupUserId ? getSignupUser(signupUserId).catch(() => null) : Promise.resolve(null),
+          signupUserId ? getJobSeekerProfile(signupUserId).catch(() => null) : Promise.resolve(null),
         ]);
 
         if (jobsRes.data) {
@@ -58,6 +64,70 @@ export const JobSeekerHome = () => {
         if (progressRes) {
           setLearningProgress(progressRes.data);
         }
+
+        // 이름/필터 프리필
+        if (signupUser) {
+          setUserName(signupUser.name || "사용자");
+        } else {
+          const storedName = localStorage.getItem("signup_user_name");
+          if (storedName) setUserName(storedName);
+        }
+
+        const nextFilters: FilterState = {
+          languageLevel: [],
+          locations: [],
+          experience: [],
+          visas: null,
+          city: null,
+        };
+
+        const languageLevels = ["Lv.1 기초", "Lv.2 초급", "Lv.3 중급", "Lv.4 상급"];
+        const visaOptions = ["E-9", "H-2", "F-4", "F-5", "F-6", "D-10"];
+
+        const profile = jobProfile as JobSeekerProfileData | null;
+        if (profile?.visa_type && visaOptions.includes(profile.visa_type)) {
+          nextFilters.visas = profile.visa_type;
+        }
+        const level = profile?.languageLevel || (profile as any)?.language_level || null;
+        if (level && languageLevels.includes(level)) {
+          nextFilters.languageLevel = [level];
+        }
+        if (profile?.preferred_regions && profile.preferred_regions.length > 0) {
+          nextFilters.locations = profile.preferred_regions.filter(Boolean);
+        }
+
+        // 도시 추론: 선호 지역이 포함된 시/도를 찾는다
+        const inferCity = () => {
+          const regions = profile?.preferred_regions || [];
+          for (const [cityName, districtList] of Object.entries(KOREA_REGIONS)) {
+            const match = regions.find(
+              (r) =>
+                districtList.includes(r) ||
+                r.replace(/\s+/g, '').includes(cityName.replace(/(특별시|광역시|특별자치도|도|\s)/g, ''))
+            );
+            if (match) return cityName;
+          }
+          return null;
+        };
+        const city = inferCity();
+        if (city) {
+          nextFilters.city = city;
+          // 도시가 정해졌다면 해당 도시의 구/군에 포함되는 값만 남긴다
+          const districts = KOREA_REGIONS[city] || [];
+          nextFilters.locations = (profile?.preferred_regions || []).filter((r) => districts.includes(r));
+        }
+
+        const workDays = profile?.work_days_of_week;
+        if (Array.isArray(workDays) && workDays.length > 0) {
+          const daysStr = workDays.join(",");
+          if (/(토|일|SAT|SUN)/i.test(daysStr)) nextFilters.experience.push("주말");
+          if (/(월|화|수|목|금|MON|TUE|WED|THU|FRI)/i.test(daysStr)) nextFilters.experience.push("평일");
+        }
+
+        setAppliedFilters((prev) => ({
+          ...prev,
+          ...nextFilters,
+        }));
       } catch (error) {
         console.error("데이터 로딩 오류:", error);
         toast.error("데이터를 불러오는데 실패했습니다");
@@ -91,8 +161,9 @@ export const JobSeekerHome = () => {
   // 선택된 필터들을 하나의 배열로 합치기
   const getSelectedFiltersArray = () => {
     return [
-      ...appliedFilters.languageLevel,
+      ...(appliedFilters.city ? [appliedFilters.city] : []),
       ...appliedFilters.locations,
+      ...appliedFilters.languageLevel,
       ...appliedFilters.experience,
       ...(appliedFilters.visas ? [appliedFilters.visas] : []),
     ];
@@ -130,7 +201,7 @@ export const JobSeekerHome = () => {
       <div className="bg-white border-b border-line-200">
         <FilterChips
           filters={getSelectedFiltersArray()}
-          title="수정님께 추천하는 맞춤 필터"
+          title={`${userName}님께 추천하는 맞춤 필터`}
           icon="✨"
           onFilterClick={() => setIsFilterModalOpen(true)}
         />
@@ -164,7 +235,7 @@ export const JobSeekerHome = () => {
           <div className="flex items-center gap-2">
             <span className="text-[16px]">🚀</span>
             <h2 className="text-[18px] font-semibold text-text-900">
-              수정님을 위한 맞춤 공고
+              {userName}님을 위한 맞춤 공고
             </h2>
           </div>
           <button className="text-text-700">

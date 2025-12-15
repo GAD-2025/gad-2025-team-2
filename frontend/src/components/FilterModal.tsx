@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { KOREA_REGIONS } from '@/constants/locations';
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export interface FilterState {
   locations: string[];
   experience: string[];
   visas?: string | null;
+  city?: string | null;
 }
 
 export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: FilterModalProps) => {
@@ -21,8 +23,16 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
       locations: [],
       experience: [],
       visas: null,
+      city: null,
     }
   );
+
+  const languageLevels = ['Lv.1 기초', 'Lv.2 초급', 'Lv.3 중급', 'Lv.4 상급'];
+  const cities = Object.keys(KOREA_REGIONS);
+  const districts = selectedFilters.city ? KOREA_REGIONS[selectedFilters.city] || [] : [];
+  const experiences = ['경력 없음', '1년 미만', '1-2년', '2-3년', '3년 이상'];
+  const workPreferences = ['주말', '평일', '무관'];
+  const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
 
   // 초기 필터값이 바뀌면 모달 상태도 동기화
   useEffect(() => {
@@ -32,12 +42,6 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
   }, [initialFilters]);
 
   if (!isOpen) return null;
-
-  const languageLevels = ['Lv.1 기초', 'Lv.2 초급', 'Lv.3 중급', 'Lv.4 상급'];
-  const locations = ['종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구', '선택없음'];
-  const experiences = ['경력 없음', '1년 미만', '1-2년', '2-3년', '3년 이상'];
-  const workPreferences = ['주말', '평일', '무관'];
-  const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
 
   const toggleVisa = (value: string) => {
     setSelectedFilters((prev) => ({ ...prev, visas: prev.visas === value ? null : value }));
@@ -51,6 +55,15 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
         : [...currentValues, value];
       return { ...prev, [category]: newValues };
     });
+  };
+
+  const selectCity = (city: string) => {
+    setSelectedFilters((prev) => ({
+      ...prev,
+      city,
+      // 도시를 바꾸면 구 선택 초기화
+      locations: [],
+    }));
   };
 
   const handleApply = () => {
@@ -105,22 +118,46 @@ export const FilterModal = ({ isOpen, onClose, onApply, initialFilters }: Filter
 
           {/* 거주지 */}
           <div className="mb-8">
-            <h3 className="text-[16px] font-semibold text-text-900 mb-3">지역 설정</h3>
-            <div className="flex flex-wrap gap-2">
-              {locations.map((location) => (
-                <button
-                  key={location}
-                  onClick={() => toggleFilter('locations', location)}
-                  className={`px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
-                    selectedFilters.locations.includes(location)
-                      ? 'bg-mint-600 text-white'
-                      : 'bg-gray-100 text-text-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {location}
-                </button>
-              ))}
+          <h3 className="text-[16px] font-semibold text-text-900 mb-3">지역 설정</h3>
+          <p className="text-[12px] text-text-500 mb-2">시/도를 선택한 뒤 구/군을 고르세요.</p>
+          {/* 1단계: 시/도 선택 - 가로 스크롤 */}
+          <div className="mb-3 overflow-x-auto">
+            <div className="flex flex-nowrap gap-2 pb-2 min-w-full items-center">
+            {cities.map((city) => (
+              <button
+                key={city}
+                onClick={() => selectCity(city)}
+                className={`shrink-0 px-4 py-2 rounded-full text-[14px] font-medium transition-colors whitespace-nowrap ${
+                  selectedFilters.city === city
+                    ? 'bg-mint-600 text-white'
+                    : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+                }`}
+              >
+                {city}
+              </button>
+            ))}
             </div>
+          </div>
+          {/* 2단계: 구/군 선택 - 가로 스크롤 */}
+          {selectedFilters.city && (
+            <div className="overflow-x-auto">
+              <div className="flex flex-nowrap gap-2 pb-2 min-w-full items-center">
+                {districts.map((location) => (
+                  <button
+                    key={location}
+                    onClick={() => toggleFilter('locations', location)}
+                    className={`shrink-0 px-4 py-2 rounded-full text-[14px] font-medium transition-colors whitespace-nowrap ${
+                      selectedFilters.locations.includes(location)
+                        ? 'bg-mint-600 text-white'
+                        : 'bg-gray-100 text-text-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {location}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           </div>
 
           {/* 경력사항 */}
