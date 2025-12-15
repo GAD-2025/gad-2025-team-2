@@ -316,7 +316,7 @@ export const ResumeEdit = () => {
           className="w-full h-[52px] bg-mint-600 text-white rounded-[12px] text-[16px] 
                    font-semibold hover:bg-mint-700 transition-colors disabled:opacity-50"
         >
-          {submitting ? '처리 중...' : '저장 후 제출하기'}
+          {submitting ? '처리 중...' : jobId ? '저장 후 제출하기' : '저장하기'}
         </button>
       </div>
     </div>
