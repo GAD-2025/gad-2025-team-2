@@ -13,37 +13,37 @@ const WORK_SKILLS_CATEGORIES = [
   {
     title: 'UX / 서비스 디자인',
     keywords: [
-      'UX Research',
-      'UX Design',
-      'UI Design',
-      'Service Blueprint',
-      'Wireframing',
-      'Prototyping',
-      'Usability Testing',
+      'UX 리서치',
+      'UX 디자인',
+      'UI 디자인',
+      '서비스 블루프린트',
+      '와이어프레이밍',
+      '프로토타이핑',
+      '사용성 테스트',
     ],
   },
   {
     title: 'AI / Tech',
     keywords: [
-      'Python',
-      'React',
-      'Node.js',
-      'Prompt Engineering',
-      'LLM Application Development',
-      'Data Analysis',
-      'Machine Learning Basics',
+      '파이썬',
+      '리액트',
+      '노드.js',
+      '프롬프트 엔지니어링',
+      'LLM 앱 개발',
+      '데이터 분석',
+      '머신러닝 기초',
     ],
   },
   {
     title: '제품/비즈니스',
     keywords: [
-      'Product Strategy',
-      'Requirements Analysis',
-      'Market Research',
-      'A/B Testing',
-      'Documentation (PRD)',
-      'Problem Definition',
-      'Rapid Experimentation',
+      '제품 전략',
+      '요구사항 분석',
+      '시장 조사',
+      'A/B 테스트',
+      '문서화(PRD)',
+      '문제 정의',
+      '빠른 실험',
     ],
   },
 ];
@@ -52,28 +52,28 @@ const STRENGTHS_CATEGORIES = [
   {
     title: '분석/문제 해결',
     keywords: [
-      'Analytical Thinking',
-      'Problem Solving',
-      'Attention to Detail',
-      'Strategic Thinking',
+      '분석적 사고',
+      '문제 해결',
+      '디테일 주의',
+      '전략적 사고',
     ],
   },
   {
     title: '개인 성향/태도',
     keywords: [
-      'Proactivity',
-      'Persistence',
-      'High Responsibility',
-      'Fast Learning',
+      '주도성',
+      '끈기',
+      '높은 책임감',
+      '빠른 학습',
     ],
   },
   {
     title: '커뮤니케이션/협업',
     keywords: [
-      'Communication',
-      'User Empathy',
-      'Team Collaboration',
-      'Creative Thinking',
+      '커뮤니케이션',
+      '사용자 공감',
+      '팀 협업',
+      '창의적 사고',
     ],
   },
 ];
@@ -81,11 +81,16 @@ const STRENGTHS_CATEGORIES = [
 const MBTI_CATEGORIES = [
   {
     title: '성격 유형',
-    keywords: ['ENFP', 'INTJ', 'INFJ', 'ISTP', 'ENTP', 'ENFJ', 'ISTJ'],
+    keywords: [
+      'ENFP', 'ENFJ', 'ENTP', 'ENTJ',
+      'INFP', 'INFJ', 'INTP', 'INTJ',
+      'ESFP', 'ESFJ', 'ESTP', 'ESTJ',
+      'ISFP', 'ISFJ', 'ISTP', 'ISTJ',
+    ],
   },
   {
     title: '성향 태그',
-    keywords: ['Creative', 'Strategic', 'Intuitive', 'Analytical'],
+    keywords: ['창의적', '전략적', '직관적', '분석적'],
   },
 ];
 
