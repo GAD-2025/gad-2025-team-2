@@ -46,16 +46,6 @@ export const QuickMenuGrid = () => {
       path: '/jobs?sort=trusted'
     },
     { 
-      id: 'urgent', 
-      icon: (
-        <svg className="w-5 h-5 text-mint-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ), 
-      label: '단기 알바',
-      path: '/jobs?sort=short-term'
-    },
-    { 
       id: 'my-applications', 
       icon: (
         <svg className="w-5 h-5 text-mint-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
