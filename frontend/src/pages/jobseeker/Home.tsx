@@ -12,9 +12,9 @@ import { SafetyNoticeModal } from "@/components/SafetyNoticeModal";
 import { jobsAPI, getSignupUser, getJobSeekerProfile } from "@/api/endpoints";
 import { KOREA_REGIONS } from "@/constants/locations";
 import { LESSONS_DATA, type Lesson } from "@/data/lessons";
-import { LANGUAGE_LEVELS, VISA_OPTIONS } from "@/constants/profile";
+import { VISA_OPTIONS } from "@/constants/profile";
 import type { Job } from "@/types";
-import type { SignupUserData, JobSeekerProfileData } from "@/api/endpoints";
+import type { JobSeekerProfileData } from "@/api/endpoints";
 import { useAuthStore } from "@/store/useAuth";
 
 interface LessonWithProgress extends Lesson {
@@ -127,12 +127,8 @@ export const JobSeekerHome = () => {
         };
 
         const profile = jobProfile as JobSeekerProfileData | null;
-        if (profile?.visa_type && VISA_OPTIONS.includes(profile.visa_type)) {
-          nextFilters.visas = profile.visa_type;
-        }
-        const level = profile?.languageLevel || (profile as any)?.language_level || null;
-        if (level && LANGUAGE_LEVELS.includes(level)) {
-          nextFilters.languageLevel = [level];
+        if (profile?.visaType && VISA_OPTIONS.includes(profile.visaType)) {
+          nextFilters.visas = profile.visaType;
         }
         if (profile?.preferred_regions && profile.preferred_regions.length > 0) {
           nextFilters.locations = profile.preferred_regions.filter(Boolean);

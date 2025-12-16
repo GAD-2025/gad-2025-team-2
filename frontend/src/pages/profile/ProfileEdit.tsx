@@ -6,13 +6,11 @@ import {
   getSignupUser,
   getJobSeekerProfile,
   jobSeekerProfileAPI,
-  ProfileData,
   employerProfileAPI,
-  EmployerProfileData,
   JobSeekerProfileData,
 } from '@/api/endpoints';
 import { useAuthStore } from '@/store/useAuth';
-import { LANGUAGE_LEVELS, VISA_OPTIONS } from '@/constants/profile';
+import { VISA_OPTIONS } from '@/constants/profile';
 import { KOREA_REGIONS } from '@/constants/locations';
 
 const JOB_CATEGORIES = [
@@ -34,7 +32,6 @@ interface ProfileEditData {
   nationality_code: string | null;
   birthdate: string | null;
   visaType: string | null;
-  languageLevel: string | null;
   preferredRegions: string[];
   preferredJobs: string[];
   skills: string[];

@@ -142,6 +142,7 @@ export interface JobSeekerProfileData {
   phone?: string | null;
   nationality_code?: string | null;
   birthdate?: string | null;
+  visaType?: string | null;
   basic_info_file_name: string | null;
   preferred_regions: string[];
   preferred_jobs: string[];
