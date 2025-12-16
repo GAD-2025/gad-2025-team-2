@@ -5,16 +5,22 @@ import { SearchBar } from "@/components/SearchBar";
 import { FilterChips } from "@/components/FilterChips";
 import { FilterModal, type FilterState } from "@/components/FilterModal";
 import { JobCard } from "@/components/JobCard";
-import { ProgressCard } from "@/components/ProgressCard";
 import { QuickMenuGrid } from "@/components/QuickMenuGrid";
 import { GuideCard } from "@/components/GuideCard";
 import { JobCardSkeleton } from "@/components/Skeleton";
 import { SafetyNoticeModal } from "@/components/SafetyNoticeModal";
-import { jobsAPI, learningAPI, getSignupUser, getJobSeekerProfile } from "@/api/endpoints";
+import { jobsAPI, getSignupUser, getJobSeekerProfile } from "@/api/endpoints";
 import { KOREA_REGIONS } from "@/constants/locations";
-import type { Job, LearningProgress } from "@/types";
+import { LESSONS_DATA, type Lesson } from "@/data/lessons";
+import { LANGUAGE_LEVELS, VISA_OPTIONS } from "@/constants/profile";
+import type { Job } from "@/types";
 import type { SignupUserData, JobSeekerProfileData } from "@/api/endpoints";
 import { useAuthStore } from "@/store/useAuth";
+
+interface LessonWithProgress extends Lesson {
+  completed: boolean;
+  progress: number;
+}
 
 export const JobSeekerHome = () => {
   const navigate = useNavigate();
@@ -22,7 +28,6 @@ export const JobSeekerHome = () => {
   const [searchParams] = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [learningProgress, setLearningProgress] = useState<LearningProgress | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [showSafetyNotice, setShowSafetyNotice] = useState(false);
   const [userName, setUserName] = useState<string>("사용자");
@@ -32,6 +37,51 @@ export const JobSeekerHome = () => {
     experience: [],
     visas: null,
   });
+
+  const [lessonsWithProgress, setLessonsWithProgress] = useState<LessonWithProgress[]>([]);
+  const userLevel = localStorage.getItem('userLevel');
+  const getLevelNumber = (level: string): number => {
+    const match = level.match(/Lv\.(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+  const userLevelNumber = userLevel ? getLevelNumber(userLevel) : 0;
+
+  useEffect(() => {
+    const calculateProgress = () => {
+      const newLessonsWithProgress = LESSONS_DATA.map(lesson => {
+        const progressKey = `lesson-progress-${lesson.id}`;
+        let completedTopicsCount = 0;
+        
+        try {
+          const savedProgress = localStorage.getItem(progressKey);
+          if (savedProgress) {
+            const progressData = JSON.parse(savedProgress);
+            if (progressData && progressData.completedTopics) {
+              completedTopicsCount = new Set(progressData.completedTopics).size;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse progress data for lesson " + lesson.id, e);
+        }
+
+        const totalTopics = lesson.topics.length;
+        const progress = totalTopics > 0 ? Math.round((completedTopicsCount / totalTopics) * 100) : 0;
+        
+        return {
+          ...lesson,
+          progress,
+          completed: progress === 100,
+        };
+      });
+      setLessonsWithProgress(newLessonsWithProgress);
+    };
+
+    calculateProgress();
+  }, []);
+
+  const unlockedLessons = lessonsWithProgress.filter(lesson => getLevelNumber(lesson.level) <= userLevelNumber);
+  const totalProgress = unlockedLessons.reduce((sum, lesson) => sum + lesson.progress, 0);
+  const currentProgress = unlockedLessons.length > 0 ? Math.round(totalProgress / unlockedLessons.length) : 0;
 
   // Set user mode to jobseeker when entering this page
   useEffect(() => {
@@ -46,9 +96,8 @@ export const JobSeekerHome = () => {
         const signupUserId = localStorage.getItem("signup_user_id");
 
         // 기본 데이터 호출
-        const [jobsRes, progressRes, signupUser, jobProfile] = await Promise.all([
+        const [jobsRes, signupUser, jobProfile] = await Promise.all([
           jobsAPI.list({ limit: 10 }),
-          learningAPI.getSummary("seeker-test-001").catch(() => null),
           signupUserId ? getSignupUser(signupUserId).catch(() => null) : Promise.resolve(null),
           signupUserId ? getJobSeekerProfile(signupUserId).catch(() => null) : Promise.resolve(null),
         ]);
@@ -59,10 +108,6 @@ export const JobSeekerHome = () => {
         } else {
           setJobs([]);
           console.log('No jobs available');
-        }
-
-        if (progressRes) {
-          setLearningProgress(progressRes.data);
         }
 
         // 이름/필터 프리필
@@ -81,15 +126,12 @@ export const JobSeekerHome = () => {
           city: null,
         };
 
-        const languageLevels = ["Lv.1 기초", "Lv.2 초급", "Lv.3 중급", "Lv.4 상급"];
-        const visaOptions = ["E-9", "H-2", "F-4", "F-5", "F-6", "D-10"];
-
         const profile = jobProfile as JobSeekerProfileData | null;
-        if (profile?.visa_type && visaOptions.includes(profile.visa_type)) {
+        if (profile?.visa_type && VISA_OPTIONS.includes(profile.visa_type)) {
           nextFilters.visas = profile.visa_type;
         }
         const level = profile?.languageLevel || (profile as any)?.language_level || null;
-        if (level && languageLevels.includes(level)) {
+        if (level && LANGUAGE_LEVELS.includes(level)) {
           nextFilters.languageLevel = [level];
         }
         if (profile?.preferred_regions && profile.preferred_regions.length > 0) {
@@ -215,18 +257,44 @@ export const JobSeekerHome = () => {
         initialFilters={appliedFilters}
       />
 
-{learningProgress && (
-  <div className="px-8 mt-8 mb-4">
-    <ProgressCard
-      title="현재 학습 상태"
-      level={learningProgress.currentLevel}
-      progress={learningProgress.progressPercent}
-      completed={learningProgress.completedLessons}
-      total={learningProgress.totalLessons}
-      onClick={() => navigate("/learning")}
-    />
-  </div>
-)}
+      <div className="px-8 mt-8 mb-4">
+        <div className="bg-mint-100 rounded-[20px] p-5" onClick={() => navigate('/learning')}>
+          {userLevel ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-[13px] text-mint-700 opacity-90 mb-1">현재 학습 레벨</p>
+                  <h2 className="text-[24px] font-bold text-mint-700">{userLevel}</h2>
+                </div>
+                <div className="text-right">
+                  <p className="text-[32px] font-bold text-mint-600">{currentProgress}%</p>
+                  <p className="text-[12px] text-mint-600 opacity-90">완료</p>
+                </div>
+              </div>
+              <div className="relative w-full h-3 bg-mint-200 rounded-full overflow-hidden mb-4">
+                <div
+                  className="absolute left-0 top-0 h-full bg-mint-400 rounded-full transition-all"
+                  style={{ width: `${currentProgress}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-2">
+              <h2 className="text-[18px] font-bold text-mint-700 mb-2">아직 측정된 레벨이 없어요</h2>
+              <p className="text-[14px] text-mint-600 opacity-90 mb-4">레벨 테스트로 나의 한국어 실력을 확인해보세요!</p>
+            </div>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/learning');
+            }}
+            className="w-full h-[44px] bg-white text-mint-600 rounded-[12px] font-semibold hover:bg-gray-50 transition-colors"
+          >
+            학습 시작하기
+          </button>
+        </div>
+      </div>
 
       {/* AI recommendations */}
       <div className="pt-4 bg-background mb-4">

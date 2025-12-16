@@ -3,33 +3,68 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import {
-  profileAPI,
+  getSignupUser,
+  getJobSeekerProfile,
+  jobSeekerProfileAPI,
   ProfileData,
   employerProfileAPI,
   EmployerProfileData,
+  JobSeekerProfileData,
 } from '@/api/endpoints';
 import { useAuthStore } from '@/store/useAuth';
+import { LANGUAGE_LEVELS, VISA_OPTIONS } from '@/constants/profile';
+import { KOREA_REGIONS } from '@/constants/locations';
+
+const JOB_CATEGORIES = [
+  { id: 'store', label: '매장관리 · 판매' },
+  { id: 'service', label: '서비스' },
+  { id: 'serving', label: '서빙' },
+  { id: 'kitchen', label: '주방' },
+  { id: 'labor', label: '단순노무 · 분류 · 택배' },
+  { id: 'delivery', label: '배달 · 운송 · 운전' },
+  { id: 'event', label: '행사 · 스텝 · 미디어' },
+  { id: 'office', label: '사무 · 회계 · 관리' },
+  { id: 'sales', label: '영업 · 마케팅' },
+];
+
+interface ProfileEditData {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  nationality_code: string | null;
+  birthdate: string | null;
+  visaType: string | null;
+  languageLevel: string | null;
+  preferredRegions: string[];
+  preferredJobs: string[];
+  skills: string[];
+  bio: string | null;
+}
 
 export const ProfileEdit = () => {
   const navigate = useNavigate();
-  const { userMode, signupUserId } = useAuthStore();
+  const { userMode, signupUserId, user } = useAuthStore();
 
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<ProfileEditData | null>(null);
+  const [jobSeekerProfile, setJobSeekerProfile] = useState<JobSeekerProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [newSkill, setNewSkill] = useState('');
+  const [showRegionModal, setShowRegionModal] = useState(false);
+  const [showJobModal, setShowJobModal] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        if (!signupUserId) {
+        const userId = signupUserId || user?.id || localStorage.getItem('signup_user_id');
+        if (!userId) {
           throw new Error('User not found');
         }
 
         if (userMode === 'employer') {
-          const empProfile = await employerProfileAPI.get(signupUserId);
+          const empProfile = await employerProfileAPI.get(userId);
           // Adapt EmployerProfileData to ProfileData for the form
           setProfile({
             name: empProfile.company_name || '',
@@ -39,13 +74,44 @@ export const ProfileEdit = () => {
             birthdate: null,
             visaType: null,
             languageLevel: null,
-            location: empProfile.address,
+            preferredRegions: empProfile.address ? [empProfile.address] : [],
             skills: [],
             bio: null,
           });
         } else {
-          const response = await profileAPI.get();
-          setProfile(response.data);
+          const [signupUser, fetchedJobSeekerProfile] = await Promise.all([
+            getSignupUser(userId),
+            getJobSeekerProfile(userId).catch(() => null),
+          ]);
+          
+          setJobSeekerProfile(fetchedJobSeekerProfile);
+
+          const parseSkills = (skillsJson: string | null): string[] => {
+            if (!skillsJson) return [];
+            try {
+              const parsed = JSON.parse(skillsJson);
+              if (parsed.workSkills && Array.isArray(parsed.workSkills)) {
+                return parsed.workSkills;
+              }
+              return [];
+            } catch {
+              return [];
+            }
+          };
+
+          setProfile({
+            name: signupUser.name,
+            email: signupUser.email,
+            phone: signupUser.phone,
+            nationality_code: signupUser.nationality_code,
+            birthdate: signupUser.birthdate,
+            visaType: (fetchedJobSeekerProfile as any)?.visa_type || null,
+            languageLevel: (fetchedJobSeekerProfile as any)?.languageLevel || (fetchedJobSeekerProfile as any)?.language_level || null,
+            preferredRegions: fetchedJobSeekerProfile?.preferred_regions || [],
+            preferredJobs: fetchedJobSeekerProfile?.preferred_jobs || [],
+            skills: parseSkills(fetchedJobSeekerProfile?.experience_skills || null),
+            bio: fetchedJobSeekerProfile?.experience_introduction || null,
+          });
         }
       } catch (err: any) {
         setError(err.message);
@@ -55,15 +121,31 @@ export const ProfileEdit = () => {
       }
     };
     fetchProfile();
-  }, [userMode, signupUserId]);
+  }, [userMode, signupUserId, user]);
 
-  const languageOptions = ['Lv.1 기초', 'Lv.2 초급', 'Lv.3 중급', 'Lv.4 상급'];
-  const visaOptions = ['E-9', 'H-2', 'F-4', 'F-5', 'F-6', 'D-10'];
-  const locationOptions = ['종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구'];
+  const locationOptions = KOREA_REGIONS['서울특별시'];
 
-  const handleChange = (field: keyof ProfileData, value: string | string[]) => {
+  const handleChange = (field: keyof Omit<ProfileEditData, 'preferredRegions'>, value: string | string[]) => {
     if (profile) {
       setProfile({ ...profile, [field]: value });
+    }
+  };
+
+  const handleRegionToggle = (region: string) => {
+    if (profile) {
+      const newRegions = profile.preferredRegions.includes(region)
+        ? profile.preferredRegions.filter((r) => r !== region)
+        : [...profile.preferredRegions, region];
+      setProfile({ ...profile, preferredRegions: newRegions });
+    }
+  };
+
+  const handleJobToggle = (jobId: string) => {
+    if (profile) {
+      const newJobs = profile.preferredJobs.includes(jobId)
+        ? profile.preferredJobs.filter((j) => j !== jobId)
+        : [...profile.preferredJobs, jobId];
+      setProfile({ ...profile, preferredJobs: newJobs });
     }
   };
 
@@ -87,7 +169,7 @@ export const ProfileEdit = () => {
   };
 
   const handleSubmit = async () => {
-    if (!profile) return;
+    if (!profile || !signupUserId) return;
 
     if (!profile.name.trim()) {
       toast.error('이름을 입력해주세요');
@@ -102,7 +184,29 @@ export const ProfileEdit = () => {
         return;
       }
 
-      await profileAPI.update(profile);
+      const payload = {
+        user_id: signupUserId,
+        preferred_regions: profile.preferredRegions,
+        preferred_jobs: profile.preferredJobs,
+        work_schedule: {
+          available_dates: jobSeekerProfile?.work_available_dates || [],
+          start_time: jobSeekerProfile?.work_start_time || null,
+          end_time: jobSeekerProfile?.work_end_time || null,
+          days_of_week: jobSeekerProfile?.work_days_of_week || [],
+        },
+        experience: {
+          sections: ['skills', 'introduction', 'career', 'license'],
+          data: {
+            skills: JSON.stringify({ workSkills: profile.skills }),
+            introduction: profile.bio,
+            career: jobSeekerProfile?.experience_career || '',
+            license: jobSeekerProfile?.experience_license || '',
+          },
+        },
+        visa_type: profile.visaType,
+      };
+
+      await jobSeekerProfileAPI.upsert(payload);
       toast.success('프로필이 업데이트되었습니다');
       navigate(-1);
     } catch (error) {
@@ -229,11 +333,11 @@ export const ProfileEdit = () => {
                   </label>
                   <select
                     value={profile.visaType || ''}
-                    onChange={(e) => handleChange('visaType', e.target.value)}
+                    onChange={(e) => handleChange('visaType' as any, e.target.value)}
                     className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
                              text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
                   >
-                    {visaOptions.map((option) => (
+                    {VISA_OPTIONS.map((option) => (
                       <option key={option} value={option}>
                         {option}
                       </option>
@@ -243,38 +347,36 @@ export const ProfileEdit = () => {
 
                 <div>
                   <label className="block text-[14px] font-medium text-text-900 mb-2">
-                    한국어 능력
+                    희망 근무 지역
                   </label>
-                  <select
-                    value={profile.languageLevel || ''}
-                    onChange={(e) => handleChange('languageLevel', e.target.value)}
-                    className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
-                             text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
-                  >
-                    {languageOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200 flex items-center justify-between">
+                    <span className="text-[14px] text-text-900 truncate">
+                      {profile.preferredRegions.join(', ') || '지역을 선택해주세요'}
+                    </span>
+                    <button
+                      onClick={() => setShowRegionModal(true)}
+                      className="text-mint-600 font-semibold text-sm flex-shrink-0"
+                    >
+                      수정
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-[14px] font-medium text-text-900 mb-2">
-                    거주 지역
+                    희망 직종
                   </label>
-                  <select
-                    value={profile.location || ''}
-                    onChange={(e) => handleChange('location', e.target.value)}
-                    className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200
-                             text-[14px] text-text-900 focus:outline-none focus:ring-2 focus:ring-mint-600"
-                  >
-                    {locationOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-full h-[48px] px-4 bg-background rounded-[12px] border border-line-200 flex items-center justify-between">
+                    <span className="text-[14px] text-text-900 truncate">
+                      {profile.preferredJobs.map(jobId => JOB_CATEGORIES.find(j => j.id === jobId)?.label).join(', ') || '직종을 선택해주세요'}
+                    </span>
+                    <button
+                      onClick={() => setShowJobModal(true)}
+                      className="text-mint-600 font-semibold text-sm flex-shrink-0"
+                    >
+                      수정
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -365,7 +467,70 @@ export const ProfileEdit = () => {
           </button>
         </div>
       </div>
+
+      {showRegionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative">
+            <h3 className="text-lg font-bold mb-4">희망 근무 지역</h3>
+            <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto">
+              {locationOptions.map((option) => {
+                const isSelected = profile.preferredRegions.includes(option);
+                return (
+                  <button
+                    key={option}
+                    onClick={() => handleRegionToggle(option)}
+                    className={`px-3 py-2 rounded-full text-sm ${
+                      isSelected
+                        ? 'bg-mint-600 text-white'
+                        : 'bg-gray-200 text-gray-800'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setShowRegionModal(false)}
+              className="w-full mt-4 bg-mint-600 text-white py-3 rounded-lg font-semibold hover:bg-mint-700 transition-colors"
+            >
+              완료
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showJobModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative">
+            <h3 className="text-lg font-bold mb-4">희망 직종</h3>
+            <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto">
+              {JOB_CATEGORIES.map((category) => {
+                const isSelected = profile.preferredJobs.includes(category.id);
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => handleJobToggle(category.id)}
+                    className={`px-3 py-2 rounded-full text-sm ${
+                      isSelected
+                        ? 'bg-mint-600 text-white'
+                        : 'bg-gray-200 text-gray-800'
+                    }`}
+                  >
+                    {category.label}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setShowJobModal(false)}
+              className="w-full mt-4 bg-mint-600 text-white py-3 rounded-lg font-semibold hover:bg-mint-700 transition-colors"
+            >
+              완료
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

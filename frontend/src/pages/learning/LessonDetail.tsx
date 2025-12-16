@@ -111,17 +111,7 @@ export const LessonDetail = () => {
         {/* Content */}
         {activeTab === 'overview' ? (
           <div className="space-y-5">
-            {/* Solve Problem Button */}
-            <div className="bg-white rounded-[16px] p-5 shadow-card text-center">
-              <h3 className="text-[16px] font-bold text-text-900 mb-3">실력 확인하기</h3>
-              <p className="text-[14px] text-text-700 mb-4">문제를 풀고 진도율을 올려보세요!</p>
-              <button
-                onClick={() => navigate(`/learning/lesson/${lesson.id}/quiz`)}
-                className="w-full h-[48px] bg-mint-100 text-mint-700 rounded-[12px] font-semibold hover:bg-mint-200 transition-colors"
-              >
-                오늘의 문제 풀기
-              </button>
-            </div>
+
 
             {/* Description */}
             <div className="bg-white rounded-[16px] p-5 shadow-card">
