@@ -234,10 +234,7 @@ export const router = createBrowserRouter([
         path: 'employer/schedule',
         element: <EmployeeScheduleList />,
       },
-      {
-        path: 'employer/schedule/:userId',
-        element: <SharedSchedule />,
-      },
+
       {
         path: 'jobseeker/schedule',
         element: <MySchedule />,

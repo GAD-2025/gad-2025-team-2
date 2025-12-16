@@ -109,26 +109,7 @@ export const Recruitment = () => {
   const [applicantToReject, setApplicantToReject] = useState<Applicant | null>(null);
 
   const addEmployeeToSchedule = (applicant: Applicant) => {
-    const targetId = applicant.userId || applicant.id;
-    if (!targetId) return;
-    const key = 'schedule_employees';
-    try {
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      const exists = existing.some((e: any) => e.id === targetId);
-      if (exists) return;
-      const newEmployee = {
-        id: targetId,
-        name: applicant.name || '직원',
-        nationality: applicant.nationality || '',
-        position: applicant.jobTitle || '',
-        totalShifts: 0,
-        completedShifts: 0,
-        upcomingShifts: 0,
-      };
-      localStorage.setItem(key, JSON.stringify([...existing, newEmployee]));
-    } catch {
-      // ignore errors; best effort only
-    }
+    return;
   };
 
   useEffect(() => {
