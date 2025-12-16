@@ -1389,8 +1389,24 @@ export const MyApplications = ({ onUnreadCountChange }: { onUnreadCountChange?: 
               <div
                 key={app.id}
                 onClick={() => {
+                  const isAccepted =
+                    app.status === 'accepted' ||
+                    app.interviewProposal?.status === 'accepted' ||
+                    !!app.acceptanceData ||
+                    !!app.firstWorkDateConfirmed;
+
+                  if (isAccepted) {
+                    // 합격/출근 확정 건은 합격 안내 모달 표시
+                    setSelectedAcceptedApp(app);
+                    setShowAcceptanceDetail(true);
+                    return;
+                  }
+
                   // 면접제안 섹션이거나 면접 제안이 있는 경우 상세 모달 표시
-                  if ((activeFilter === 'interview' || app.status === 'interview' || app.interviewProposal) && app.interviewProposal && app.interviewProposal.status !== 'accepted') {
+                  if (
+                    (activeFilter === 'interview' || app.status === 'interview' || app.interviewProposal) &&
+                    app.interviewProposal
+                  ) {
                     setSelectedInterviewApp(app);
                     setShowInterviewDetail(true);
                     setCoordinationMessage('');
@@ -1403,19 +1419,18 @@ export const MyApplications = ({ onUnreadCountChange }: { onUnreadCountChange?: 
                         proposal.isRead = true;
                         localStorage.setItem(interviewProposalKey, JSON.stringify(proposal));
                       }
-                      setApplications(prev => prev.map(a => 
-                        a.id === app.id && a.interviewProposal
-                          ? { ...a, interviewProposal: { ...a.interviewProposal, isRead: true } }
-                          : a
-                      ));
+                      setApplications(prev =>
+                        prev.map(a =>
+                          a.id === app.id && a.interviewProposal
+                            ? { ...a, interviewProposal: { ...a.interviewProposal, isRead: true } }
+                            : a
+                        )
+                      );
                     }
-                  } else if (app.status === 'accepted' || app.interviewProposal?.status === 'accepted' || app.acceptanceData || app.firstWorkDateConfirmed) {
-                    // 합격/출근 확정 건은 합격 안내 모달 표시
-                    setSelectedAcceptedApp(app);
-                    setShowAcceptanceDetail(true);
-                  } else {
-                    navigate(`/jobs/${app.jobId}`);
+                    return;
                   }
+
+                  navigate(`/jobs/${app.jobId}`);
                 }}
                 className="bg-white rounded-[16px] p-4 shadow-card border border-line-200
                          hover:shadow-soft transition-all cursor-pointer relative"
