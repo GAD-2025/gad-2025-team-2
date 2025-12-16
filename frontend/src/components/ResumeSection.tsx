@@ -53,7 +53,7 @@ export const ResumeSection = ({ resume, onEdit }: ResumeSectionProps) => {
                 📍
               </div>
               <div className="flex-1">
-                <p className="text-[13px] text-text-500">거주지</p>
+                <p className="text-[13px] text-text-500">희망 근무 지역</p>
                 <p className="text-[15px] font-medium text-text-900">
                   {resume.city && resume.country ? `${resume.city}, ${resume.country}` : resume.city || resume.country}
                 </p>
