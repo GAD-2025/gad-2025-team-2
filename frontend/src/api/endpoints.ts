@@ -227,6 +227,21 @@ export async function getEmployerProfile(userId: string): Promise<EmployerProfil
   return response.json();
 }
 
+export interface EmployerProfileCreatePayload {
+  user_id: string;
+  business_type: string;
+  company_name: string;
+  address: string;
+  address_detail?: string;
+  business_license?: string;
+}
+
+export const employerProfileAPI = {
+  get: getEmployerProfile,
+  update: (payload: EmployerProfileCreatePayload) =>
+    apiClient.post<EmployerProfileData>('/employer/profile', payload),
+};
+
 export interface JobSeekerListItem {
   id: string;
   user_id: string;

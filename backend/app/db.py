@@ -7,14 +7,37 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./workfair.db")
 
-# MySQL의 경우 connect_args 불필요
-connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
-engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args)
+connect_args = {}
+pool_args = {}
+
+if "sqlite" in DATABASE_URL:
+    connect_args["check_same_thread"] = False
+elif "mysql" in DATABASE_URL or "mariadb" in DATABASE_URL:
+    connect_args['connect_timeout'] = 20
+    pool_args['pool_recycle'] = 1800
+    pool_args['pool_pre_ping'] = True
+
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    connect_args=connect_args,
+    **pool_args
+)
 
 
 def create_db_and_tables():
     """Create all tables in the database"""
-    SQLModel.metadata.create_all(engine)
+    try:
+        SQLModel.metadata.create_all(engine)
+    except Exception as e:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print(f"ERROR: Could not connect to the database and create tables.")
+        print(f"DETAILS: {e}")
+        print("Please check your '.env' file and ensure the DATABASE_URL is correct.")
+        print("Also, ensure the database server is running and accessible from the application.")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        # Re-raise the exception to ensure the application startup fails loudly
+        raise
 
 
 def get_engine():
@@ -26,4 +49,3 @@ def get_session() -> Generator[Session, None, None]:
     """Dependency to get database session"""
     with Session(engine) as session:
         yield session
-

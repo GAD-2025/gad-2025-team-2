@@ -93,7 +93,7 @@ async def update_my_profile(
         jobseeker = JobSeeker(
             id=user_id,
             name=profile_update.name,
-            nationality=signup_user.nationality_code or "Unknown",
+            nationality=profile_update.nationality_code or "KR",
             phone=profile_update.phone or "Not Provided",
             languageLevel=profile_update.languageLevel or "Basic",
             visaType=profile_update.visaType or "Unknown",

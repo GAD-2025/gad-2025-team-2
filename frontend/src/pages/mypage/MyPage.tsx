@@ -210,13 +210,15 @@ export const MyPage = () => {
       <header className="bg-white border-b border-line-200 px-4 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <h1 className="text-[20px] font-bold text-text-900">프로필</h1>
-          <button
-            onClick={handleResumeEdit}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px] 
-                     text-[13px] font-medium text-text-900 transition-colors"
-          >
-            수정하기
-          </button>
+          {!isEmployer && (
+            <button
+              onClick={handleResumeEdit}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px] 
+                       text-[13px] font-medium text-text-900 transition-colors"
+            >
+              수정하기
+            </button>
+          )}
         </div>
       </header>
 
@@ -356,15 +358,37 @@ export const MyPage = () => {
         )}
 
         {/* Resume Details Toggle */}
-        <button
-          onClick={() => setShowResume(!showResume)}
-          className="w-full bg-white rounded-[16px] border border-line-200 p-4 
+        {!isEmployer && (
+          <>
+            <button
+              onClick={() => setShowResume(!showResume)}
+              className="w-full bg-white rounded-[16px] border border-line-200 p-4 
                    hover:border-mint-600/30 transition-all flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-mint-100 rounded-full flex items-center justify-center">
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-mint-100 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-mint-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                <span className="text-[15px] font-semibold text-text-900">
+                  {showResume ? "프로필 상세 접기" : "프로필 상세 보기"}
+                </span>
+              </div>
               <svg
-                className="w-5 h-5 text-mint-600"
+                className={`w-5 h-5 text-text-700 transition-transform ${
+                  showResume ? "rotate-180" : ""
+                }`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -373,37 +397,19 @@ export const MyPage = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  d="M19 9l-7 7-7-7"
                 />
               </svg>
-            </div>
-            <span className="text-[15px] font-semibold text-text-900">
-              {showResume ? "프로필 상세 접기" : "프로필 상세 보기"}
-            </span>
-          </div>
-          <svg
-            className={`w-5 h-5 text-text-700 transition-transform ${
-              showResume ? "rotate-180" : ""
-            }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
+            </button>
 
-        {/* Resume Section */}
-        {showResume && (
-          <div className="space-y-3">
-            <h2 className="text-[18px] font-bold text-text-900">상세 정보</h2>
-            <ResumeSection resume={resume} onEdit={handleResumeEdit} />
-          </div>
+            {/* Resume Section */}
+            {showResume && (
+              <div className="space-y-3">
+                <h2 className="text-[18px] font-bold text-text-900">상세 정보</h2>
+                <ResumeSection resume={resume} onEdit={handleResumeEdit} />
+              </div>
+            )}
+          </>
         )}
 
         {/* Quick Actions */}
