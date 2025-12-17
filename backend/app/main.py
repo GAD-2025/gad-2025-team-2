@@ -77,6 +77,8 @@ app.add_middleware(
         "http://127.0.0.1:5174",
         "https://workfair-2d831.web.app",
         "https://workfair-2d831.firebaseapp.com",
+        "https://gad-2025-team-2.web.app",
+        "https://gad-2025-team-2.firebaseapp.com",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
@@ -97,6 +99,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         "http://127.0.0.1:5174",
         "https://workfair-2d831.web.app",
         "https://workfair-2d831.firebaseapp.com",
+        "https://gad-2025-team-2.web.app",
+        "https://gad-2025-team-2.firebaseapp.com",
     ]
     
     # 요청 origin이 허용된 목록에 있으면 사용, 없으면 *
