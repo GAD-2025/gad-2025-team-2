@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Choose API endpoint:
+// 1) VITE_API_BASE_URL if provided at build/runtime
+// 2) If running on localhost, fall back to local API
+// 3) Otherwise use deployed API domain
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : 'https://route.nois.club:3002');
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
