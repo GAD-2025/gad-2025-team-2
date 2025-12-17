@@ -75,6 +75,8 @@ app.add_middleware(
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
+        "https://workfair-2d831.web.app",
+        "https://workfair-2d831.firebaseapp.com",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
@@ -93,6 +95,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
+        "https://workfair-2d831.web.app",
+        "https://workfair-2d831.firebaseapp.com",
     ]
     
     # 요청 origin이 허용된 목록에 있으면 사용, 없으면 *
@@ -126,6 +130,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
+        "https://workfair-2d831.web.app",
+        "https://workfair-2d831.firebaseapp.com",
     ]
     
     cors_origin = origin if origin in allowed_origins else "*"
