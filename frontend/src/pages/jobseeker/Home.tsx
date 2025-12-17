@@ -16,6 +16,7 @@ import { VISA_OPTIONS } from "@/constants/profile";
 import type { Job } from "@/types";
 import type { JobSeekerProfileData } from "@/api/endpoints";
 import { useAuthStore } from "@/store/useAuth";
+import { useMemo } from "react";
 
 interface LessonWithProgress extends Lesson {
   completed: boolean;
@@ -207,6 +208,64 @@ export const JobSeekerHome = () => {
     ];
   };
 
+  // 클라이언트 필터링: 적용된 필터가 있는 경우 jobs를 필터링
+  const filteredJobs = useMemo(() => {
+    const norm = (v: string | undefined | null) => (v || "").toLowerCase();
+
+    return jobs.filter((job) => {
+      // 언어 필터
+      if (appliedFilters.languageLevel.length > 0) {
+        const lang = norm(job.requiredLanguage);
+        const matchLang = appliedFilters.languageLevel.some((lv) => lang.includes(norm(lv)));
+        if (!matchLang) return false;
+      }
+
+      // 비자 필터
+      if (appliedFilters.visas) {
+        const visas = Array.isArray(job.requiredVisa)
+          ? job.requiredVisa
+          : typeof job.requiredVisa === "string"
+          ? [job.requiredVisa]
+          : [];
+        const matchVisa = visas.some((v) => norm(v) === norm(appliedFilters.visas as string));
+        if (!matchVisa) return false;
+      }
+
+      // 지역/도시 필터
+      if (appliedFilters.city || appliedFilters.locations.length > 0) {
+        const locStr =
+          norm(job.shop_address) ||
+          norm(job.location) ||
+          norm(job.shop_address_detail) ||
+          norm(job.employer?.address as string);
+
+        // city가 있으면 city 포함 여부 확인
+        if (appliedFilters.city && !locStr.includes(norm(appliedFilters.city))) {
+          return false;
+        }
+        // 구/군 목록이 있으면 하나라도 포함되어야 함
+        if (
+          appliedFilters.locations.length > 0 &&
+          !appliedFilters.locations.some((loc) => locStr.includes(norm(loc)))
+        ) {
+          return false;
+        }
+      }
+
+      // 근무 요일(주말/평일) 필터는 experience 배열을 재활용
+      if (appliedFilters.experience.length > 0) {
+        const days = norm(job.workDays);
+        const wantWeekend = appliedFilters.experience.includes("주말");
+        const wantWeekday = appliedFilters.experience.includes("평일");
+
+        if (wantWeekend && !/(토|일|sat|sun)/i.test(days)) return false;
+        if (wantWeekday && !/(월|화|수|목|금|mon|tue|wed|thu|fri)/i.test(days)) return false;
+      }
+
+      return true;
+    });
+  }, [jobs, appliedFilters]);
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header with branding - Mint background */}
@@ -329,7 +388,7 @@ export const JobSeekerHome = () => {
                 <JobCardSkeleton />
               </>
             ) : (
-              jobs
+              filteredJobs
                 .slice(0, 10)
                 .map((job) => (
                   <JobCard key={job.id} job={job} variant="featured" />
