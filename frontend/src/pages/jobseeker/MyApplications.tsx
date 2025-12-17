@@ -686,152 +686,116 @@ export const MyApplications = ({ onUnreadCountChange }: { onUnreadCountChange?: 
                 </div>
               </div>
               
-              {/* 액션 버튼: 조율, 출근 확정, 출근 거부 */}
-              <div className="space-y-2 mt-4">
-                <button
-                  onClick={async () => {
-                    // 조율 버튼: 조율 메시지 입력 모달 표시
-                    const message = prompt('조율 메시지를 입력하세요:');
-                    if (message && message.trim()) {
+              {/* 액션 버튼: 출근 확정, 출근 거부 (출근 확정 전에만 표시) */}
+              {!isConfirmed && (
+                <div className="space-y-2 mt-4">
+                  <button
+                    onClick={async () => {
+                      // 출근 확정: API로 채용 확정 처리
                       try {
-                        // API로 조율 메시지 전송 (출근 날짜 조율)
-                        await applicationsAPI.addCoordinationMessage(selectedAcceptedApp.id, {
-                          message: message.trim(),
-                          type: 'work_date_coordination',
-                        });
+                        await applicationsAPI.confirmWorkDate(selectedAcceptedApp.id, true);
                         
                         // localStorage에도 저장 (fallback)
-                        const coordinationKey = `coordination_messages_${selectedAcceptedApp.id}`;
-                        const existingMessages = localStorage.getItem(coordinationKey);
-                        const messages = existingMessages ? JSON.parse(existingMessages) : [];
-                        messages.push({
-                          message: message.trim(),
-                          sentAt: new Date().toISOString(),
-                          from: 'jobseeker',
-                          type: 'work_date_coordination',
-                        });
-                        localStorage.setItem(coordinationKey, JSON.stringify(messages));
+                        localStorage.setItem(`first_work_date_confirmed_${selectedAcceptedApp.id}`, 'true');
                         
-                        toast.success('조율 메시지가 전송되었습니다');
-                        setShowAcceptanceDetail(false);
-                        setSelectedAcceptedApp(null);
-                        fetchApplications();
-                      } catch (error) {
-                        console.error('조율 메시지 전송 실패:', error);
-                        // API 실패 시 localStorage만 저장
-                        const coordinationKey = `coordination_messages_${selectedAcceptedApp.id}`;
-                        const existingMessages = localStorage.getItem(coordinationKey);
-                        const messages = existingMessages ? JSON.parse(existingMessages) : [];
-                        messages.push({
-                          message: message.trim(),
-                          sentAt: new Date().toISOString(),
-                          from: 'jobseeker',
-                        });
-                        localStorage.setItem(coordinationKey, JSON.stringify(messages));
-                        toast.success('조율 메시지가 저장되었습니다 (로컬 저장)');
-                        setShowAcceptanceDetail(false);
-                        setSelectedAcceptedApp(null);
-                        fetchApplications();
-                      }
-                    }
-                  }}
-                  className="w-full py-3 bg-mint-50 text-mint-700 border border-mint-300 rounded-[12px] font-medium text-[14px] hover:bg-mint-100 transition-colors"
-                >
-                  조율
-                </button>
-                <button
-                  onClick={async () => {
-                    // 출근 확정: API로 채용 확정 처리
-                    try {
-                      await applicationsAPI.confirmWorkDate(selectedAcceptedApp.id, true);
-                      
-                      // localStorage에도 저장 (fallback)
-                      localStorage.setItem(`first_work_date_confirmed_${selectedAcceptedApp.id}`, 'true');
-                      
-                      const acceptanceKey = `acceptance_guide_${selectedAcceptedApp.id}`;
-                      const acceptanceData = localStorage.getItem(acceptanceKey);
-                      if (acceptanceData) {
-                        const acceptance = JSON.parse(acceptanceData);
-                        acceptance.isHired = true;
-                        acceptance.hiredAt = new Date().toISOString();
-                        localStorage.setItem(acceptanceKey, JSON.stringify(acceptance));
-                      }
-                      
-                      // 체크 팝업 표시 후 합격 섹션으로 이동
-                      setShowWorkConfirmSuccess(true);
-                      setShowAcceptanceDetail(false);
-                      setSelectedAcceptedApp(null);
-                      
-                      // 애플리케이션 목록 새로고침
-                      await fetchApplications();
-                      
-                      // 2초 후 팝업 닫고 합격 섹션으로 이동
-                      setTimeout(() => {
-                        setShowWorkConfirmSuccess(false);
-                        setActiveFilter('accepted');
-                        // 합격 섹션으로 스크롤
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }, 2000);
-                    } catch (error) {
-                      console.error('출근 확정 실패:', error);
-                      // API 실패 시 localStorage만 저장
-                      localStorage.setItem(`first_work_date_confirmed_${selectedAcceptedApp.id}`, 'true');
-                      const acceptanceKey = `acceptance_guide_${selectedAcceptedApp.id}`;
-                      const acceptanceData = localStorage.getItem(acceptanceKey);
-                      if (acceptanceData) {
-                        const acceptance = JSON.parse(acceptanceData);
-                        acceptance.isHired = true;
-                        acceptance.hiredAt = new Date().toISOString();
-                        localStorage.setItem(acceptanceKey, JSON.stringify(acceptance));
-                      }
-                      // 실패 시에도 동일하게 처리
-                      setShowWorkConfirmSuccess(true);
-                      setShowAcceptanceDetail(false);
-                      setSelectedAcceptedApp(null);
-                      await fetchApplications();
-                      setTimeout(() => {
-                        setShowWorkConfirmSuccess(false);
-                        setActiveFilter('accepted');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }, 2000);
-                    }
-                  }}
-                  className="w-full py-3 bg-mint-500 text-white rounded-[12px] font-medium text-[14px] hover:bg-mint-600 transition-colors"
-                >
-                  출근 확정
-                </button>
-                <button
-                  onClick={async () => {
-                    if (confirm('정말 출근을 거부하시겠습니까?')) {
-                      try {
-                        // 백엔드 상태를 rejected로 업데이트
-                        await applicationsAPI.update(selectedAcceptedApp.id, 'rejected');
-                        
-                        // localStorage에도 저장
                         const acceptanceKey = `acceptance_guide_${selectedAcceptedApp.id}`;
                         const acceptanceData = localStorage.getItem(acceptanceKey);
                         if (acceptanceData) {
                           const acceptance = JSON.parse(acceptanceData);
-                          acceptance.isRejected = true;
-                          acceptance.rejectedAt = new Date().toISOString();
+                          acceptance.isHired = true;
+                          acceptance.hiredAt = new Date().toISOString();
                           localStorage.setItem(acceptanceKey, JSON.stringify(acceptance));
                         }
                         
-                        toast.success('출근이 거부되었습니다');
+                        // 체크 팝업 표시 후 합격 섹션으로 이동
+                        setShowWorkConfirmSuccess(true);
                         setShowAcceptanceDetail(false);
                         setSelectedAcceptedApp(null);
-                        fetchApplications();
+                        
+                        // 애플리케이션 목록 새로고침
+                        await fetchApplications();
+                        
+                        // 2초 후 팝업 닫고 합격 섹션으로 이동
+                        setTimeout(() => {
+                          setShowWorkConfirmSuccess(false);
+                          setActiveFilter('accepted');
+                          // 합격 섹션으로 스크롤
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 2000);
                       } catch (error) {
-                        console.error('출근 거부 실패:', error);
-                        toast.error('출근 거부 처리에 실패했습니다');
+                        console.error('출근 확정 실패:', error);
+                        // API 실패 시 localStorage만 저장
+                        localStorage.setItem(`first_work_date_confirmed_${selectedAcceptedApp.id}`, 'true');
+                        const acceptanceKey = `acceptance_guide_${selectedAcceptedApp.id}`;
+                        const acceptanceData = localStorage.getItem(acceptanceKey);
+                        if (acceptanceData) {
+                          const acceptance = JSON.parse(acceptanceData);
+                          acceptance.isHired = true;
+                          acceptance.hiredAt = new Date().toISOString();
+                          localStorage.setItem(acceptanceKey, JSON.stringify(acceptance));
+                        }
+                        // 실패 시에도 동일하게 처리
+                        setShowWorkConfirmSuccess(true);
+                        setShowAcceptanceDetail(false);
+                        setSelectedAcceptedApp(null);
+                        await fetchApplications();
+                        setTimeout(() => {
+                          setShowWorkConfirmSuccess(false);
+                          setActiveFilter('accepted');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 2000);
                       }
-                    }
-                  }}
-                  className="w-full py-3 bg-red-50 text-red-600 border border-red-200 rounded-[12px] font-medium text-[14px] hover:bg-red-100 transition-colors"
-                >
-                  출근 거부
-                </button>
-              </div>
+                    }}
+                    className="w-full py-3 bg-mint-500 text-white rounded-[12px] font-medium text-[14px] hover:bg-mint-600 transition-colors"
+                  >
+                    출근 확정
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (confirm('정말 출근을 거부하시겠습니까?')) {
+                        try {
+                          // 백엔드 상태를 rejected로 업데이트
+                          await applicationsAPI.update(selectedAcceptedApp.id, 'rejected');
+                          
+                          // localStorage에도 저장
+                          const acceptanceKey = `acceptance_guide_${selectedAcceptedApp.id}`;
+                          const acceptanceData = localStorage.getItem(acceptanceKey);
+                          if (acceptanceData) {
+                            const acceptance = JSON.parse(acceptanceData);
+                            acceptance.isRejected = true;
+                            acceptance.rejectedAt = new Date().toISOString();
+                            localStorage.setItem(acceptanceKey, JSON.stringify(acceptance));
+                          }
+                          
+                          toast.success('출근이 거부되었습니다');
+                          setShowAcceptanceDetail(false);
+                          setSelectedAcceptedApp(null);
+                          fetchApplications();
+                        } catch (error) {
+                          console.error('출근 거부 실패:', error);
+                          toast.error('출근 거부 처리에 실패했습니다');
+                        }
+                      }
+                    }}
+                    className="w-full py-3 bg-red-50 text-red-600 border border-red-200 rounded-[12px] font-medium text-[14px] hover:bg-red-100 transition-colors"
+                  >
+                    출근 거부
+                  </button>
+                </div>
+              )}
+              
+              {/* 출근 확정 완료 메시지 */}
+              {isConfirmed && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-[15px] font-semibold text-green-700">출근이 확정되었습니다</p>
+                  </div>
+                  <p className="text-[13px] text-green-600">첫 출근 날짜와 유의사항을 잘 확인하여 주세요.</p>
+                </div>
+              )}
             </div>
           </div>
         );
