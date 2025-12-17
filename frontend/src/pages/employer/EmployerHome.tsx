@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { SearchBar } from '@/components/SearchBar';
@@ -17,12 +17,14 @@ export const EmployerHome = () => {
   const [applicants, setApplicants] = useState<JobSeeker[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  // 기본 필터 설정
+  // 기본 필터: 무필터(전체)
   const [appliedFilters, setAppliedFilters] = useState<EmployerFilterState>({
-    languageLevel: 'Lv.1 기초: 일상적인 의사소통 가능',
-    locations: ['종로구'],
-    experience: '경력 무관',
-    workSchedule: ['주말'],
+    languageLevel: '',
+    city: null,
+    locations: [],
+    experience: '',
+    workSchedule: [],
+    visas: null,
   });
 
   const location = useLocation();
@@ -41,12 +43,12 @@ export const EmployerHome = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch applicants whenever appliedFilters change
+  // Fetch applicants (전체 불러온 후 클라이언트 필터)
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const jobSeekers = await listJobSeekers(20, { visa_type: appliedFilters.visas || undefined });
+        const jobSeekers = await listJobSeekers(50, { visa_type: undefined });
 
         // Convert API response to JobSeeker type
         const formattedApplicants: JobSeeker[] = jobSeekers.map((seeker) => {
@@ -59,6 +61,8 @@ export const EmployerHome = () => {
             console.warn('[WARNING] 지원자 데이터에 user_id가 없습니다:', s);
           }
           
+          const preferredRegions = Array.isArray(s.preferred_regions) ? s.preferred_regions : [];
+
           return {
             id: s.id || s.user_id, // profile id 또는 user_id
             userId: s.user_id, // 백엔드 엔드포인트는 user_id를 기대하므로 필수
@@ -75,7 +79,7 @@ export const EmployerHome = () => {
             preferences: {
               industries: [],
               wageRange: { min: 0, max: 0 },
-              area: s.preferred_regions?.[0] || '',
+              area: preferredRegions.join(', '),
               radiusKm: 5,
               preferDays: s.work_days_of_week || [],
             },
@@ -83,7 +87,8 @@ export const EmployerHome = () => {
             age,
             // experience_skills를 JobSeeker 타입에 추가 (타입 확장 필요할 수 있음)
             experience_skills: s.experience_skills || null,
-          } as JobSeeker & { experience_skills?: string | null };
+            preferredRegions,
+          } as JobSeeker & { experience_skills?: string | null; preferredRegions?: string[] };
         });
 
         setApplicants(formattedApplicants);
@@ -102,23 +107,48 @@ export const EmployerHome = () => {
     };
 
     fetchData();
-  }, [appliedFilters]);
+  }, []);
 
   
 
   const handleFilterApply = (filters: EmployerFilterState) => {
     setAppliedFilters(filters);
     console.log('Applied filters:', filters);
-    // TODO: 필터 적용 로직 추가 (API 호출 등)
   };
+
+  const filteredApplicants = useMemo(() => {
+    const norm = (v: string | undefined | null) => (v || '').toLowerCase();
+    return applicants.filter((applicant) => {
+      // 언어
+      if (appliedFilters.languageLevel) {
+        if (!norm(applicant.languageLevel).includes(norm(appliedFilters.languageLevel))) return false;
+      }
+      // 비자
+      if (appliedFilters.visas) {
+        if (norm(applicant.visaType) !== norm(appliedFilters.visas)) return false;
+      }
+      // 시/도
+      if (appliedFilters.city) {
+        const area = norm(applicant.preferences?.area as string);
+        if (!area.includes(norm(appliedFilters.city))) return false;
+      }
+      // 구/군
+      if (appliedFilters.locations.length > 0) {
+        const area = norm(applicant.preferences?.area as string);
+        if (!appliedFilters.locations.some((loc) => area.includes(norm(loc)))) return false;
+      }
+      return true;
+    });
+  }, [applicants, appliedFilters]);
 
   // 선택된 필터들을 하나의 배열로 합치기
   const getSelectedFiltersArray = () => {
     // 언어 레벨은 "Lv.1 기초" 형태로 표시
-    const langShort = appliedFilters.languageLevel.split(':')[0];
+    const langShort = appliedFilters.languageLevel ? appliedFilters.languageLevel.split(':')[0] : '';
     
     return [
       langShort,
+      ...(appliedFilters.city ? [appliedFilters.city] : []),
       ...appliedFilters.locations,
       appliedFilters.experience,
       ...appliedFilters.workSchedule,
@@ -187,7 +217,7 @@ export const EmployerHome = () => {
                 <div className="min-w-[340px] w-[340px] h-[200px] bg-white rounded-card border border-line-200 animate-pulse" />
               </>
             ) : (
-              applicants.map((applicant) => (
+              filteredApplicants.map((applicant) => (
                 <ApplicantCard key={applicant.id} applicant={applicant} variant="featured" />
               ))
             )}

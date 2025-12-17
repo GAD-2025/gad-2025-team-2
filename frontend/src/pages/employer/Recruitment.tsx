@@ -1,11 +1,13 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { InterviewProposalModal, type InterviewProposalData } from '@/components/InterviewProposalModal';
 import { AcceptanceGuideModal, type AcceptanceGuideData } from '@/components/AcceptanceGuideModal';
 import { useAuthStore } from '@/store/useAuth';
 import { getStores, type StoreData } from '@/api/endpoints';
+import { FilterChips } from '@/components/FilterChips';
+import { EmployerFilterModal, type EmployerFilterState } from '@/components/EmployerFilterModal';
 import { API_BASE_URL } from '@/api/client';
 
 // localStorage 변경 감지를 위한 커스텀 훅
@@ -109,9 +111,61 @@ export const Recruitment = () => {
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [applicantToReject, setApplicantToReject] = useState<Applicant | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<EmployerFilterState>({
+    languageLevel: '',
+    city: null,
+    locations: [],
+    experience: '',
+    workSchedule: [],
+    visas: null,
+  });
 
   const addEmployeeToSchedule = (applicant: Applicant) => {
     return;
+  };
+
+  const handleFilterApply = (filters: EmployerFilterState) => {
+    setAppliedFilters(filters);
+    console.log('Applied employer filters:', filters);
+  };
+
+  const filteredApplicants = useMemo(() => {
+    const norm = (v: string | undefined | null) => (v || '').toLowerCase();
+    return applicants.filter((applicant) => {
+      // 언어
+      if (appliedFilters.languageLevel) {
+        if (!norm(applicant.languageLevel).includes(norm(appliedFilters.languageLevel))) return false;
+      }
+      // 비자
+      if (appliedFilters.visas) {
+        const visa = (applicant as any).visaType || (applicant as any).visa_type || '';
+        if (norm(visa) !== norm(appliedFilters.visas)) return false;
+      }
+      // 시/도
+      if (appliedFilters.city) {
+        const area = norm((applicant as any).area as string);
+        if (!area.includes(norm(appliedFilters.city))) return false;
+      }
+      // 구/군
+      if (appliedFilters.locations.length > 0) {
+        const area = norm((applicant as any).area as string);
+        if (!appliedFilters.locations.some((loc) => area.includes(norm(loc)))) return false;
+      }
+      return true;
+    });
+  }, [applicants, appliedFilters]);
+
+  const getSelectedFiltersArray = () => {
+    const langShort = appliedFilters.languageLevel ? appliedFilters.languageLevel.split(':')[0] : '';
+    return [
+      langShort,
+      ...(appliedFilters.city ? [appliedFilters.city] : []),
+      ...appliedFilters.locations,
+      appliedFilters.experience,
+      ...appliedFilters.workSchedule,
+      ...(appliedFilters.visas ? [appliedFilters.visas] : []),
+    ].filter(Boolean);
   };
 
   useEffect(() => {
@@ -243,12 +297,20 @@ export const Recruitment = () => {
           
           // Extract tags from preferences or experience
           const tags: string[] = [];
+          let preferencesObj: any = {};
           try {
             const preferences = typeof seeker.preferences === 'string'
               ? JSON.parse(seeker.preferences || '{}')
               : (seeker.preferences || {});
+            preferencesObj = preferences;
             // Add tags based on preferences if needed
           } catch {}
+          const areaStr =
+            preferencesObj?.area ||
+            seeker.location ||
+            app.job?.shop_address ||
+            app.job?.location ||
+            '';
 
           // store_id 추출 (여러 방법 시도)
           const storeId = app.job?.store_id || app.job?.storeId || app.job?.store_id || null;
@@ -330,6 +392,7 @@ export const Recruitment = () => {
             acceptanceData: apiAcceptanceData || null, // API 데이터
             firstWorkDateConfirmed: app.firstWorkDateConfirmed || null, // 채용 확정된 첫 출근 날짜
             coordinationMessages: app.coordinationMessages || [], // 출근 날짜 조율 메시지
+            area: areaStr,
           };
         });
 
@@ -441,6 +504,27 @@ export const Recruitment = () => {
 
   const filteredApplicants = (() => {
     let filtered = applicants;
+    const norm = (v: string | undefined | null) => (v || '').toLowerCase();
+
+    // 모달 필터 적용 (언어/비자/지역)
+    filtered = filtered.filter((a) => {
+      if (appliedFilters.languageLevel) {
+        if (!norm(a.languageLevel).includes(norm(appliedFilters.languageLevel))) return false;
+      }
+      if (appliedFilters.visas) {
+        const visa = (a as any).visaType || (a as any).visa_type || '';
+        if (norm(visa) !== norm(appliedFilters.visas)) return false;
+      }
+      if (appliedFilters.city) {
+        const area = norm((a as any).area as string);
+        if (!area.includes(norm(appliedFilters.city))) return false;
+      }
+      if (appliedFilters.locations.length > 0) {
+        const area = norm((a as any).area as string);
+        if (!appliedFilters.locations.some((loc) => area.includes(norm(loc)))) return false;
+      }
+      return true;
+    });
     
     // 가게별 필터링
     if (selectedStoreId) {
@@ -488,6 +572,18 @@ export const Recruitment = () => {
     return filtered;
   })();
 
+  const getSelectedFiltersArray = () => {
+    const langShort = appliedFilters.languageLevel ? appliedFilters.languageLevel.split(':')[0] : '';
+    return [
+      langShort,
+      ...(appliedFilters.city ? [appliedFilters.city] : []),
+      ...appliedFilters.locations,
+      appliedFilters.experience,
+      ...appliedFilters.workSchedule,
+      ...(appliedFilters.visas ? [appliedFilters.visas] : []),
+    ].filter(Boolean);
+  };
+
   const getStatusBadge = (status: Applicant['status']) => {
     switch (status) {
       case 'pending':
@@ -506,18 +602,18 @@ export const Recruitment = () => {
   };
 
   const statusCounts = {
-    all: applicants.length,
-    new: applicants.filter(a => a.status === 'pending').length,
-    in_progress: applicants.filter(a => a.status === 'reviewed').length,
-    interview_result: applicants.filter(a => a.status === 'accepted' || a.status === 'hold' || a.status === 'rejected').length,
-    saved: applicants.filter(a => savedApplicantIds.includes(a.userId || '')).length
+    all: filteredApplicants.length,
+    new: filteredApplicants.filter(a => a.status === 'pending').length,
+    in_progress: filteredApplicants.filter(a => a.status === 'reviewed').length,
+    interview_result: filteredApplicants.filter(a => a.status === 'accepted' || a.status === 'hold' || a.status === 'rejected').length,
+    saved: filteredApplicants.filter(a => savedApplicantIds.includes(a.userId || '')).length
   };
 
   const interviewResultCounts = {
-    accepted: applicants.filter(a => a.status === 'accepted' && !isHired(a)).length, // 채용 확정 제외
-    hold: applicants.filter(a => a.status === 'hold').length,
-    rejected: applicants.filter(a => a.status === 'rejected').length,
-    hired: applicants.filter(a => isHired(a)).length,
+    accepted: filteredApplicants.filter(a => a.status === 'accepted' && !isHired(a)).length, // 채용 확정 제외
+    hold: filteredApplicants.filter(a => a.status === 'hold').length,
+    rejected: filteredApplicants.filter(a => a.status === 'rejected').length,
+    hired: filteredApplicants.filter(a => isHired(a)).length,
   };
 
   return (
@@ -560,6 +656,16 @@ export const Recruitment = () => {
           </button>
         </div>
       </header>
+
+      {/* Filters (언어/비자/지역) */}
+      <div className="bg-white border-b border-line-200 px-4 py-2">
+        <FilterChips
+          filters={getSelectedFiltersArray()}
+          title="검색 조건 설정"
+          icon="⚙️"
+          onFilterClick={() => setIsFilterModalOpen(true)}
+        />
+      </div>
 
       {/* Filter Tabs - 전체, 신규, 진행중, 면접결과, 가게선택 */}
       <div className="bg-white border-b border-line-200 px-4">
@@ -1319,6 +1425,14 @@ export const Recruitment = () => {
         )}
         </div>
       )}
+
+      {/* 필터 모달 */}
+      <EmployerFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        onApply={handleFilterApply}
+        initialFilters={appliedFilters}
+      />
 
       {/* 면접 제안 모달 */}
       <InterviewProposalModal
