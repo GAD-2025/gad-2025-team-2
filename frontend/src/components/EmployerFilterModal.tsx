@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface EmployerFilterModalProps {
   isOpen: boolean;
@@ -25,6 +25,7 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
       visas: null,
     }
   );
+  const backButtonRef = useRef<HTMLButtonElement>(null);
 
   // 브라우저 뒤로가기 이벤트 처리
   useEffect(() => {
@@ -43,6 +44,24 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isOpen, onClose]);
+
+  // 버튼 클릭 이벤트를 직접 바인딩
+  useEffect(() => {
+    if (!isOpen || !backButtonRef.current) return;
+    
+    const button = backButtonRef.current;
+    const handleClick = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('직접 바인딩된 클릭 이벤트');
+      onClose();
+    };
+
+    button.addEventListener('click', handleClick);
+    return () => {
+      button.removeEventListener('click', handleClick);
     };
   }, [isOpen, onClose]);
 
@@ -107,6 +126,13 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
     onClose();
   };
 
+  const handleBackClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('뒤로가기 버튼 클릭됨');
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       {/* Backdrop */}
@@ -116,12 +142,32 @@ export const EmployerFilterModal = ({ isOpen, onClose, onApply, initialFilters }
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-[500px] bg-white rounded-t-[24px] shadow-xl 
-                    animate-slide-up max-h-[90vh] overflow-y-auto">
+      <div 
+        className="relative w-full max-w-[500px] bg-white rounded-t-[24px] shadow-xl 
+                    animate-slide-up max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-line-200 px-4 py-4 flex items-center rounded-t-[24px] z-10">
-          <button onClick={onClose} className="p-2 -ml-2">
-            <svg className="w-6 h-6 text-text-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button 
+            ref={backButtonRef}
+            onClick={handleBackClick}
+            onMouseDown={(e) => e.preventDefault()}
+            className="relative min-w-[44px] min-h-[44px] p-2 -ml-2 cursor-pointer 
+                     flex items-center justify-center
+                     hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors
+                     touch-manipulation"
+            type="button"
+            aria-label="뒤로가기"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <svg 
+              className="w-6 h-6 text-text-900 pointer-events-none" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+              style={{ pointerEvents: 'none' }}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
