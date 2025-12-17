@@ -32,7 +32,7 @@ export const LevelTestIntro: React.FC<LevelTestIntroProps> = ({ onStartTest }) =
           </div>
           <div className="flex-1 bg-white p-3 rounded-lg shadow-sm">
             <div className="text-sm text-gray-500">문항수</div>
-            <div className="font-semibold text-gray-800">20문항</div>
+            <div className="font-semibold text-gray-800">3문항</div>
           </div>
           <div className="flex-1 bg-white p-3 rounded-lg shadow-sm">
             <div className="text-sm text-gray-500">난이도</div>
