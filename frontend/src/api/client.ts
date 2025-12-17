@@ -4,7 +4,7 @@ import axios from 'axios';
 // 1) VITE_API_BASE_URL if provided at build/runtime
 // 2) If running on localhost, fall back to local API
 // 3) Otherwise use deployed API domain
-const API_BASE_URL =
+export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   (typeof window !== 'undefined' && window.location.hostname === 'localhost'
     ? 'http://localhost:8000'

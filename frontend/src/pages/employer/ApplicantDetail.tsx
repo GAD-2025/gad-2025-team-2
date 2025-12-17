@@ -9,6 +9,7 @@ import { getJobSeekerProfile, type JobSeekerProfileData, applicationsAPI } from 
 import { InterviewProposalModal, type InterviewProposalData } from '@/components/InterviewProposalModal';
 import { AcceptanceGuideModal, type AcceptanceGuideData } from '@/components/AcceptanceGuideModal';
 import { useAuthStore } from '@/store/useAuth';
+import { API_BASE_URL } from '@/api/client';
 
 export const ApplicantDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,7 +50,6 @@ export const ApplicantDetail = () => {
         const signupUserId = useAuthStore.getState().signupUserId;
         const userId = signupUserId || localStorage.getItem('signup_user_id');
         if (userId) {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
           const applicationsRes = await fetch(`${API_BASE_URL}/applications?userId=${userId}`);
           if (applicationsRes.ok) {
             const applications = await applicationsRes.json();

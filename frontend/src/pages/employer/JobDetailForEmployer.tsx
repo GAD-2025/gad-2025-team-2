@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { jobsAPI } from '@/api/endpoints';
 import { formatCurrency, getDaysUntil, formatDate } from '@/utils/date';
 import type { Job } from '@/types';
+import { API_BASE_URL } from '@/api/client';
 
 export const JobDetailForEmployer = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,7 +41,6 @@ export const JobDetailForEmployer = () => {
     if (!job) return;
     
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const newStatus = job.status === 'active' ? 'paused' : 'active';
       const response = await fetch(`${API_BASE_URL}/jobs/${job.id}/status`, {
         method: 'PATCH',
@@ -72,7 +72,6 @@ export const JobDetailForEmployer = () => {
     }
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const response = await fetch(`${API_BASE_URL}/jobs/${job.id}`, {
         method: 'DELETE',
       });

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuth';
+import { API_BASE_URL } from '@/api/client';
 
 export function AutoRedirect() {
   const navigate = useNavigate();
@@ -20,7 +21,6 @@ export function AutoRedirect() {
 
       // 가입한 경우 -> role에 따라 홈으로
       try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
         const response = await fetch(`${API_BASE_URL}/auth/signup-user/${userId}`);
         if (!response.ok) {
           // 사용자 정보 없으면 회원가입으로

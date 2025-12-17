@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { SignupFormValues, NationalityOption } from './types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { API_BASE_URL } from '@/api/client';
 
 export interface SignupPayload {
   role: string;

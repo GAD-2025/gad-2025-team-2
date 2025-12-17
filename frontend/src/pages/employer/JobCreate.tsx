@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from '@/components/Header';
 import { getStores, getStore, type StoreData } from '@/api/endpoints';
+import { API_BASE_URL } from '@/api/client';
 import InfoPopover from '@/components/InfoPopover';
 
 interface JobFormData {
@@ -124,7 +125,7 @@ export const JobCreate = () => {
         }
 
         // Fetch employer profile
-        const response = await fetch(`http://localhost:8000/employer/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/employer/profile/${userId}`);
         if (!response.ok) {
           if (response.status === 404) {
             toast.error('고용주 프로필을 찾을 수 없습니다. 테스트 데이터를 실행해주세요.');
@@ -394,7 +395,6 @@ export const JobCreate = () => {
       }
 
       // API call to create job posting
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const response = await fetch(`${API_BASE_URL}/jobs`, {
         method: 'POST',
         headers: {

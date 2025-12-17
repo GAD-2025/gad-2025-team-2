@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { API_BASE_URL } from './client';
 import type {
   Job,
   Application,
@@ -9,9 +9,6 @@ import type {
   LearningProgress,
   User,
 } from '@/types';
-
-// Read Vite env safely — cast import.meta to any if types are missing in the project
-const API_BASE_URL = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://localhost:8000';
 
 // Auth
 export const authAPI = {

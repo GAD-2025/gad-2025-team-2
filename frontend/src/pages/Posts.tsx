@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
+import { API_BASE_URL } from '@/api/client';
 
 interface Post {
   id: string;
@@ -23,7 +24,6 @@ export const Posts = () => {
       setLoading(true);
       setError(null);
       
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const response = await fetch(`${API_BASE_URL}/api/posts`);
       
       if (!response.ok) {

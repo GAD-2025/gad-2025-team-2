@@ -7,6 +7,7 @@ import { VerificationList } from "@/components/VerificationList";
 import { ResumeSection } from "@/components/ResumeSection";
 import type { Profile, Verifications, Resume } from "@/types/profile";
 import { getSignupUser, getJobSeekerProfile, getStores, getEmployerProfile, type SignupUserData, type JobSeekerProfileData, type StoreData, type EmployerProfileData } from '@/api/endpoints';
+import { API_BASE_URL } from '@/api/client';
 
 export const MyPage = () => {
   const { userMode, user, clearAuth } = useAuthStore();
@@ -286,7 +287,6 @@ export const MyPage = () => {
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
-                                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
                                 const userId = localStorage.getItem('signup_user_id');
                                 if (!userId) {
                                   toast.error('로그인 정보를 찾을 수 없습니다.');

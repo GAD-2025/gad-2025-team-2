@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { jobsAPI } from '@/api/endpoints';
 import { getStores, type StoreData } from '@/api/endpoints';
 import type { Job } from '@/types';
+import { API_BASE_URL } from '@/api/client';
 
 interface JobWithStats extends Job {
   applicantCount: number;
@@ -117,7 +118,6 @@ export const JobManagement = () => {
     e.stopPropagation();
     
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const newStatus = currentStatus === 'active' ? 'paused' : 'active';
       const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/status`, {
         method: 'PATCH',
@@ -151,7 +151,6 @@ export const JobManagement = () => {
     }
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const userId = localStorage.getItem('signup_user_id');
       const url = userId 
         ? `${API_BASE_URL}/jobs/${jobId}?user_id=${encodeURIComponent(userId)}`

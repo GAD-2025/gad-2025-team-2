@@ -6,6 +6,7 @@ import { InterviewProposalModal, type InterviewProposalData } from '@/components
 import { AcceptanceGuideModal, type AcceptanceGuideData } from '@/components/AcceptanceGuideModal';
 import { useAuthStore } from '@/store/useAuth';
 import { getStores, type StoreData } from '@/api/endpoints';
+import { API_BASE_URL } from '@/api/client';
 
 // localStorage 변경 감지를 위한 커스텀 훅
 const useLocalStorage = (key: string) => {
@@ -165,7 +166,6 @@ export const Recruitment = () => {
       }
 
       // Get all applications for this employer using userId
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const applicationsRes = await fetch(`${API_BASE_URL}/applications?userId=${userId}`);
       if (!applicationsRes.ok) {
         throw new Error('지원 내역을 가져올 수 없습니다');

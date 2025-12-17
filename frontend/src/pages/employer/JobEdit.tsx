@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import InfoPopover from '@/components/InfoPopover';
 import { jobsAPI } from '@/api/endpoints';
 import { useAuthStore } from '@/store/useAuth';
+import { API_BASE_URL } from '@/api/client';
 
 interface JobFormData {
   title: string;
@@ -76,7 +77,6 @@ export const JobEdit = () => {
         const signupUserId = useAuthStore.getState().signupUserId;
         const userId = signupUserId || localStorage.getItem('signup_user_id');
         if (userId) {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
           const response = await fetch(`${API_BASE_URL}/employer/profile/${userId}`);
           if (response.ok) {
             const profile = await response.json();
@@ -149,7 +149,6 @@ export const JobEdit = () => {
         benefits: formData.preferredSkills || null,
       };
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
         method: 'PUT',
         headers: {
