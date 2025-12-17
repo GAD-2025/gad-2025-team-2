@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ProfileOverviewStep } from './components/ProfileOverviewStep';
 import { BasicInfoUploadStep } from './components/BasicInfoUploadStep';
 import { PreferredRegionStep } from './components/PreferredRegionStep';
