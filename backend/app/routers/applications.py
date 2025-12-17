@@ -573,8 +573,8 @@ async def update_interview_proposal(
         # coordinationStatus: 확정되면 'confirmed', 아니면 기존 값 유지
         "coordinationStatus": "confirmed" if request.isConfirmed else existing_interview_data.get("coordinationStatus"),
         # 기존 response 상태 유지 (면접 수락/거절/보류) - 프론트엔드에서 업데이트하도록 함
-        "response": existing_interview_data.get("response"),
-        "responseAt": existing_interview_data.get("responseAt"),
+        "response": request.response if request.response is not None else existing_interview_data.get("response"),
+        "responseAt": request.responseAt if request.responseAt is not None else existing_interview_data.get("responseAt"),
     }
     
     application.interviewData = json.dumps(interview_data)

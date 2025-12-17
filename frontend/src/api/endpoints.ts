@@ -54,6 +54,8 @@ export const applicationsAPI = {
     allDatesTimeSlots?: Array<{ time: string; duration: number }>;
     dateSpecificTimes?: Record<string, Array<{ time: string; duration: number }>>;
     isConfirmed: boolean;
+    response?: string;
+    responseAt?: string;
   }) =>
     apiClient.post(`/applications/${id}/interview-proposal`, data),
   updateAcceptanceGuide: (id: string, data: {

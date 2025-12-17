@@ -376,6 +376,8 @@ export const MyApplications = ({ onUnreadCountChange }: { onUnreadCountChange?: 
             allDatesTimeSlots: proposal.allDatesTimeSlots,
             dateSpecificTimes: proposal.dateSpecificTimes,
             isConfirmed: proposal.isConfirmed || false, // 기존 확정 상태 유지
+            response,
+            responseAt: new Date().toISOString(),
           });
         } catch (apiError) {
           console.error('면접 응답 API 업데이트 실패:', apiError);

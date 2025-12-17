@@ -507,7 +507,14 @@ export const ApplicantDetail = () => {
             
             const interviewResponseKey = `interview_response_${applicationId}`;
             const responseData = localStorage.getItem(interviewResponseKey);
-            const response = responseData ? JSON.parse(responseData) : null;
+          let response = responseData ? JSON.parse(responseData) : null;
+          // API에서 응답 상태가 내려오면 우선 사용
+          if (!response && proposal?.response) {
+            response = {
+              response: proposal.response,
+              responseAt: proposal.responseAt,
+            };
+          }
             
             // 고용주 입장에서는 구직자가 보낸 메시지만 표시
             // coordinationMessages state 사용 (API 또는 localStorage에서 로드됨)

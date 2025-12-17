@@ -194,7 +194,7 @@ export const Recruitment = () => {
       }
 
       // Transform to Applicant format
-      const applicantsData: Applicant[] = applications
+        const applicantsData: Applicant[] = applications
         .filter((app: any) => {
           const hasSeekerId = !!app.seekerId;
           const hasJobseeker = !!app.jobseeker;
@@ -304,7 +304,20 @@ export const Recruitment = () => {
             userId: userId, // 지원자의 user_id (지원자 상세 페이지에서 필요) - app.seekerId는 signup_user_id
             applicationId: app.applicationId,
             name: seeker.name || '이름 없음',
-            age: 28, // Default age, can be calculated from birthdate if available
+            // birthdate => age 계산 (연나이, 생일 기준)
+            age: (() => {
+              const birth = seeker.birthdate || seeker.birth_date;
+              if (!birth) return 28;
+              const d = new Date(birth);
+              if (Number.isNaN(d.getTime())) return 28;
+              const now = new Date();
+              let age = now.getFullYear() - d.getFullYear();
+              const m = now.getMonth() - d.getMonth();
+              if (m < 0 || (m === 0 && now.getDate() < d.getDate())) {
+                age -= 1;
+              }
+              return age;
+            })(),
             nationality: seeker.nationality || '국적 없음',
             jobTitle: app.job?.title || '공고 제목 없음',
             appliedDate: app.appliedAt || new Date().toISOString(),

@@ -45,6 +45,9 @@ class InterviewProposalUpdate(BaseModel):
     allDatesTimeSlots: Optional[List[dict]] = None
     dateSpecificTimes: Optional[dict] = None
     isConfirmed: bool = False
+    # 면접 응답 상태 (구직자 응답)
+    response: Optional[str] = None  # 'accepted' | 'rejected' | 'hold'
+    responseAt: Optional[str] = None
 
 
 class AcceptanceGuideUpdate(BaseModel):
